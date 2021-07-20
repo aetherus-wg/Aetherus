@@ -13,3 +13,5 @@ documentation = "https://aetherus-wg.github.io/aetherus"
 exclude = ["docs/", "input/", "output/"]
 
 [dependencies]
+
+[lib]
