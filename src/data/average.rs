@@ -7,7 +7,7 @@ use std::ops::AddAssign;
 pub struct Average {
     /// Current average value.
     total: f64,
-    /// Total counts so far.
+    /// Total individual contributions so far.
     counts: i32,
 }
 
