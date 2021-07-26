@@ -35,6 +35,9 @@
     clippy::unwrap_used
 )]
 
+#[cfg(feature = "data")]
+pub mod data;
+
 #[cfg(test)]
 mod tests {
     #[test]
