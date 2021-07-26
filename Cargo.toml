@@ -18,5 +18,6 @@ data = []
 
 [dependencies]
 assert_approx_eq = "1.1.0"
+rand = "0.8.4"
 
 [lib]

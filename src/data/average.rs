@@ -22,6 +22,20 @@ impl Average {
         }
     }
 
+    /// Read the number of counts.
+    #[inline]
+    #[must_use]
+    pub const fn counts(&self) -> i32 {
+        self.counts
+    }
+
+    /// Read the total.
+    #[inline]
+    #[must_use]
+    pub const fn total(&self) -> f64 {
+        self.total
+    }
+
     /// Calculate the average value.
     #[inline]
     #[must_use]
