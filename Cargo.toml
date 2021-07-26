@@ -12,6 +12,10 @@ categories = ["science", "simulation"]
 documentation = "https://aetherus-wg.github.io/aetherus"
 exclude = ["docs/", "input/", "output/"]
 
+[features]
+default = []
+data = []
+
 [dependencies]
 
 [lib]
