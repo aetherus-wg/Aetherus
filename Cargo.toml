@@ -15,6 +15,7 @@ exclude = ["docs/", "input/", "output/"]
 [features]
 default = []
 data = []
+meta = []
 
 [dependencies]
 assert_approx_eq = "1.1.0"
