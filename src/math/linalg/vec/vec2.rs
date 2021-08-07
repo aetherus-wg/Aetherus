@@ -1,10 +1,10 @@
 //! Two-dimensional vector alias.
 
-use nalgebra::{Vector2, Unit};
-use std::ops::{
-    Add, AddAssign, BitXor, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign, IndexMut
-};
 use crate::math::Dir2;
+use nalgebra::{Unit, Vector2};
+use std::ops::{
+    Add, AddAssign, BitXor, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
+};
 
 /// Two-dimensional real-number vector.
 pub struct Vec2 {
@@ -144,7 +144,7 @@ impl Index<usize> for Vec2 {
         match i {
             0 => &self.data.x,
             1 => &self.data.y,
-            _ => panic!("Out of bounds index for two-dimensional vector.")
+            _ => panic!("Out of bounds index for two-dimensional vector."),
         }
     }
 }
@@ -154,11 +154,10 @@ impl IndexMut<usize> for Vec2 {
         match i {
             0 => &mut self.data.x,
             1 => &mut self.data.y,
-            _ => panic!("Out of bounds index for two-dimensional vector.")
+            _ => panic!("Out of bounds index for two-dimensional vector."),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
