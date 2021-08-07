@@ -38,5 +38,8 @@
 #[cfg(feature = "data")]
 pub mod data;
 
+#[cfg(feature = "math")]
+pub mod math;
+
 #[cfg(feature = "meta")]
 pub mod meta;
