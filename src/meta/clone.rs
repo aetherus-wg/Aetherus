@@ -41,10 +41,9 @@ mod tests {
         clone!(b, b_mut, i32);
     }
 
-
     #[test]
     fn test_clone() {
-        let testy = Testy{a: 1, b: 2};
+        let testy = Testy { a: 1, b: 2 };
 
         assert_eq!(testy.a(), 1);
         assert_eq!(testy.b(), 2);
@@ -52,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_mut_clone() {
-        let mut testy = Testy{a: 1, b: 2};
+        let mut testy = Testy { a: 1, b: 2 };
 
         *testy.b_mut() *= -1;
 

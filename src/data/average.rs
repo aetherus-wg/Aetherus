@@ -1,5 +1,6 @@
 //! Rolling average implementation.
 
+use crate::clone;
 use std::ops::AddAssign;
 
 /// Rolling average value recording.
@@ -12,6 +13,9 @@ pub struct Average {
 }
 
 impl Average {
+    clone!(counts, i32);
+    clone!(total, f64);
+
     /// Construct a new instance.
     #[inline]
     #[must_use]
@@ -20,20 +24,6 @@ impl Average {
             counts: 0,
             total: 0.0,
         }
-    }
-
-    /// Read the number of counts.
-    #[inline]
-    #[must_use]
-    pub const fn counts(&self) -> i32 {
-        self.counts
-    }
-
-    /// Read the total.
-    #[inline]
-    #[must_use]
-    pub const fn total(&self) -> f64 {
-        self.total
     }
 
     /// Calculate the average value.
