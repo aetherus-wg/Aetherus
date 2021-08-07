@@ -2,21 +2,19 @@
 
 use nalgebra::{Unit, Vector2};
 
-
 /// Normalised two-dimensional real-number vector.
 pub struct Dir2 {
     /// Internal data.
-    data: Unit<Vector2<f64>>
+    data: Unit<Vector2<f64>>,
 }
-
 
 impl Dir2 {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(x: f64, y:f64) -> Self {
-        Self{
-            data: Unit::new_normalize(Vector2::new(x, y))
+    pub fn new(x: f64, y: f64) -> Self {
+        Self {
+            data: Unit::new_normalize(Vector2::new(x, y)),
         }
     }
 
@@ -24,18 +22,16 @@ impl Dir2 {
     #[inline]
     #[must_use]
     pub fn x(&self) -> f64 {
-        return self.data.x
+        return self.data.x;
     }
 
     /// Access the second component.
     #[inline]
     #[must_use]
     pub fn y(&self) -> f64 {
-        return self.data.y
+        return self.data.y;
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
