@@ -48,10 +48,10 @@ mod tests {
 
     #[test]
     fn test_init() {
-        let v = Vec3::new(SQRT_2, PI, E);
+        let vec = Vec3::new(SQRT_2, PI, E);
 
-        assert_approx_eq!(v.x, SQRT_2);
-        assert_approx_eq!(v.y, PI);
-        assert_approx_eq!(v.z, E);
+        assert_approx_eq!(vec.x(), SQRT_2);
+        assert_approx_eq!(vec.y(), PI);
+        assert_approx_eq!(vec.z(), E);
     }
 }
