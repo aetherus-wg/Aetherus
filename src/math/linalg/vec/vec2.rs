@@ -1,7 +1,10 @@
 //! Two-dimensional vector alias.
 
-use nalgebra::Vector2;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
+use nalgebra::{Vector2, Unit};
+use std::ops::{
+    Add, AddAssign, BitXor, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign, IndexMut
+};
+use crate::math::Dir2;
 
 /// Two-dimensional real-number vector.
 pub struct Vec2 {
@@ -31,6 +34,20 @@ impl Vec2 {
     #[must_use]
     pub fn y(&self) -> f64 {
         return self.data.y;
+    }
+
+    /// Calculate the magnitude of the vector.
+    #[inline]
+    #[must_use]
+    pub fn mag(&self) -> f64 {
+        self.data.magnitude()
+    }
+
+    /// Calculate the unit vector.
+    #[inline]
+    #[must_use]
+    pub fn dir(&self) -> Dir2 {
+        Dir2::from(Unit::new_normalize(self.data))
     }
 }
 
@@ -116,20 +133,32 @@ impl BitXor for Vec2 {
     type Output = f64;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
-        return
-        (self.data.x * rhs.data.y) -
-        (rhs.data.x * self.data.y);
+        return (self.data.x * rhs.data.y) - (rhs.data.x * self.data.y);
     }
 }
-// impl BitXorAssign for Vec2 {
 
-// }
-// impl BitOr for Vec2 {
+impl Index<usize> for Vec2 {
+    type Output = f64;
 
-// }
-// impl BitOrAssign for Vec2 {
+    fn index(&self, i: usize) -> &Self::Output {
+        match i {
+            0 => &self.data.x,
+            1 => &self.data.y,
+            _ => panic!("Out of bounds index for two-dimensional vector.")
+        }
+    }
+}
 
-// }
+impl IndexMut<usize> for Vec2 {
+    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
+        match i {
+            0 => &mut self.data.x,
+            1 => &mut self.data.y,
+            _ => panic!("Out of bounds index for two-dimensional vector.")
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -143,6 +172,25 @@ mod tests {
 
         assert_approx_eq!(vec.x(), SQRT_2);
         assert_approx_eq!(vec.y(), PI);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_mag() {
+        let vec = Vec2::new(1.0, -4.0);
+
+        assert_approx_eq!(vec.mag(), 2.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_dir() {
+        let vec = Vec2::new(1.0, -4.0);
+
+        let dir = vec.dir();
+
+        assert_approx_eq!(dir.x(), 0.5);
+        assert_approx_eq!(dir.y(), -2.0);
     }
 
     #[test]
@@ -194,7 +242,6 @@ mod tests {
         assert_approx_eq!(ans.x(), 2.5);
         assert_approx_eq!(ans.y(), -10.0);
     }
-
 
     #[test]
     fn test_div() {
@@ -258,7 +305,6 @@ mod tests {
         assert_approx_eq!(vec.y(), -0.4);
     }
 
-
     #[test]
     fn test_dot_prod() {
         let vec_a = Vec2::new(0.5, -2.0);
@@ -277,5 +323,32 @@ mod tests {
         let ans = vec_a ^ vec_b;
 
         assert_approx_eq!(ans, 3.5 + 10.0);
+    }
+
+    #[test]
+    fn test_index() {
+        let vec = Vec2::new(0.5, -2.0);
+
+        assert_approx_eq!(vec[0], 0.5);
+        assert_approx_eq!(vec[1], -2.0);
+    }
+
+    #[test]
+    fn test_index_mut() {
+        let mut vec = Vec2::new(0.5, -2.0);
+
+        vec[0] *= 2.0;
+        vec[1] /= 2.0;
+
+        assert_approx_eq!(vec[0], 1.0);
+        assert_approx_eq!(vec[1], -1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_index_mut_out_of_bounds() {
+        let vec = Vec2::new(0.5, -2.0);
+
+        vec[2];
     }
 }
