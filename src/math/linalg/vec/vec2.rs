@@ -16,7 +16,7 @@ impl Vec2 {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(x: Real, y: Real) -> Self {
+    pub const fn new(x: Real, y: Real) -> Self {
         Self {
             data: Vector2::new(x, y),
         }
@@ -111,7 +111,6 @@ impl Div<Real> for Vec2 {
 
 impl AddAssign<Self> for Vec2 {
     #[inline]
-    #[must_use]
     fn add_assign(&mut self, rhs: Self) {
         self.data += rhs.data;
     }
@@ -119,7 +118,6 @@ impl AddAssign<Self> for Vec2 {
 
 impl SubAssign<Self> for Vec2 {
     #[inline]
-    #[must_use]
     fn sub_assign(&mut self, rhs: Self) {
         self.data -= rhs.data;
     }
@@ -127,7 +125,6 @@ impl SubAssign<Self> for Vec2 {
 
 impl MulAssign<Real> for Vec2 {
     #[inline]
-    #[must_use]
     fn mul_assign(&mut self, rhs: Real) {
         self.data *= rhs;
     }
@@ -135,9 +132,8 @@ impl MulAssign<Real> for Vec2 {
 
 impl DivAssign<Real> for Vec2 {
     #[inline]
-    #[must_use]
     fn div_assign(&mut self, rhs: Real) {
-        self.data /= rhs
+        self.data /= rhs;
     }
 }
 
@@ -363,6 +359,6 @@ mod tests {
     fn test_index_mut_out_of_bounds() {
         let vec = Vec2::new(1.0, -4.0);
 
-        vec[2];
+        let _ = vec[2];
     }
 }

@@ -17,7 +17,7 @@ impl Vec3 {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(x: Real, y: Real, z: Real) -> Self {
+    pub const fn new(x: Real, y: Real, z: Real) -> Self {
         Self {
             data: Vector3::new(x, y, z),
         }
@@ -119,7 +119,6 @@ impl Div<Real> for Vec3 {
 
 impl AddAssign<Self> for Vec3 {
     #[inline]
-    #[must_use]
     fn add_assign(&mut self, rhs: Self) {
         self.data += rhs.data;
     }
@@ -127,7 +126,6 @@ impl AddAssign<Self> for Vec3 {
 
 impl SubAssign<Self> for Vec3 {
     #[inline]
-    #[must_use]
     fn sub_assign(&mut self, rhs: Self) {
         self.data -= rhs.data;
     }
@@ -135,7 +133,6 @@ impl SubAssign<Self> for Vec3 {
 
 impl MulAssign<Real> for Vec3 {
     #[inline]
-    #[must_use]
     fn mul_assign(&mut self, rhs: Real) {
         self.data *= rhs;
     }
@@ -143,9 +140,8 @@ impl MulAssign<Real> for Vec3 {
 
 impl DivAssign<Real> for Vec3 {
     #[inline]
-    #[must_use]
     fn div_assign(&mut self, rhs: Real) {
-        self.data /= rhs
+        self.data /= rhs;
     }
 }
 
@@ -175,7 +171,6 @@ impl BitXor for Vec3 {
 
 impl BitXorAssign for Vec3 {
     #[inline]
-    #[must_use]
     fn bitxor_assign(&mut self, rhs: Self) {
         let x = (self.data.y * rhs.data.z) - (self.data.z * rhs.data.y);
         let y = (self.data.z * rhs.data.x) - (self.data.x * rhs.data.z);
@@ -420,6 +415,6 @@ mod tests {
     fn test_index_mut_out_of_bounds() {
         let vec = Vec3::new(1.0, -4.0, 12.0);
 
-        vec[3];
+        let _ = vec[3];
     }
 }
