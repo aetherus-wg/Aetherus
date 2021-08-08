@@ -182,6 +182,14 @@ impl Mat4 {
     }
 }
 
+impl From<Matrix4<Real>> for Mat4 {
+    #[inline]
+    #[must_use]
+    fn from(d: Matrix4<Real>) -> Self {
+        Self { data: d }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
