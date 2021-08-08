@@ -45,8 +45,8 @@ mod tests {
     #[test]
     fn test_access() {
         let testy = Testy {
-            a: "one".to_string(),
-            b: "two".to_string(),
+            a: "one".to_owned(),
+            b: "two".to_owned(),
         };
 
         assert_eq!(testy.a(), &"one");
@@ -56,11 +56,11 @@ mod tests {
     #[test]
     fn test_mut_access() {
         let mut testy = Testy {
-            a: "one".to_string(),
-            b: "two".to_string(),
+            a: "one".to_owned(),
+            b: "two".to_owned(),
         };
 
-        *testy.b_mut() = "three".to_string();
+        *testy.b_mut() = "three".to_owned();
 
         assert_eq!(testy.b(), &"three");
     }
