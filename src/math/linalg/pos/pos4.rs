@@ -1,20 +1,20 @@
-//! Four-dimensional unit vector alias.
+//! Four-dimensional point position.
 
-use nalgebra::{Unit, Vector4};
+use nalgebra::Point4;
 
-/// Normalised four dimensional real-number vector.
-pub struct Dir4 {
-    /// Internal data.
-    data: Unit<Vector4<f64>>,
+/// Four-coordinate position.
+pub struct Pos4 {
+    // Internal data.
+    data: Point4<f64>
 }
 
-impl Dir4 {
+impl Pos4 {
     /// Construct a new instance.
     #[inline]
     #[must_use]
     pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
         Self {
-            data: Unit::new_normalize(Vector4::new(x, y, z, w)),
+            data: Point4::new(x, y, z, w),
         }
     }
 
