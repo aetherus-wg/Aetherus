@@ -5,7 +5,7 @@ use nalgebra::Point2;
 /// Two-coordinate position.
 pub struct Pos2 {
     // Internal data.
-    data: Point2<f64>
+    data: Point2<f64>,
 }
 
 impl Pos2 {

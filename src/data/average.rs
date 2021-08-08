@@ -1,6 +1,9 @@
 //! Rolling average implementation.
 
-use crate::{clone, core::{Int, Real}};
+use crate::{
+    clone,
+    core::{Int, Real},
+};
 use std::ops::AddAssign;
 
 /// Rolling average value recording.

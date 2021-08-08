@@ -1,7 +1,7 @@
 //! Complex composite type.
 
 use crate::{access, core::Real};
-use std::ops::{Mul};
+use std::ops::Mul;
 
 /// Complex number type.
 pub struct Complex {

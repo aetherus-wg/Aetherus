@@ -1,7 +1,7 @@
 //! Core type definitions.
 
-pub mod number;
 pub mod memory;
+pub mod number;
 
-pub use self::number::*;
 pub use self::memory::*;
+pub use self::number::*;

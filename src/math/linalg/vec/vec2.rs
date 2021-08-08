@@ -1,6 +1,6 @@
 //! Two-dimensional vector alias.
 
-use crate::{math::Dir2, core::Real};
+use crate::{core::Real, math::Dir2};
 use nalgebra::{Unit, Vector2};
 use std::ops::{
     Add, AddAssign, BitXor, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,

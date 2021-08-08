@@ -1,6 +1,6 @@
 //! Square fourth-order matrix.
 
-use nalgebra::{Matrix4};
+use nalgebra::Matrix4;
 
 /// Four-by-four real-number matrix.
 pub struct Mat4 {

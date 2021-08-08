@@ -2,7 +2,6 @@
 
 use nalgebra::Vector4;
 
-
 /// Four-dimensional real-number vector.
 pub struct Vec4 {
     /// Internal data.

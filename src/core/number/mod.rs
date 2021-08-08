@@ -1,9 +1,9 @@
 //! Number type module.
 
-pub mod real;
-pub mod integer;
 pub mod complex;
+pub mod integer;
+pub mod real;
 
-pub use self::real::*;
-pub use self::integer::*;
 pub use self::complex::*;
+pub use self::integer::*;
+pub use self::real::*;

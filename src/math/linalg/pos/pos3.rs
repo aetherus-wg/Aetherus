@@ -5,7 +5,7 @@ use nalgebra::Point3;
 /// Three-coordinate position.
 pub struct Pos3 {
     // Internal data.
-    data: Point3<f64>
+    data: Point3<f64>,
 }
 
 impl Pos3 {

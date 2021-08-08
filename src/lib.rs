@@ -35,9 +35,6 @@
     clippy::unwrap_used
 )]
 
-
-
-
 pub mod core;
 
 #[cfg(feature = "data")]

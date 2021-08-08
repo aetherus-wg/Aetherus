@@ -1,7 +1,7 @@
 //! Three-dimensional unit vector alias.
 
-use nalgebra::{Unit, Vector3};
 use crate::core::Real;
+use nalgebra::{Unit, Vector3};
 
 /// Normalised three dimensional real-number vector.
 pub struct Dir3 {

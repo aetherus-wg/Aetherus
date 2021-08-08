@@ -5,7 +5,7 @@ use nalgebra::Point4;
 /// Four-coordinate position.
 pub struct Pos4 {
     // Internal data.
-    data: Point4<f64>
+    data: Point4<f64>,
 }
 
 impl Pos4 {
