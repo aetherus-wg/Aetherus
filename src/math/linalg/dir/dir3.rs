@@ -40,3 +40,9 @@ impl Dir3 {
         return self.data.z;
     }
 }
+
+impl From<Unit<Vector3<Real>>> for Dir3 {
+    fn from(d: Unit<Vector3<Real>>) -> Self {
+        Self { data: d }
+    }
+}

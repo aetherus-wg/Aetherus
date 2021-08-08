@@ -23,8 +23,8 @@ impl Mul for Complex {
     #[must_use]
     fn mul(self, rhs: Self) -> Self {
         Self {
-            re: (self.re * rhs.re) - (self.im * rhs.im),
-            im: (self.re * rhs.im) + (self.im * rhs.re),
+            re: self.re.mul_add(rhs.re, -self.im * rhs.im),
+            im: self.re.mul_add(rhs.im, self.im * rhs.re),
         }
     }
 }

@@ -14,9 +14,6 @@ exclude = ["docs/", "input/", "output/"]
 
 [features]
 default = []
-data = []
-math = []
-meta = []
 
 [dependencies]
 assert_approx_eq = "1.1.*"

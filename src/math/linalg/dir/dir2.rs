@@ -1,18 +1,19 @@
 //! Two-dimensional unit vector alias.
 
+use crate::core::Real;
 use nalgebra::{Unit, Vector2};
 
 /// Normalised two dimensional real-number vector.
 pub struct Dir2 {
     /// Internal data.
-    data: Unit<Vector2<f64>>,
+    data: Unit<Vector2<Real>>,
 }
 
 impl Dir2 {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(x: f64, y: f64) -> Self {
+    pub fn new(x: Real, y: Real) -> Self {
         Self {
             data: Unit::new_normalize(Vector2::new(x, y)),
         }
@@ -21,20 +22,20 @@ impl Dir2 {
     /// Access the first component.
     #[inline]
     #[must_use]
-    pub fn x(&self) -> f64 {
+    pub fn x(&self) -> Real {
         return self.data.x;
     }
 
     /// Access the second component.
     #[inline]
     #[must_use]
-    pub fn y(&self) -> f64 {
+    pub fn y(&self) -> Real {
         return self.data.y;
     }
 }
 
-impl From<Unit<Vector2<f64>>> for Dir2 {
-    fn from(d: Unit<Vector2<f64>>) -> Self {
+impl From<Unit<Vector2<Real>>> for Dir2 {
+    fn from(d: Unit<Vector2<Real>>) -> Self {
         Self { data: d }
     }
 }

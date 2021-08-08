@@ -1,5 +1,6 @@
 //! Four-dimensional unit vector alias.
 
+use crate::core::Real;
 use nalgebra::{Unit, Vector4};
 
 /// Normalised four dimensional real-number vector.
@@ -44,5 +45,11 @@ impl Dir4 {
     #[must_use]
     pub fn w(&self) -> f64 {
         return self.data.w;
+    }
+}
+
+impl From<Unit<Vector4<Real>>> for Dir4 {
+    fn from(d: Unit<Vector4<Real>>) -> Self {
+        Self { data: d }
     }
 }
