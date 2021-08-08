@@ -10,8 +10,8 @@ pub struct Mat2 {
 }
 
 impl Mat2 {
-    #[inline]
     /// Construct a new instance from component row vectors.
+    #[inline]
     #[must_use]
     pub fn new_from_rows(row_x: &Vec2, row_y: &Vec2) -> Self {
         Self {
@@ -71,28 +71,28 @@ mod tests {
 
     #[test]
     fn test_new_from_rows() {
-        let mat = Mat2::new_from_rows(&Vec2::new(0.5, -2.0), &Vec2::new(4.0, 0.125));
+        let mat = Mat2::new_from_rows(&Vec2::new(3.0, 8.0), &Vec2::new(4.0, 6.0));
 
-        assert_approx_eq!(mat.xx(), 0.5);
-        assert_approx_eq!(mat.xy(), -2.0);
+        assert_approx_eq!(mat.xx(), 3.0);
+        assert_approx_eq!(mat.xy(), 8.0);
         assert_approx_eq!(mat.yx(), 4.0);
-        assert_approx_eq!(mat.yy(), 0.125);
+        assert_approx_eq!(mat.yy(), 6.0);
     }
 
     #[test]
     fn test_new_from_cols() {
-        let mat = Mat2::new_from_cols(&Vec2::new(0.5, -2.0), &Vec2::new(4.0, 0.125));
+        let mat = Mat2::new_from_cols(&Vec2::new(3.0, 8.0), &Vec2::new(4.0, 6.0));
 
-        assert_approx_eq!(mat.xx(), 0.5);
+        assert_approx_eq!(mat.xx(), 3.0);
         assert_approx_eq!(mat.xy(), 4.0);
-        assert_approx_eq!(mat.yx(), -2.0);
-        assert_approx_eq!(mat.yy(), 0.125);
+        assert_approx_eq!(mat.yx(), 8.0);
+        assert_approx_eq!(mat.yy(), 6.0);
     }
 
     #[test]
     fn test_det() {
-        let mat = Mat2::new_from_rows(&Vec2::new(0.5, -2.0), &Vec2::new(4.0, 0.125));
+        let mat = Mat2::new_from_rows(&Vec2::new(3.0, 8.0), &Vec2::new(4.0, 6.0));
 
-        assert_approx_eq!(mat.det(), (0.5 * 0.125) - (-2.0 * 4.0));
+        assert_approx_eq!(mat.det(), -14.0);
     }
 }
