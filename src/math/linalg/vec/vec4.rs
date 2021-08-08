@@ -197,7 +197,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
-    fn test_init() {
+    fn test_new() {
         let vec = Vec4::new(17.0, -4.0, 23.0, 4.0);
 
         assert_approx_eq!(vec.x(), 17.0);
