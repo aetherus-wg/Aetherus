@@ -1,6 +1,6 @@
 //! Two-dimensional vector alias.
 
-use crate::math::Dir2;
+use crate::{math::Dir2, core::Real};
 use nalgebra::{Unit, Vector2};
 use std::ops::{
     Add, AddAssign, BitXor, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -9,14 +9,14 @@ use std::ops::{
 /// Two-dimensional real-number vector.
 pub struct Vec2 {
     /// Internal data.
-    data: Vector2<f64>,
+    data: Vector2<Real>,
 }
 
 impl Vec2 {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(x: f64, y: f64) -> Self {
+    pub fn new(x: Real, y: Real) -> Self {
         Self {
             data: Vector2::new(x, y),
         }
@@ -25,21 +25,21 @@ impl Vec2 {
     /// Access the first component.
     #[inline]
     #[must_use]
-    pub fn x(&self) -> f64 {
+    pub fn x(&self) -> Real {
         return self.data.x;
     }
 
     /// Access the second component.
     #[inline]
     #[must_use]
-    pub fn y(&self) -> f64 {
+    pub fn y(&self) -> Real {
         return self.data.y;
     }
 
     /// Calculate the magnitude of the vector.
     #[inline]
     #[must_use]
-    pub fn mag(&self) -> f64 {
+    pub fn mag(&self) -> Real {
         self.data.magnitude()
     }
 
@@ -51,8 +51,10 @@ impl Vec2 {
     }
 }
 
-impl From<Vector2<f64>> for Vec2 {
-    fn from(v: Vector2<f64>) -> Self {
+impl From<Vector2<Real>> for Vec2 {
+    #[inline]
+    #[must_use]
+    fn from(v: Vector2<Real>) -> Self {
         Self { data: v }
     }
 }
@@ -60,6 +62,8 @@ impl From<Vector2<f64>> for Vec2 {
 impl Neg for Vec2 {
     type Output = Self;
 
+    #[inline]
+    #[must_use]
     fn neg(self) -> Self {
         return Self::from(-self.data);
     }
@@ -68,6 +72,8 @@ impl Neg for Vec2 {
 impl Add for Vec2 {
     type Output = Self;
 
+    #[inline]
+    #[must_use]
     fn add(self, rhs: Self) -> Self::Output {
         return Self::from(self.data + rhs.data);
     }
@@ -76,70 +82,90 @@ impl Add for Vec2 {
 impl Sub for Vec2 {
     type Output = Self;
 
+    #[inline]
+    #[must_use]
     fn sub(self, rhs: Self) -> Self::Output {
         return Self::from(self.data - rhs.data);
     }
 }
 
-impl Mul<f64> for Vec2 {
+impl Mul<Real> for Vec2 {
     type Output = Self;
 
-    fn mul(self, rhs: f64) -> Self::Output {
+    #[inline]
+    #[must_use]
+    fn mul(self, rhs: Real) -> Self::Output {
         return Self::from(self.data * rhs);
     }
 }
 
-impl Div<f64> for Vec2 {
+impl Div<Real> for Vec2 {
     type Output = Self;
 
-    fn div(self, rhs: f64) -> Self {
+    #[inline]
+    #[must_use]
+    fn div(self, rhs: Real) -> Self {
         return Self::from(self.data / rhs);
     }
 }
 
 impl AddAssign<Self> for Vec2 {
+    #[inline]
+    #[must_use]
     fn add_assign(&mut self, rhs: Self) {
         self.data += rhs.data;
     }
 }
 
 impl SubAssign<Self> for Vec2 {
+    #[inline]
+    #[must_use]
     fn sub_assign(&mut self, rhs: Self) {
         self.data -= rhs.data;
     }
 }
 
-impl MulAssign<f64> for Vec2 {
-    fn mul_assign(&mut self, rhs: f64) {
+impl MulAssign<Real> for Vec2 {
+    #[inline]
+    #[must_use]
+    fn mul_assign(&mut self, rhs: Real) {
         self.data *= rhs;
     }
 }
 
-impl DivAssign<f64> for Vec2 {
-    fn div_assign(&mut self, rhs: f64) {
+impl DivAssign<Real> for Vec2 {
+    #[inline]
+    #[must_use]
+    fn div_assign(&mut self, rhs: Real) {
         self.data /= rhs
     }
 }
 
 impl Mul for Vec2 {
-    type Output = f64;
+    type Output = Real;
 
+    #[inline]
+    #[must_use]
     fn mul(self, rhs: Self) -> Self::Output {
         return self.data.dot(&rhs.data);
     }
 }
 
 impl BitXor for Vec2 {
-    type Output = f64;
+    type Output = Real;
 
+    #[inline]
+    #[must_use]
     fn bitxor(self, rhs: Self) -> Self::Output {
         return (self.data.x * rhs.data.y) - (rhs.data.x * self.data.y);
     }
 }
 
 impl Index<usize> for Vec2 {
-    type Output = f64;
+    type Output = Real;
 
+    #[inline]
+    #[must_use]
     fn index(&self, i: usize) -> &Self::Output {
         match i {
             0 => &self.data.x,
@@ -150,6 +176,8 @@ impl Index<usize> for Vec2 {
 }
 
 impl IndexMut<usize> for Vec2 {
+    #[inline]
+    #[must_use]
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         match i {
             0 => &mut self.data.x,
@@ -163,18 +191,16 @@ impl IndexMut<usize> for Vec2 {
 mod tests {
     use super::*;
     use assert_approx_eq::assert_approx_eq;
-    use std::f64::consts::{PI, SQRT_2};
 
     #[test]
     fn test_init() {
-        let vec = Vec2::new(SQRT_2, PI);
+        let vec = Vec2::new(1.0, -2.0);
 
-        assert_approx_eq!(vec.x(), SQRT_2);
-        assert_approx_eq!(vec.y(), PI);
+        assert_approx_eq!(vec.x(), 1.0);
+        assert_approx_eq!(vec.y(), -2.0);
     }
 
     #[test]
-    #[should_panic]
     fn test_mag() {
         let vec = Vec2::new(1.0, -4.0);
 
@@ -182,7 +208,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_dir() {
         let vec = Vec2::new(1.0, -4.0);
 

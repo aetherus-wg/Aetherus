@@ -3,7 +3,7 @@
 /// Succinctly create an access-by-clone method for the given variable.
 #[macro_export]
 macro_rules! clone {
-    ($field:ident, $type:ty) => {
+    ($field:ident: $type:ty) => {
         #[inline]
         #[must_use]
         pub const fn $field(&self) -> $type {
@@ -11,7 +11,7 @@ macro_rules! clone {
         }
     };
 
-    ($field:ident, $setter:ident, $type:ty) => {
+    ($field:ident, $setter:ident: $type:ty) => {
         #[inline]
         #[must_use]
         pub const fn $field(&self) -> $type {
@@ -28,17 +28,19 @@ macro_rules! clone {
 
 #[cfg(test)]
 mod tests {
+    use crate::core::Int;
+
     /// Test implementation structure.
     pub struct Testy {
         /// Immutable parameter.
-        a: i32,
+        a: Int,
         /// Mutable parameter.
-        b: i32,
+        b: Int,
     }
 
     impl Testy {
-        clone!(a, i32);
-        clone!(b, b_mut, i32);
+        clone!(a: Int);
+        clone!(b, b_mut: Int);
     }
 
     #[test]

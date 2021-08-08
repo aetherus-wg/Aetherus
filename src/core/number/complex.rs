@@ -12,8 +12,8 @@ pub struct Complex {
 }
 
 impl Complex {
-    access!(re, Real);
-    access!(im, Real);
+    access!(re: Real);
+    access!(im: Real);
 }
 
 impl Mul for Complex {

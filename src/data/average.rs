@@ -1,20 +1,20 @@
 //! Rolling average implementation.
 
-use crate::clone;
+use crate::{clone, core::{Int, Real}};
 use std::ops::AddAssign;
 
 /// Rolling average value recording.
 #[derive(Clone, Default)]
 pub struct Average {
     /// Total individual contributions so far.
-    counts: i32,
-    /// Current average value.
-    total: f64,
+    counts: Int,
+    /// Average multiplied by number of counts.
+    total: Real,
 }
 
 impl Average {
-    clone!(counts, i32);
-    clone!(total, f64);
+    clone!(counts: Int);
+    clone!(total: Real);
 
     /// Construct a new instance.
     #[inline]
@@ -29,9 +29,9 @@ impl Average {
     /// Calculate the average value.
     #[inline]
     #[must_use]
-    pub fn ave(&self) -> f64 {
+    pub fn ave(&self) -> Real {
         if self.counts > 0 {
-            self.total / f64::from(self.counts)
+            self.total / Real::from(self.counts)
         } else {
             0.0
         }
@@ -54,9 +54,9 @@ impl AddAssign<&Self> for Average {
     }
 }
 
-impl AddAssign<f64> for Average {
+impl AddAssign<Real> for Average {
     #[inline]
-    fn add_assign(&mut self, rhs: f64) {
+    fn add_assign(&mut self, rhs: Real) {
         self.total += rhs;
         self.counts += 1;
     }
@@ -80,7 +80,7 @@ mod tests {
         let mut a = Average::new();
 
         for n in 0..100 {
-            a += f64::from(n);
+            a += Real::from(n);
         }
 
         assert_eq!(a.counts, 100);

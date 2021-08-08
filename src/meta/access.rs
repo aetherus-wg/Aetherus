@@ -3,7 +3,7 @@
 /// Succinctly create an access-by-reference method for the given variable.
 #[macro_export]
 macro_rules! access {
-    ($field:ident, $type:ty) => {
+    ($field:ident: $type:ty) => {
         #[inline]
         #[must_use]
         pub const fn $field(&self) -> &$type {
@@ -11,7 +11,7 @@ macro_rules! access {
         }
     };
 
-    ($field:ident, $setter:ident, $type:ty) => {
+    ($field:ident, $setter:ident: $type:ty) => {
         #[inline]
         #[must_use]
         pub const fn $field(&self) -> &$type {
@@ -38,8 +38,8 @@ mod tests {
     }
 
     impl Testy {
-        access!(a, String);
-        access!(b, b_mut, String);
+        access!(a: String);
+        access!(b, b_mut: String);
     }
 
     #[test]
