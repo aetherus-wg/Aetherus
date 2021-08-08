@@ -7,7 +7,7 @@ use crate::{
 use std::ops::AddAssign;
 
 /// Rolling average value recording.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Average {
     /// Total individual contributions so far.
     counts: Int,

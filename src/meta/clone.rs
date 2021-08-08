@@ -1,6 +1,6 @@
 //! Clone macro.
 
-/// Succinctly create an access-by-clone method for the given variable.
+/// Create an access-by-clone method for the given variable.
 #[macro_export]
 macro_rules! clone {
     ($field:ident: $type:ty) => {

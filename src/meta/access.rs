@@ -1,6 +1,6 @@
 //! Access macro.
 
-/// Succinctly create an access-by-reference method for the given variable.
+/// Create an access-by-reference method for the given variable.
 #[macro_export]
 macro_rules! access {
     ($field:ident: $type:ty) => {
