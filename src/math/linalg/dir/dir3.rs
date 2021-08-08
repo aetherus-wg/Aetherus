@@ -23,25 +23,27 @@ impl Dir3 {
     #[inline]
     #[must_use]
     pub fn x(&self) -> Real {
-        return self.data.x;
+        self.data.x
     }
 
     /// Access the second component.
     #[inline]
     #[must_use]
     pub fn y(&self) -> Real {
-        return self.data.y;
+        self.data.y
     }
 
     /// Access the third component.
     #[inline]
     #[must_use]
     pub fn z(&self) -> Real {
-        return self.data.z;
+        self.data.z
     }
 }
 
 impl From<Unit<Vector3<Real>>> for Dir3 {
+    #[inline]
+    #[must_use]
     fn from(d: Unit<Vector3<Real>>) -> Self {
         Self { data: d }
     }

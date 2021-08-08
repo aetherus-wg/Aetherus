@@ -23,32 +23,34 @@ impl Dir4 {
     #[inline]
     #[must_use]
     pub fn x(&self) -> f64 {
-        return self.data.x;
+        self.data.x
     }
 
     /// Access the second component.
     #[inline]
     #[must_use]
     pub fn y(&self) -> f64 {
-        return self.data.y;
+        self.data.y
     }
 
     /// Access the third component.
     #[inline]
     #[must_use]
     pub fn z(&self) -> f64 {
-        return self.data.z;
+        self.data.z
     }
 
     /// Access the fourth component.
     #[inline]
     #[must_use]
     pub fn w(&self) -> f64 {
-        return self.data.w;
+        self.data.w
     }
 }
 
 impl From<Unit<Vector4<Real>>> for Dir4 {
+    #[inline]
+    #[must_use]
     fn from(d: Unit<Vector4<Real>>) -> Self {
         Self { data: d }
     }
