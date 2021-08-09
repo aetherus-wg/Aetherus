@@ -35,13 +35,8 @@
     clippy::unwrap_used
 )]
 
-#[cfg(feature = "data")]
+pub mod core;
 pub mod data;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub mod math;
+pub mod meta;
+pub mod phys;

@@ -1,18 +1,28 @@
 //! Rolling average implementation.
 
+use crate::{
+    clone,
+    core::{Int, Real},
+};
 use std::ops::AddAssign;
 
-/// Rolling average value recording.
-#[derive(Clone, Default)]
+///This struct takes a number of samples, of type f64, of some distribution of 
+/// values and calculates the rolling average of those values. 
+
+#[derive(Clone)]
 pub struct Average {
-    /// Total individual contributions so far.
-    counts: i32,
-    /// Current average value.
-    total: f64,
+    /// The total number of accumulated samples.
+    counts: Int,
+    /// The total value of all accumulated samples. 
+    total: Real,
 }
 
 impl Average {
-    /// Construct a new instance.
+    clone!(counts: Int);
+    clone!(total: Real);
+
+    /// This constructs a new instance of the Average struct, setting all fields
+    /// to zero. 
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
@@ -22,26 +32,12 @@ impl Average {
         }
     }
 
-    /// Read the number of counts.
+    /// Returns the mean value of all accumulated samples.
     #[inline]
     #[must_use]
-    pub const fn counts(&self) -> i32 {
-        self.counts
-    }
-
-    /// Read the total.
-    #[inline]
-    #[must_use]
-    pub const fn total(&self) -> f64 {
-        self.total
-    }
-
-    /// Calculate the average value.
-    #[inline]
-    #[must_use]
-    pub fn ave(&self) -> f64 {
+    pub fn ave(&self) -> Real {
         if self.counts > 0 {
-            self.total / f64::from(self.counts)
+            self.total / Real::from(self.counts)
         } else {
             0.0
         }
@@ -64,9 +60,9 @@ impl AddAssign<&Self> for Average {
     }
 }
 
-impl AddAssign<f64> for Average {
+impl AddAssign<Real> for Average {
     #[inline]
-    fn add_assign(&mut self, rhs: f64) {
+    fn add_assign(&mut self, rhs: Real) {
         self.total += rhs;
         self.counts += 1;
     }
@@ -77,6 +73,8 @@ mod tests {
     use super::*;
     use assert_approx_eq::assert_approx_eq;
 
+    /// This test checks that the constructor works as intended, and that
+    /// the fields in the struct are zero-initialised. 
     #[test]
     fn test_init() {
         let a = Average::new();
@@ -85,12 +83,21 @@ mod tests {
         assert_approx_eq!(a.total, 0.0);
     }
 
+    /// This text checks to see that we sensibly handle the edge case where there 
+    /// are zero accumulated samples, else there may be a divide-by-zero error. 
+    #[test]
+    fn test_zero() {
+        let a = Average::new();
+        assert_eq!(a.ave(), 0.0);
+    }
+
+    /// This test checks to see
     #[test]
     fn test_sum() {
         let mut a = Average::new();
 
         for n in 0..100 {
-            a += f64::from(n);
+            a += Real::from(n);
         }
 
         assert_eq!(a.counts, 100);
