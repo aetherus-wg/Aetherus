@@ -2,6 +2,10 @@ language: rust
 
 sudo: required
 
+branches:
+  only:
+    - main
+
 rust:
   - stable
   - beta
