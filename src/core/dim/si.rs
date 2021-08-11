@@ -7,7 +7,6 @@ macro_rules! dimension {
     ($underlying:ty, $dim:ident, $unit:ident) => {
         pub type $dim = si::$unit<$underlying>;
     };
-
 }
 
 dimension!(Real, Length, Meter);
@@ -38,9 +37,6 @@ dimension!(Real, Velocity, MeterPerSecond);
 dimension!(Real, Acceleration, MeterPerSecond2);
 dimension!(Real, Jerk, MeterPerSecond3);
 
-// dimension!(Point3<Real>, Pos3, Meter);
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -49,7 +45,7 @@ mod tests {
     fn test_init() {
         // let x = Length::new(6.0);
         let x = 6.0 * Meters;
-        let y = x / 1.0 * (M/S);
+        let y = x / 1.0 * (M / S);
 
         assert_eq!(x, Length::new(6.0));
     }
