@@ -44,7 +44,7 @@ impl Average {
     }
 }
 
-impl AddAssign<Self> for Average {
+impl AddAssign for Average {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.total += rhs.total;

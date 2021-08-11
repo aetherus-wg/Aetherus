@@ -1,6 +1,6 @@
 //! Three-dimensional vector.
 
-use crate::{core::Real, math::Dir3};
+use crate::{clone, core::Real, math::Dir3};
 use nalgebra::{Unit, Vector3};
 use std::ops::{
     Add, AddAssign, BitXor, BitXorAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg,
@@ -14,6 +14,8 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
+    clone!(data: Vector3<Real>);
+
     /// Construct a new instance.
     #[inline]
     #[must_use]
@@ -117,14 +119,14 @@ impl Div<Real> for Vec3 {
     }
 }
 
-impl AddAssign<Self> for Vec3 {
+impl AddAssign for Vec3 {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.data += rhs.data;
     }
 }
 
-impl SubAssign<Self> for Vec3 {
+impl SubAssign for Vec3 {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.data -= rhs.data;

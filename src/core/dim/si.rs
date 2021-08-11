@@ -9,7 +9,6 @@ macro_rules! dimension {
         #[allow(dead_code)]
         const $suffix: $dim = dimensioned::si::$suffix;
     };
-
 }
 
 dimension!(Real, Length, Meter, M);
@@ -94,7 +93,7 @@ mod tests {
         let area = 2.0 * M2;
         let temp = 2000.0 * K;
 
-        let sigma = 5.6703e-8 * W / (M * M * K* K* K* K); // TODO: Replace with constant.
+        let sigma = 5.6703e-8 * W / (M * M * K * K * K * K); // TODO: Replace with constant.
 
         let lumin = area * sigma * temp * temp * temp * temp;
 

@@ -109,14 +109,14 @@ impl Div<Real> for Vec2 {
     }
 }
 
-impl AddAssign<Self> for Vec2 {
+impl AddAssign for Vec2 {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.data += rhs.data;
     }
 }
 
-impl SubAssign<Self> for Vec2 {
+impl SubAssign for Vec2 {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.data -= rhs.data;
