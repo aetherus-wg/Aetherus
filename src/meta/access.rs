@@ -24,6 +24,12 @@
 /// }
 /// ```
 /// which also generates a setter at `DocStruct::str_prop_mut()`. 
+/// 
+/// ## Warning - Usage with `clone!()`
+/// As both the `access!()` and `clone!()` macros are generating getters and 
+/// setters with the name of the provided property, they are mutually exclusive.
+/// Attempting to use both on the same property will result in a compilation 
+/// error. 
 #[macro_export]
 macro_rules! access {
     ($field:ident: $type:ty) => {
