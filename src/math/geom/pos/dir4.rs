@@ -1,4 +1,4 @@
-//! Four-dimensional unit vector.
+//! Four-dimensional unit vector alias.
 
 use crate::core::Real;
 use nalgebra::{Unit, Vector4};

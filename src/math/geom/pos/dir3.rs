@@ -1,21 +1,21 @@
-//! Four-dimensional unit vector.
+//! Three-dimensional unit vector alias.
 
 use crate::core::Real;
-use nalgebra::{Unit, Vector4};
+use nalgebra::{Unit, Vector3};
 
-/// Normalised four dimensional real-number vector.
-pub struct Dir4 {
+/// Normalised three dimensional real-number vector.
+pub struct Dir3 {
     /// Internal data.
-    data: Unit<Vector4<Real>>,
+    data: Unit<Vector3<Real>>,
 }
 
-impl Dir4 {
+impl Dir3 {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(x: Real, y: Real, z: Real, w: Real) -> Self {
+    pub fn new(x: Real, y: Real, z: Real) -> Self {
         Self {
-            data: Unit::new_normalize(Vector4::new(x, y, z, w)),
+            data: Unit::new_normalize(Vector3::new(x, y, z)),
         }
     }
 
@@ -39,19 +39,12 @@ impl Dir4 {
     pub fn z(&self) -> Real {
         self.data.z
     }
-
-    /// Access the fourth component.
-    #[inline]
-    #[must_use]
-    pub fn w(&self) -> Real {
-        self.data.w
-    }
 }
 
-impl From<Unit<Vector4<Real>>> for Dir4 {
+impl From<Unit<Vector3<Real>>> for Dir3 {
     #[inline]
     #[must_use]
-    fn from(d: Unit<Vector4<Real>>) -> Self {
+    fn from(d: Unit<Vector3<Real>>) -> Self {
         Self { data: d }
     }
 }

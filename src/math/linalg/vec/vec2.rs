@@ -1,4 +1,4 @@
-//! Two-dimensional vector alias.
+//! Two-dimensional vector.
 
 use crate::{core::Real, math::Dir2};
 use nalgebra::{Unit, Vector2};

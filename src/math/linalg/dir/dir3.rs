@@ -1,4 +1,4 @@
-//! Three-dimensional unit vector alias.
+//! Three-dimensional unit vector.
 
 use crate::core::Real;
 use nalgebra::{Unit, Vector3};
