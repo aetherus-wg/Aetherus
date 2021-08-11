@@ -4,27 +4,33 @@
 /// As opposed to the `access!()` macro, this will return a value by cloning it.
 /// To automatically implement a getter, use it like so:
 /// ```rust
+/// # use Aetherus::clone;
 /// pub struct DocStruct {
 ///     number_prop: f64,   
 /// }
 /// 
 /// impl DocStruct {
-///     clone!(number_prop: f64)   
+///     clone!(number_prop: f64);
 /// }
 /// ```
 /// which generates a getter at `DocStruct::number_prop()`. 
-/// To generate a setter, in addtion to a getter, use the macro like so:
+/// 
+/// ## Generation of Setter Method
+/// In addition, this macro can optionally generate a 'setter' method, which
+/// returns a mutable reference to the variable. To do this, the above code can
+/// be augmented as below
 /// 
 /// ```rust
+/// # use Aetherus::clone;
 /// pub struct DocStruct {
-///     number_prop: String,
+///     number_prop: f64,
 /// }
 /// 
 /// impl DocStruct {
-///     clone!(number_prop, number_prop_mut: f64)
+///     clone!(number_prop, number_prop_mut: f64);
 /// }
 /// ```
-/// which also generates a setter at `DocStruct::number_prop_mut()`. 
+/// which generates a setter method at `DocStruct::number_prop_mut()`. 
 /// 
 /// ## Warning - Usage with `access!()`
 /// As both the `access!()` and `clone!()` macros are generating getters and 
@@ -92,17 +98,5 @@ mod tests {
         *testy.b_mut() *= -1;
 
         assert_eq!(testy.b(), -2);
-    }
-
-    /// Test for whether the original struct is modified after a mutable clone. 
-    #[test]
-    fn test_not_modify_struct() {
-        let mut testy = Testy {a: 1, b: 2};
-
-        let cloned_var = testy.b_mut();
-        *cloned_var += 1;
-
-        assert_eq!(*cloned_var, 3);
-        assert_eq!(testy.b(), 2);
     }
 }

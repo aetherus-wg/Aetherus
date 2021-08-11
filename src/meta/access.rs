@@ -4,26 +4,32 @@
 /// You can use this to macro generate both a getter and a setter.
 /// To automatically implement a getter, use it like so:
 /// ```rust
+/// # use Aetherus::access;
 /// pub struct DocStruct {
 ///     str_prop: String,   
 /// }
 /// 
 /// impl DocStruct {
-///     access!(str_prop: String)   
+///     access!(str_prop: String);   
 /// }
 /// ```
 /// which generates a getter at `DocStruct::str_prop()`.
-/// To generate a setter, in addition to a getter, use the macro like so:
+/// 
+/// ## Generation of Setter Method
+/// In addition, this macro can optionally generate a 'setter' method, which
+/// returns a mutable reference to the variable. To do this, the above code can
+/// be augmented as below
 /// ```rust
+/// # use Aetherus::access;
 /// pub struct DocStruct {
 ///     str_prop: String,
 /// }
 /// 
 /// impl DocStruct {
-///     access!(str_prop, str_prop_mut: String)
+///     access!(str_prop, str_prop_mut: String);
 /// }
 /// ```
-/// which also generates a setter at `DocStruct::str_prop_mut()`. 
+/// which produces a setter at `DocStruct::str_prop_mut()`. 
 /// 
 /// ## Warning - Usage with `clone!()`
 /// As both the `access!()` and `clone!()` macros are generating getters and 
