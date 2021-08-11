@@ -1,6 +1,29 @@
 //! Access macro.
 
-/// Create an access-by-reference method for the given variable.
+/// Create access-by-reference methods for the given struct member.
+/// You can use this to macro generate both a getter and a setter.
+/// To automatically implement a getter, use it like so:
+/// ```rust
+/// pub struct DocStruct {
+///     str_prop: String,   
+/// }
+/// 
+/// impl DocStruct {
+///     access!(str_prop: String)   
+/// }
+/// ```
+/// which generates a getter at `DocStruct::str_prop()`.
+/// To generate a setter, in addition to a getter, use the macro like so:
+/// ```rust
+/// pub struct DocStruct {
+///     str_prop: String,
+/// }
+/// 
+/// impl DocStruct {
+///     access!(str_prop, str_prop_mut: String)
+/// }
+/// ```
+/// which also generates a setter at `DocStruct::str_prop_mut()`. 
 #[macro_export]
 macro_rules! access {
     ($field:ident: $type:ty) => {
@@ -42,6 +65,7 @@ mod tests {
         access!(b, b_mut: String);
     }
 
+    /// A simple test for immutable access with an access-generated getter.
     #[test]
     fn test_access() {
         let testy = Testy {
@@ -53,6 +77,7 @@ mod tests {
         assert_eq!(testy.b(), &"two");
     }
 
+    /// A simple test for mutable access with an access-generated setter. 
     #[test]
     fn test_mut_access() {
         let mut testy = Testy {
