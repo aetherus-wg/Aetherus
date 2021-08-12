@@ -2,123 +2,133 @@
 
 use crate::core::Real;
 
-macro_rules! dimension {
-    ($underlying:ty, $dim:ident, $unit:ident, $suffix:ident) => {
-        pub type $dim = dimensioned::si::$unit<$underlying>;
-
-        #[allow(dead_code)]
-        const $suffix: $dim = dimensioned::si::$suffix;
+macro_rules! unit {
+    ($underlying:ty, $name:ident, $value:expr, $dim:ident) => {
+        pub const $name: $dim = dimensioned::si::SI {
+            value_unsafe: $value,
+            _marker: std::marker::PhantomData,
+        };
+    };
+    ($underlying:ty, $name:ident, $value:expr, [$d0:ident, $d1:ident, $d2:ident, $d3:ident, $d4:ident, $d5:ident, $d6:ident]) => {
+        use dimensioned::tarr;
+        pub const $name: dimensioned::si::SI<
+            $underlying,
+            tarr![$d0, $d1, $d2, $d3, $d4, $d5, $d6],
+        > = dimensioned::si::SI {
+            value_unsafe: $value,
+            _marker: std::marker::PhantomData,
+        };
     };
 }
 
-dimension!(Real, Length, Meter, M);
-dimension!(Real, Mass, Kilogram, KG);
-// dimension!(Real, Time, Second, S);
-dimension!(Real, Current, Ampere, A);
-dimension!(Real, Temp, Kelvin, K);
-// dimension!(Real, Lumin, Candela);
-// dimension!(Real, Mole, Mole);
-// dimension!(Real, Freq, Hertz);
-dimension!(Real, Force, Newton, N);
-dimension!(Real, Pressure, Pascal, PA);
-dimension!(Real, Energy, Joule, J);
-dimension!(Real, Power, Watt, W);
-dimension!(Real, Charge, Coulomb, C);
-dimension!(Real, ElecPotential, Volt, V);
-// dimension!(Real, Capacitance, Farad);
-dimension!(Real, Resistance, Ohm, OHM);
-// dimension!(Real, Conductance, Siemens);
-// dimension!(Real, MagFlux, Weber);
-// dimension!(Real, MagFluxDensity, Tesla);
-// dimension!(Real, Inductance, Henry);
-// dimension!(Real, Candela, Lumen);
-// dimension!(Real, Illuminance, Lux);
-dimension!(Real, Area, Meter2, M2);
-dimension!(Real, Volume, Meter3, M3);
-dimension!(Real, Velocity, MeterPerSecond, MPS);
-dimension!(Real, Acceleration, MeterPerSecond2, MPS2);
-// dimension!(Real, Jerk, MeterPerSecond3);
-dimension!(Real, MassDensity, KilogramPerMeter3, KGPM3);
+// use dimensioned::typenum::{P4, Z0};
+// unit!(Real, SPEED_OF_LIGHT, 29982293.0, Velocity);
+// unit!(Real, XX, 1.0, [P4, Z0, Z0, Z0, Z0, Z0, Z0]);
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// pub const SPEED_OF_LIGHT: Velocity = 29982293.0 * MPS;
 
-    #[test]
-    fn test_newtons_second_law() {
-        let mass = 6.0 * KG;
-        let accel = 2.0 * MPS2;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-        let force = mass * accel;
+//     #[test]
+//     fn test_newtons_second_law() {
+//         let mass = 6.0 * KG;
+//         let accel = 2.0 * MPS2;
 
-        assert_eq!(force, 12.0 * N);
-    }
+//         let force = mass * accel;
 
-    #[test]
-    fn test_archimedes_principle() {
-        let fluid_density = 0.9 * KGPM3;
-        let grav_accel = 9.81 * MPS2;
-        let displacement_vol = 1.0 * M3;
+//         assert_eq!(force, 12.0 * N);
+//     }
 
-        let buoyant_force = -fluid_density * grav_accel * displacement_vol;
+//     #[test]
+//     fn test_archimedes_principle() {
+//         let fluid_density = 0.9 * KGPM3;
+//         let grav_accel = 9.81 * MPS2;
+//         let displacement_vol = 1.0 * M3;
 
-        assert_eq!(buoyant_force, -8.829 * N);
-    }
+//         let buoyant_force = -fluid_density * grav_accel * displacement_vol;
 
-    #[test]
-    fn test_ohms_law() {
-        let voltage = 20.0 * V;
-        let resis = 5.0 * OHM;
+//         assert_eq!(buoyant_force, -8.829 * N);
+//     }
 
-        let current = voltage / resis;
+//     #[test]
+//     fn test_ohms_law() {
+//         let voltage = 20.0 * V;
+//         let resis = 5.0 * OHM;
 
-        assert_eq!(current, 4.0 * A);
-    }
+//         let current = voltage / resis;
 
-    #[test]
-    fn test_coulombs_law() {
-        let charge_a = 0.1 * C;
-        let charge_b = 2.5 * C;
-        let distance = 10.0 * M;
+//         assert_eq!(current, 4.0 * A);
+//     }
 
-        let k = 8.9875e9 * N * M * M / (C * C); // TODO: Replace with constant.
+//     #[test]
+//     fn test_coulombs_law() {
+//         let charge_a = 0.1 * C;
+//         let charge_b = 2.5 * C;
+//         let distance = 10.0 * M;
 
-        let force = k * (charge_a * charge_b) / (distance * distance);
+//         let k = 8.9875e9 * N * M2 / C2; // TODO: Replace with constant.
 
-        assert_eq!(force, 22468750.0 * N);
-    }
+//         let force = k * (charge_a * charge_b) / (distance * distance);
 
-    #[test]
-    fn test_stefans_law() {
-        let area = 2.0 * M2;
-        let temp = 2000.0 * K;
+//         assert_eq!(force, 22468750.0 * N);
+//     }
 
-        let sigma = 5.6703e-8 * W / (M * M * K * K * K * K); // TODO: Replace with constant.
+//     #[test]
+//     fn test_stefans_law() {
+//         let area = 2.0 * M2;
+//         let temp = 2000.0 * K;
 
-        let lumin = area * sigma * temp * temp * temp * temp;
+//         let sigma = 5.6703e-8 * W / (M * M * K * K * K * K); // TODO: Replace with constant.
 
-        assert_eq!(lumin, 1814496.0 * W);
-    }
+//         let lumin = area * sigma * temp * temp * temp * temp;
 
-    #[test]
-    fn test_pascals_law() {
-        let force = 2000.0 * N;
-        let area = 2.0 * M2;
+//         assert_eq!(lumin, 1814496.0 * W);
+//     }
 
-        let pressure = force / area;
+//     #[test]
+//     fn test_pascals_law() {
+//         let force = 2000.0 * N;
+//         let area = 2.0 * M2;
 
-        assert_eq!(pressure, 1000.0 * PA);
-    }
+//         let pressure = force / area;
 
-    #[test]
-    fn test_einsteins_law() {
-        let mass = 0.1 * KG;
+//         assert_eq!(pressure, 1000.0 * PA);
+//     }
 
-        let c = 3.0e8 * MPS; // TODO: Replace with constant.
+//     #[test]
+//     fn test_hookes_law() {
+//         let length = 0.1 * M;
+//         let k = 2.0 * N / M;
 
-        assert_eq!(mass * c * c, 9.0e15 * J);
-    }
+//         assert_eq!(-k * length, -0.2 * N);
+//     }
 
-    // # TODO: More at:
-    // https://www.jagranjosh.com/general-knowledge/important-laws-of-physics-1513943551-1
-}
+//     #[test]
+//     fn test_bernoullis_law() {
+//         let vel = 2.0 * MPS;
+//         let pressure = 3.0 * PA;
+//         let density = 0.1 * KGPM3;
+//         let elevation = 1000.0 * M;
+
+//         let g = 9.81 * MPS2; // TODO: Replace with constant.
+
+//         assert_eq!(
+//             ((vel * vel) / 2.0) + (pressure / density) + (g * elevation),
+//             2.0 * M2PS2
+//         );
+//     }
+
+//     #[test]
+//     fn test_einsteins_law() {
+//         let mass = 0.1 * KG;
+
+//         let c = 3.0e8 * MPS; // TODO: Replace with constant.
+
+//         assert_eq!(mass * c * c, 9.0e15 * J);
+//     }
+
+//     // # TODO: More at:
+//     // https://www.jagranjosh.com/general-knowledge/important-laws-of-physics-1513943551-1
+// }
