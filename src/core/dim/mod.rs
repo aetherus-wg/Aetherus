@@ -1,9 +1,9 @@
 //! Dimensions type module.
 
-pub mod physical;
-pub mod si;
+pub mod dimension;
 pub mod prefix;
+pub mod si;
 
-pub use self::physical::*;
+pub use self::dimension::*;
 pub use self::prefix::*;
 pub use self::si::*;
