@@ -1,9 +1,6 @@
 //! International System of Units
 
-use crate::core::dim::{
-    dimension::*,
-    prefix::{KILO, MILLI},
-};
+use crate::core::dim::dimension::*;
 
 /// Create the constant used to form the SI equivalent base unit.
 /// As UCUM uses grams as a base, not kilograms, then some values are scaled to account.
@@ -21,23 +18,23 @@ unit!(Length, Meter, 1.0);
 unit!(Time, Second, 1.0);
 unit!(Time, Minutes, 60.0);
 unit!(Time, Hour, 3600.0);
-unit!(Mass, Kilogram, KILO);
+unit!(Mass, Kilogram, 1.0e3);
 unit!(Charge, Coulomb, 1.0);
 unit!(Temperature, Kelvin, 1.0);
 unit!(Luminosity, Candela, 1.0);
 unit!(Angle, Radian, 1.0);
-unit!(Force, Newton, KILO);
-unit!(Pressure, Pascal, KILO);
-unit!(Energy, Joule, KILO);
-unit!(Power, Watt, KILO);
+unit!(Force, Newton, 1.0e3);
+unit!(Pressure, Pascal, 1.0e3);
+unit!(Energy, Joule, 1.0e3);
+unit!(Power, Watt, 1.0e3);
 unit!(Current, Ampere, 1.0);
-unit!(Voltage, Volt, KILO);
-unit!(Capacitance, Farad, MILLI);
-unit!(Resistance, Ohm, KILO);
-unit!(Conductance, Siemens, MILLI);
-unit!(MagFlux, Weber, KILO);
-unit!(MagFluxDens, Tesla, KILO);
-unit!(Inductance, Henry, KILO);
+unit!(Voltage, Volt, 1.0e3);
+unit!(Capacitance, Farad, 1.0e-3);
+unit!(Resistance, Ohm, 1.0e3);
+unit!(Conductance, Siemens, 1.0e-3);
+unit!(MagFlux, Weber, 1.0e3);
+unit!(MagFluxDens, Tesla, 1.0e3);
+unit!(Inductance, Henry, 1.0e3);
 unit!(AngularFrequency, RadianPerSecond, 1.0);
 unit!(Area, Meter2, 1.0);
 unit!(Volume, Meter3, 1.0);
@@ -47,7 +44,7 @@ unit!(Steradian, Steradian, 1.0);
 unit!(Velocity, MeterPerSecond, 1.0);
 unit!(Acceleration, MeterPerSecond2, 1.0);
 unit!(Jerk, MeterPerSecond3, 1.0);
-unit!(MassDensity, KilogramPerMeter3, KILO);
+unit!(MassDensity, KilogramPerMeter3, 1.0e3);
 
 #[cfg(test)]
 mod tests {
