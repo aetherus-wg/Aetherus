@@ -1,6 +1,6 @@
-//! Two-dimensional vector alias.
+//! Two-dimensional vector.
 
-use crate::{core::Real, math::Dir2};
+use crate::{clone, core::Real, math::Dir2};
 use nalgebra::{Unit, Vector2};
 use std::ops::{
     Add, AddAssign, BitXor, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -13,6 +13,8 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
+    clone!(data: Vector2<Real>);
+
     /// Construct a new instance.
     #[inline]
     #[must_use]
@@ -109,14 +111,14 @@ impl Div<Real> for Vec2 {
     }
 }
 
-impl AddAssign<Self> for Vec2 {
+impl AddAssign for Vec2 {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.data += rhs.data;
     }
 }
 
-impl SubAssign<Self> for Vec2 {
+impl SubAssign for Vec2 {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.data -= rhs.data;

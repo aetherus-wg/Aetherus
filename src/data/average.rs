@@ -6,14 +6,14 @@ use crate::{
 };
 use std::ops::AddAssign;
 
-///This struct takes a number of samples, of type f64, of some distribution of 
-/// values and calculates the rolling average of those values. 
+///This struct takes a number of samples, of type f64, of some distribution of
+/// values and calculates the rolling average of those values.
 
 #[derive(Clone)]
 pub struct Average {
     /// The total number of accumulated samples.
     counts: Int,
-    /// The total value of all accumulated samples. 
+    /// The total value of all accumulated samples.
     total: Real,
 }
 
@@ -22,7 +22,7 @@ impl Average {
     clone!(total: Real);
 
     /// This constructs a new instance of the Average struct, setting all fields
-    /// to zero. 
+    /// to zero.
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
@@ -44,7 +44,7 @@ impl Average {
     }
 }
 
-impl AddAssign<Self> for Average {
+impl AddAssign for Average {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.total += rhs.total;
@@ -74,7 +74,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
 
     /// This test checks that the constructor works as intended, and that
-    /// the fields in the struct are zero-initialised. 
+    /// the fields in the struct are zero-initialised.
     #[test]
     fn test_init() {
         let a = Average::new();
@@ -83,8 +83,8 @@ mod tests {
         assert_approx_eq!(a.total, 0.0);
     }
 
-    /// This text checks to see that we sensibly handle the edge case where there 
-    /// are zero accumulated samples, else there may be a divide-by-zero error. 
+    /// This text checks to see that we sensibly handle the edge case where there
+    /// are zero accumulated samples, else there may be a divide-by-zero error.
     #[test]
     fn test_zero() {
         let a = Average::new();

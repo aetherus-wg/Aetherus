@@ -1,6 +1,6 @@
-//! Four-dimensional vector alias.
+//! Four-dimensional vector.
 
-use crate::{core::Real, math::Dir4};
+use crate::{clone, core::Real, math::Dir4};
 use nalgebra::{Unit, Vector4};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -13,6 +13,8 @@ pub struct Vec4 {
 }
 
 impl Vec4 {
+    clone!(data: Vector4<Real>);
+
     /// Construct a new instance.
     #[inline]
     #[must_use]
@@ -123,14 +125,14 @@ impl Div<Real> for Vec4 {
     }
 }
 
-impl AddAssign<Self> for Vec4 {
+impl AddAssign for Vec4 {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.data += rhs.data;
     }
 }
 
-impl SubAssign<Self> for Vec4 {
+impl SubAssign for Vec4 {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.data -= rhs.data;

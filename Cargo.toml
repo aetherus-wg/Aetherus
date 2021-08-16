@@ -17,6 +17,7 @@ default = []
 
 [dependencies]
 assert_approx_eq = "1.1.*"
+dimensioned = "0.7.*"
 nalgebra = { version = "0.28.*", features = ["serde-serialize"] }
 rand = "0.8.*"
 
