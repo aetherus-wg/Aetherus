@@ -6,7 +6,7 @@ use crate::{
 };
 use std::ops::AddAssign;
 
-///This struct takes a number of samples, of type f64, of some distribution of
+///This struct takes a number of Real samples, of some distribution of
 /// values and calculates the rolling average of those values.
 
 #[derive(Clone)]
