@@ -6,7 +6,7 @@ use crate::{
 };
 use std::ops::AddAssign;
 
-///This struct takes a number of samples, of type f64, of some distribution of
+///This struct takes a number of Real samples, of some distribution of
 /// values and calculates the rolling average of those values.
 
 #[derive(Clone)]
@@ -71,6 +71,7 @@ impl AddAssign<Real> for Average {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::prelude::*;
     use assert_approx_eq::assert_approx_eq;
 
     /// This test checks that the constructor works as intended, and that
@@ -91,7 +92,9 @@ mod tests {
         assert_eq!(a.ave(), 0.0);
     }
 
-    /// This test checks to see
+    /// This test checks to see whether we can accurately sum a uniform value, and 
+    /// checks to see that whether we can also retrieve the receive the correct
+    /// average value from this summation. 
     #[test]
     fn test_sum() {
         let mut a = Average::new();
@@ -103,5 +106,24 @@ mod tests {
         assert_eq!(a.counts, 100);
         assert_approx_eq!(a.total, 4950.0);
         assert_approx_eq!(a.ave(), 49.5);
+    }
+
+    /// This drawns numbers from a random uniform distribution, whose average should
+    /// always converge toward the centre of the tophat with enough values sampled.
+    /// I have intentionally left the tollerance high here so that we don't get
+    /// false negatives when the randomness doesn't fall in our favour. 
+    #[test]
+    fn test_random() {
+        let mut a = Average::new();
+        let low = 1.0;
+
+        // Init a random number generator and generate flows between 0.0 and 1.0. 
+        let mut rng = rand::thread_rng();
+        for n in 0..1000 {
+            a += low + rng.gen::<f64>();
+        }
+
+        assert_eq!(a.counts, 1000);
+        assert_approx_eq!(a.ave(), 1.5, 0.02);
     }
 }
