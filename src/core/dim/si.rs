@@ -91,7 +91,7 @@ mod tests {
 
         let force = k * (charge_a * charge_b) / (distance * distance);
 
-        assert_eq!(force, 22468750.0 * Newton);
+        assert_eq!(force, 22_468_750.0 * Newton);
     }
 
     #[test]
@@ -103,7 +103,7 @@ mod tests {
 
         let lumin = area * sigma * temp * temp * temp * temp;
 
-        assert_eq!(lumin, 1814496.0 * Watt);
+        assert_eq!(lumin, 1_814_496.0 * Watt);
     }
 
     #[test]
