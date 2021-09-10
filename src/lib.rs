@@ -35,8 +35,16 @@
     clippy::unwrap_used
 )]
 
-pub mod core;
+// pub mod chem;
 pub mod data;
+pub mod err;
+pub mod fs;
+pub mod geom;
+pub mod img;
+pub mod sim;
 pub mod math;
 pub mod meta;
+pub mod ord;
 pub mod phys;
+pub mod tools;
+pub mod util;

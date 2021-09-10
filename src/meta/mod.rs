@@ -1,4 +1,6 @@
-//! Meta-programming macros.
+//! Meta-programming.
 
 pub mod access;
-pub mod clone;
+pub mod args;
+pub mod map;
+pub mod pause;
