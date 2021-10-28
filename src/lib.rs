@@ -35,7 +35,9 @@
     clippy::unwrap_used
 )]
 
+pub mod err;
 pub mod core;
+pub mod fs;
 pub mod data;
 pub mod math;
 pub mod meta;
