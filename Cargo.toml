@@ -16,6 +16,10 @@ exclude = ["docs/", "input/", "output/"]
 default = []
 
 [dependencies]
+# ARCTK Dependencies
+arctk-attr = "0.3.*"
+arctk-proc = "0.4.*"
+
 assert_approx_eq = "1.1.*"
 dimensioned = "0.7.*"
 nalgebra = { version = "0.29.*", features = ["serde-serialize"] }
