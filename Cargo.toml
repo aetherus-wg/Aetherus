@@ -1,7 +1,7 @@
 [package]
 name = "Aetherus"
 version = "0.1.2"
-authors = ["Freddy Wordingham <f.wordingham@exeter.ac.uk>", "Sam Morrell <s.morrell@exeter.ac.uk>"]
+authors = ["Freddy Wordingham <f.wordingham@exeter.ac.uk>", "Sam Morrell <s.a.f.morrell@exeter.ac.uk>"]
 edition = "2018"
 description = "Physics simulation library and binaries"
 repository = "https://github.com/aetherus-wg/aetherus"
