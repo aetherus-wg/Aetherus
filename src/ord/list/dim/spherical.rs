@@ -18,3 +18,18 @@ pub const THETA: usize = Spherical::Theta as usize;
 
 /// Spherical-polar phi convenience indexing constant.
 pub const PHI: usize = Spherical::Phi as usize;
+
+#[cfg(test)]
+mod tests {
+    use std::f64::consts::PI;
+    use super::{RHO, THETA, PHI};
+
+    /// Checking that each index pulls back the expected index. 
+    #[test]
+    fn polar_index_test() {
+        let polar_vector = vec![1.0, PI, 2.0 * PI];
+        assert_eq!(polar_vector[RHO], 1.0);
+        assert_eq!(polar_vector[THETA], PI);
+        assert_eq!(polar_vector[PHI], 2.0 * PI);
+    }
+}

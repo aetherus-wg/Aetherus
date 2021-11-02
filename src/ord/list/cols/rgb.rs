@@ -18,3 +18,17 @@ pub const GREEN: usize = Rgb::Green as usize;
 
 /// Blue convenience indexing constant.
 pub const BLUE: usize = Rgb::Blue as usize;
+
+#[cfg(test)]
+mod tests {
+    use super::{RED, GREEN, BLUE};
+
+    /// Checking that each index pulls back the expected index. 
+    #[test]
+    fn colour_index_test() {
+        let rgb_value = vec![255, 128, 0];
+        assert_eq!(rgb_value[RED], 255);
+        assert_eq!(rgb_value[GREEN], 128);
+        assert_eq!(rgb_value[BLUE], 0);
+    }
+}

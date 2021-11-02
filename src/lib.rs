@@ -36,6 +36,7 @@
 )]
 
 pub mod err;
+pub mod ord;
 pub mod core;
 pub mod fs;
 pub mod data;
