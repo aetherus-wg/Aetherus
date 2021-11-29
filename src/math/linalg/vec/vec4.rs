@@ -1,6 +1,6 @@
 //! Four-dimensional vector.
 
-use crate::{clone, core::Real, math::Dir4};
+use crate::{clone, core::Real, math::{Dir4, Point3}};
 use nalgebra::{Unit, Vector4};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -43,6 +43,12 @@ impl Vec4 {
     #[must_use]
     pub fn z(&self) -> Real {
         self.data.z
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn xyz(&self) -> Point3 {
+        self.data.xyz().into()
     }
 
     /// Access the fourth component.

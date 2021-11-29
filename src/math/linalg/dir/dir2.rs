@@ -1,15 +1,19 @@
 //! Two-dimensional unit vector.
 
-use crate::core::Real;
+use crate::{core::Real, clone};
 use nalgebra::{Unit, Vector2};
 
 /// Normalised two dimensional real-number vector.
+#[derive(Clone, Copy, Debug)]
 pub struct Dir2 {
     /// Internal data.
     data: Unit<Vector2<Real>>,
 }
 
 impl Dir2 {
+    clone!(data: Unit<Vector2<Real>>);
+
+
     /// Construct a new instance.
     #[inline]
     #[must_use]

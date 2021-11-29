@@ -5,8 +5,9 @@ use nalgebra::Point4 as P4;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
-
+use serde_derive::{Serialize, Deserialize};
 /// Four-dimensional real-number point.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Point4 {
     /// Internal data.
     data: P4<Real>,

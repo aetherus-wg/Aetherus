@@ -1,18 +1,22 @@
 //! Three-dimensional point.
 
-use crate::{core::Real, math::Vec3};
-use nalgebra::Point3 as P3;
+use crate::{clone, core::Real, math::Vec3, math::Vec4};
+use nalgebra::{Point3 as P3, Vector3, Const};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
+use serde_derive::{Serialize, Deserialize};
 
 /// Three-dimensional real-number point.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Point3 {
     /// Internal data.
     data: P3<Real>,
 }
 
 impl Point3 {
+    clone!(data: P3<Real>);
+
     /// Construct a new instance.
     #[inline]
     #[must_use]
@@ -20,6 +24,12 @@ impl Point3 {
         Self {
             data: P3::new(x, y, z),
         }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn to_homogeneous(&self) -> Vec4 {
+        Vec4::from(self.data.to_homogeneous())
     }
 
     /// Access the first component.
@@ -42,6 +52,16 @@ impl Point3 {
     pub fn z(&self) -> Real {
         self.data.z
     }
+
+    #[inline]
+    pub fn iter(&self) -> nalgebra::base::iter::MatrixIter<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+        self.data.iter()
+    }
+
+    #[inline]
+    pub fn iter_mut(&mut self) -> nalgebra::base::iter::MatrixIterMut<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+        self.data.iter_mut()
+    }
 }
 
 impl From<P3<Real>> for Point3 {
@@ -49,6 +69,14 @@ impl From<P3<Real>> for Point3 {
     #[must_use]
     fn from(v: P3<Real>) -> Self {
         Self { data: v }
+    }
+}
+
+impl From<Vector3<Real>> for Point3 {
+    #[inline]
+    #[must_use]
+    fn from(v: Vector3<Real>) -> Self {
+        Self { data: v.into() }
     }
 }
 
@@ -62,6 +90,16 @@ impl Neg for Point3 {
     }
 }
 
+impl Add<Point3> for Point3 {
+    type Output = Point3;
+
+    #[inline]
+    #[must_use]
+    fn add(self, rhs: Self) -> Point3 {
+        Self::new(self.data.x + rhs.data.x, self.data.y + rhs.data.y, self.data.z + rhs.data.z)
+    }
+}
+
 impl Add<Vec3> for Point3 {
     type Output = Self;
 
@@ -69,6 +107,56 @@ impl Add<Vec3> for Point3 {
     #[must_use]
     fn add(self, rhs: Vec3) -> Self {
         Self::from(self.data + rhs.data())
+    }
+}
+
+impl Add<&Vec3> for &Point3 {
+    type Output = Point3;
+
+    #[inline]
+    #[must_use]
+    fn add(self, rhs: &Vec3) -> Point3 {
+        *self + *rhs
+    }
+}
+
+impl Add<Real> for Point3 {
+    type Output = Self;
+
+    #[inline]
+    #[must_use]
+    fn add(self, rhs: Real) -> Self {
+        Self::new(self.data.x + rhs, self.data.y + rhs, self.data.z + rhs)
+    }
+}
+
+impl Sub<Point3> for Point3 {
+    type Output = Vec3;
+
+    #[inline]
+    #[must_use]
+    fn sub(self, rhs: Self) -> Vec3 {
+        Vec3::from(self.data - rhs.data)
+    }
+}
+
+impl Sub<&Point3> for Point3 {
+    type Output = Vec3;
+
+    #[inline]
+    #[must_use]
+    fn sub(self, rhs: &Self) -> Vec3 {
+        Vec3::from(self - *rhs)
+    }
+}
+
+impl Sub<Point3> for &Point3 {
+    type Output = Vec3;
+
+    #[inline]
+    #[must_use]
+    fn sub(self, rhs: Point3) -> Vec3 {
+        Vec3::from(*self - rhs)
     }
 }
 
@@ -82,6 +170,36 @@ impl Sub<Vec3> for Point3 {
     }
 }
 
+impl Sub<&Vec3> for Point3 {
+    type Output = Self;
+
+    #[inline]
+    #[must_use]
+    fn sub(self, rhs: &Vec3) -> Self {
+        Self::from(self.data - rhs.data())
+    }
+}
+
+impl Sub<Vec3> for &Point3 {
+    type Output = Point3;
+
+    #[inline]
+    #[must_use]
+    fn sub(self, rhs: Vec3) -> Point3 {
+        Point3::from(*self - rhs)
+    }
+}
+
+impl Sub<&Vec3> for &Point3 {
+    type Output = Point3;
+
+    #[inline]
+    #[must_use]
+    fn sub(self, rhs: &Vec3) -> Point3 {
+        Point3::from(*self - *rhs)
+    }
+}
+
 impl Mul<Real> for Point3 {
     type Output = Self;
 
@@ -89,6 +207,16 @@ impl Mul<Real> for Point3 {
     #[must_use]
     fn mul(self, rhs: Real) -> Self {
         Self::from(self.data * rhs)
+    }
+}
+
+impl Mul<Point3> for Real {
+    type Output = Point3;
+
+    #[inline]
+    #[must_use]
+    fn mul(self, rhs: Point3) -> Point3 {
+        Point3::from(self * rhs.data())
     }
 }
 
@@ -155,6 +283,18 @@ impl IndexMut<usize> for Point3 {
             2 => &mut self.data.z,
             _ => panic!("Out of bounds index for three-dimensional point."),
         }
+    }
+}
+
+impl PartialOrd for Point3 {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.data.partial_cmp(&other.data)
+    }
+}
+
+impl PartialEq for Point3 {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
     }
 }
 
