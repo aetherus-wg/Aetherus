@@ -1,12 +1,14 @@
 //! Three-dimensional vector.
 
 use crate::{clone, core::Real, math::Dir3};
-use nalgebra::{Unit, Vector3};
+use nalgebra::{Const, Unit, Vector3};
+use serde_derive::{Serialize, Deserialize};
 use std::ops::{
     Add, AddAssign, BitXor, BitXorAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg,
     Sub, SubAssign,
 };
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 /// Three-dimensional real-number vector.
 pub struct Vec3 {
     /// Internal data.
@@ -23,6 +25,27 @@ impl Vec3 {
         Self {
             data: Vector3::new(x, y, z),
         }
+    }
+
+    /// Construct a x-axis column vector.
+    #[inline]
+    #[must_use]
+    pub fn x_axis() -> Dir3 {
+        Dir3::x_axis()
+    }
+
+    /// Construct a x-axis column vector.
+    #[inline]
+    #[must_use]
+    pub fn y_axis() -> Dir3 {
+        Dir3::y_axis()
+    }
+
+    /// Construct a x-axis column vector.
+    #[inline]
+    #[must_use]
+    pub fn z_axis() -> Dir3 {
+        Dir3::z_axis()
     }
 
     /// Access the first component.
@@ -59,6 +82,34 @@ impl Vec3 {
     pub fn dir(&self) -> Dir3 {
         Dir3::from(Unit::new_normalize(self.data))
     }
+
+    #[inline]
+    #[must_use]
+    pub fn cross(&self, b: &Vec3) -> Vec3 {
+        Vec3::from(self.data.cross(&b.data()))
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn dot(&self, b: &Vec3) -> f64 {
+        self.data.dot(&b.data)
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn dot_dir3(&self, b: &Dir3) -> f64 {
+        self.data.dot(&b.data())
+    }
+
+    #[inline]
+    pub fn iter(&self) -> nalgebra::base::iter::MatrixIter<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+        self.data.iter()
+    }
+
+    #[inline]
+    pub fn iter_mut(&mut self) -> nalgebra::base::iter::MatrixIterMut<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+        self.data.iter_mut()
+    }
 }
 
 impl From<Vector3<Real>> for Vec3 {
@@ -66,6 +117,14 @@ impl From<Vector3<Real>> for Vec3 {
     #[must_use]
     fn from(v: Vector3<Real>) -> Self {
         Self { data: v }
+    }
+}
+
+impl From<Dir3> for Vec3 {
+    #[inline]
+    #[must_use]
+    fn from(dir: Dir3) -> Self {
+        Self { data: *dir.data() }
     }
 }
 

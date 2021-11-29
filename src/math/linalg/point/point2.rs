@@ -5,8 +5,10 @@ use nalgebra::Point2 as P2;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
+use serde_derive::{Serialize, Deserialize};
 
 /// Two-dimensional real-number point.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Point2 {
     /// Internal data.
     data: P2<Real>,

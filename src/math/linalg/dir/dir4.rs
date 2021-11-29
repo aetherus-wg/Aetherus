@@ -2,8 +2,10 @@
 
 use crate::core::Real;
 use nalgebra::{Unit, Vector4};
+use serde_derive::{Serialize, Deserialize};
 
 /// Normalised four dimensional real-number vector.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Dir4 {
     /// Internal data.
     data: Unit<Vector4<Real>>,

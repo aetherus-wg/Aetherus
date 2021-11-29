@@ -1,0 +1,28 @@
+use nalgebra::{Rotation2, Unit};
+use serde_derive::{Serialize, Deserialize};
+use crate::{
+    core::Real,
+    math::Vec2,
+};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Two-dimensional rotation. 
+pub struct Rot2 {
+    data: Rotation2<f64>,
+}
+
+impl Rot2 {
+    pub fn new(angle: f64) -> Self {
+        Rot2 {
+            data: Rotation2::new(angle)
+        }
+    }
+}
+
+impl From<Rotation2<f64>> for Rot2 {
+    #[inline]
+    #[must_use]
+    fn from(r: Rotation2<f64>) -> Self {
+        Self { data: r }
+    }
+}
