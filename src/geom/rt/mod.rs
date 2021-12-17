@@ -1,4 +1,6 @@
-//! Ray-tracing module.
+//! Ray Tracing Module
+//! 
+//! Thos module contains a load of useful modules for carrying out ray tracing. 
 
 pub mod hit;
 pub mod orient;
