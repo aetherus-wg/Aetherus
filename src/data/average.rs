@@ -119,11 +119,11 @@ mod tests {
 
         // Init a random number generator and generate flows between 0.0 and 1.0. 
         let mut rng = rand::thread_rng();
-        for n in 0..1000 {
+        for n in 0..10_000 {
             a += low + rng.gen::<f64>();
         }
 
-        assert_eq!(a.counts, 1000);
+        assert_eq!(a.counts, 10_000);
         assert_approx_eq!(a.ave(), 1.5, 0.02);
     }
 }
