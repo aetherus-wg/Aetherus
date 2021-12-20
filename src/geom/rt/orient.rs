@@ -1,4 +1,4 @@
-//! Orientation implementation.
+//! Orientation structure. 
 
 use crate::{
     access, fmt_report,
@@ -7,7 +7,10 @@ use crate::{
 };
 use std::fmt::{Display, Error, Formatter};
 
-/// Orientation structure.
+/// # Orientation 
+/// 
+/// Contains orientation information about an object. 
+/// The struct contains the forward, right and up directions.
 #[derive(Debug)]
 pub struct Orient {
     /// Position.
@@ -161,5 +164,54 @@ impl Display for Orient {
             "upwards"
         );
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::f64;
+    use assert_approx_eq::assert_approx_eq;
+    use super::Orient;
+    use crate::{
+        geom::Ray, 
+        math::{Dir3, Point3},
+    };
+
+    /// Checks that we can initialise and pull back the correct orientation information
+    /// using an Orient object. 
+    #[test]
+    fn make_new_test() {
+        let ray = Ray::new(Point3::new(0., 0., 0.), Dir3::new(1., 0., 0.));
+        let orient = Orient::new(ray);
+
+        // Check that it is in the correct position. 
+        assert_eq!(orient.pos(), &Point3::new(0.0, 0.0, 0.0));
+
+        // Make sure that each of the orientations are pointing in the correct direction.
+        assert_eq!(orient.forward(), &Dir3::new(1.0, 0.0, 0.0));
+        assert_eq!(orient.right(), &Dir3::new(0.0, -1.0, 0.0));
+        assert_eq!(orient.up(), &Dir3::new(0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn make_new_target_test() {
+        let pos = Point3::new(0.0, 0.0, 0.0);
+        let target = Point3::new(1.0, 1.0, 1.0);
+        let orient = Orient::new_tar(pos, &target);
+
+        // Check that it is in the correct position. 
+        assert_eq!(orient.pos(), &Point3::new(0.0, 0.0, 0.0));
+
+        // Make sure that each of the orientations are pointing in the correct direction.
+        assert_eq!(orient.forward(), &Dir3::new(1.0, 1.0, 1.0));
+        
+        // TODO: Check that these are correct. 
+        assert_approx_eq!(orient.left().x(), -1.0 / 2.0_f64.sqrt(), f64::EPSILON);
+        assert_approx_eq!(orient.left().y(), 1.0 / 2.0_f64.sqrt(), f64::EPSILON);
+        assert_approx_eq!(orient.left().z(), 0.0, f64::EPSILON);
+
+        assert_approx_eq!(orient.up().x(), -1.0 / 6.0f64.sqrt(), f64::EPSILON);
+        assert_approx_eq!(orient.up().y(), -1.0 / 6.0f64.sqrt(), f64::EPSILON);
+        assert_approx_eq!(orient.up().z(), 1.0 / 1.50f64.sqrt(), f64::EPSILON);
     }
 }

@@ -6,6 +6,9 @@ use crate::{
 };
 
 /// Ray structure.
+/// 
+/// This is the type at the core of our ray tracing / hit scan implementation.
+/// This is also the type at the core of our photon implementation. 
 #[derive(Clone)]
 pub struct Ray {
     /// Ray origin.
@@ -105,6 +108,7 @@ mod tests {
         assert_approx_eq!(ray.pos().z(), (0.1 / norm) * dist, 0.001);
     }
 
+    /// Check that we can correctly rotate the ray. 
     #[test]
     fn ray_rotate_test() {
         let mut ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(0.0, 0.5, 0.0));

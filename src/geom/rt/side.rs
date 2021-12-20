@@ -2,7 +2,13 @@
 
 use crate::math::Dir3;
 
-/// Side of a surface hit.
+/// # Side of a surface hit.
+/// 
+/// This enum describes which side of a surface the ray has hit during a hit-scan.
+/// This enum dots assumes that a ray with direction $\vec{d}$ will be coming from 
+/// the outside of a surface, with normal vector $\uvec{n}$, will be coming from
+/// outside of the surface if $\uvec{d} \dot \uvec{n} > 0.0$. Likewise, it assumes
+/// that a ray with $\uvec{d} \dot \uvec{n} < 0.0$ is coming from inside of the sufrace. 
 #[derive(Clone)]
 pub enum Side {
     /// Inside of surface hit. d.dot(n) > 0.0
