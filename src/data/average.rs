@@ -119,7 +119,7 @@ mod tests {
 
         // Init a random number generator and generate flows between 0.0 and 1.0. 
         let mut rng = rand::thread_rng();
-        for n in 0..10_000 {
+        for _ in 0..10_000 {
             a += low + rng.gen::<f64>();
         }
 

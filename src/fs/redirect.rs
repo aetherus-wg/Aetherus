@@ -132,7 +132,6 @@ mod tests {
         use crate::err::Error;
         use tempfile::NamedTempFile;
         use std::io::Write;
-        use serde_derive::{Deserialize};
         use std::path::Path;
         use arctk_attr::file;
 
