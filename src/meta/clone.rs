@@ -64,8 +64,6 @@ macro_rules! clone {
 
 #[cfg(test)]
 mod tests {
-    use std::clone;
-
     use crate::core::Int;
 
     /// Test implementation structure.

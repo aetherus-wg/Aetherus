@@ -24,9 +24,6 @@ pub const PICO: Real = 1.0e-12;
 
 #[cfg(test)]
 mod tests {
-
-    use std::ops::Deref;
-
     use crate::core::dim::{si::*, prefix::*};
     use assert_approx_eq::assert_approx_eq;
     use dimensioned::Dimensioned;
