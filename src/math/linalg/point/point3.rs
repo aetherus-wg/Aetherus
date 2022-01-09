@@ -49,6 +49,27 @@ impl Point3 {
     /// Access the third component.
     #[inline]
     #[must_use]
+    pub fn z_mut(&mut self) -> &mut Real {
+        &mut self.data.z
+    }
+
+    /// Access the first component.
+    #[inline]
+    #[must_use]
+    pub fn x_mut(&mut self) -> &mut Real {
+        &mut self.data.x
+    }
+
+    /// Access the second component.
+    #[inline]
+    #[must_use]
+    pub fn y_mut(&mut self) -> &mut Real {
+        &mut self.data.y
+    }
+
+    /// Access the third component.
+    #[inline]
+    #[must_use]
     pub fn z(&self) -> Real {
         self.data.z
     }

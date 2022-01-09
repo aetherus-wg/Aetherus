@@ -7,5 +7,6 @@
 //! format. 
 
 pub mod json;
+pub mod wavefront;
 
-pub use self::{json::*};
+pub use self::{json::*, wavefront::*};
