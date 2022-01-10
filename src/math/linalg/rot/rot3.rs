@@ -1,4 +1,4 @@
-use crate::math::{Dir3, Vec3};
+use crate::math::{Dir3, Point3, Vec3};
 use nalgebra::{Rotation3, Unit};
 use serde_derive::{Deserialize, Serialize};
 use std::ops::Mul;
@@ -21,6 +21,10 @@ impl Rot3 {
         Rot3 {
             data: Rotation3::from_axis_angle(&Unit::new_normalize(axis.data()), angle),
         }
+    }
+
+    pub fn transform_point(&self, point: &Point3) -> Point3 {
+        self.data.transform_point(&point.data()).into()
     }
 }
 

@@ -161,6 +161,16 @@ impl Add<&Vec3> for &Point3 {
     }
 }
 
+impl Add<&Vec3> for Point3 {
+    type Output = Point3;
+
+    #[inline]
+    #[must_use]
+    fn add(self, rhs: &Vec3) -> Point3 {
+        self + *rhs
+    }
+}
+
 impl Add<Real> for Point3 {
     type Output = Self;
 
@@ -198,6 +208,16 @@ impl Sub<Point3> for &Point3 {
     #[must_use]
     fn sub(self, rhs: Point3) -> Vec3 {
         Vec3::from(*self - rhs)
+    }
+}
+
+impl Sub<&Point3> for &Point3 {
+    type Output = Vec3;
+
+    #[inline]
+    #[must_use]
+    fn sub(self, rhs: &Point3) -> Vec3 {
+        Vec3::from(*self - *rhs)
     }
 }
 
