@@ -20,5 +20,6 @@ addons:
     packages:
 
 script:
+  - sudo apt-get install libhdf5-dev
   - cargo build --all-features
   - cargo test --all-features
