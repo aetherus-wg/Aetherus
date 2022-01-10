@@ -6,9 +6,9 @@ use crate::{
 };
 
 /// Ray structure.
-/// 
+///
 /// This is the type at the core of our ray tracing / hit scan implementation.
-/// This is also the type at the core of our photon implementation. 
+/// This is also the type at the core of our photon implementation.
 #[derive(Clone)]
 pub struct Ray {
     /// Ray origin.
@@ -64,12 +64,12 @@ impl Ray {
 
 #[cfg(test)]
 mod tests {
-    use std::f64;
-    use crate::math::{Point3, Dir3};
     use super::Ray;
+    use crate::math::{Dir3, Point3};
     use assert_approx_eq::assert_approx_eq;
+    use std::f64;
 
-    /// Check that the creation and accessing code is working correctly. 
+    /// Check that the creation and accessing code is working correctly.
     #[test]
     fn init_and_access_test() {
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 1.0, 1.0));
@@ -85,18 +85,18 @@ mod tests {
         ray.travel(1.0);
         let (pos, dir) = ray.destruct();
 
-        // Check each of the components of the position vector. 
+        // Check each of the components of the position vector.
         assert_approx_eq!(pos.x(), 1.0 / 2.0_f64.sqrt(), 1.0E-8);
         assert_approx_eq!(pos.y(), 1.0, 1.0E-6);
         assert_approx_eq!(pos.z(), 1.0 / 2.0_f64.sqrt(), 1.0E-8);
 
-        // Check each of the components of the direction unit vector. 
+        // Check each of the components of the direction unit vector.
         assert_approx_eq!(dir.x(), 1.0 / 2.0_f64.sqrt(), 1.0E-8);
         assert_approx_eq!(dir.y(), 0.0, 1.0E-6);
         assert_approx_eq!(dir.z(), 1.0 / 2.0_f64.sqrt(), 1.0E-8);
     }
 
-    /// Check that our rays are travelling correctly. 
+    /// Check that our rays are travelling correctly.
     #[test]
     fn travel_test() {
         let mut ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.5, 0.1));
@@ -108,17 +108,17 @@ mod tests {
         assert_approx_eq!(ray.pos().z(), (0.1 / norm) * dist, 0.001);
     }
 
-    /// Check that we can correctly rotate the ray. 
+    /// Check that we can correctly rotate the ray.
     #[test]
     fn ray_rotate_test() {
         let mut ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(0.0, 0.5, 0.0));
         ray.rotate(f64::consts::PI, 0.0);
-        
+
         assert_approx_eq!(ray.dir().x(), 0.0);
         assert_approx_eq!(ray.dir().y(), -1.0);
         assert_approx_eq!(ray.dir().z(), 0.0);
 
-        // Now do a roll maneuver. 
+        // Now do a roll maneuver.
         ray.rotate(-f64::consts::PI / 2.0, -f64::consts::PI);
 
         assert_approx_eq!(ray.dir().x(), 0.0);

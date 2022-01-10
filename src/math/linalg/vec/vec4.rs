@@ -1,6 +1,10 @@
 //! Four-dimensional vector.
 
-use crate::{clone, core::Real, math::{Dir4, Point3}};
+use crate::{
+    clone,
+    core::Real,
+    math::{Dir4, Point3},
+};
 use nalgebra::{Unit, Vector4};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,

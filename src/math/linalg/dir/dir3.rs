@@ -1,9 +1,9 @@
 //! Three-dimensional unit vector.
 
-use crate::{core::Real, math::Vec3, clone};
-use nalgebra::{Unit, Vector3, Const};
-use std::ops::{Mul, Neg, Add};
-use serde_derive::{Serialize, Deserialize};
+use crate::{clone, core::Real, math::Vec3};
+use nalgebra::{Const, Unit, Vector3};
+use serde_derive::{Deserialize, Serialize};
+use std::ops::{Add, Mul, Neg};
 
 /// Normalised three dimensional real-number vector.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -91,7 +91,15 @@ impl Dir3 {
     }
 
     #[inline]
-    pub fn iter(&self) -> nalgebra::base::iter::MatrixIter<'_, Real, Const<3>, Const<1>, nalgebra::ArrayStorage<Real, 3, 1>> {
+    pub fn iter(
+        &self,
+    ) -> nalgebra::base::iter::MatrixIter<
+        '_,
+        Real,
+        Const<3>,
+        Const<1>,
+        nalgebra::ArrayStorage<Real, 3, 1>,
+    > {
         self.data.iter()
     }
 }
@@ -100,7 +108,9 @@ impl From<Vec3> for Dir3 {
     #[inline]
     #[must_use]
     fn from(d: Vec3) -> Self {
-        Self { data: Unit::new_normalize(d.data()) }
+        Self {
+            data: Unit::new_normalize(d.data()),
+        }
     }
 }
 
@@ -108,7 +118,9 @@ impl From<Vector3<Real>> for Dir3 {
     #[inline]
     #[must_use]
     fn from(d: Vector3<Real>) -> Self {
-        Self { data: Unit::new_normalize(d) }
+        Self {
+            data: Unit::new_normalize(d),
+        }
     }
 }
 
@@ -124,7 +136,7 @@ impl Mul<f64> for Dir3 {
     type Output = Vec3;
 
     fn mul(self, rhs: f64) -> Vec3 {
-        return Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs)
+        return Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs);
     }
 }
 
@@ -134,7 +146,11 @@ impl Mul<Dir3> for f64 {
     #[inline]
     #[must_use]
     fn mul(self, rhs: Dir3) -> Vec3 {
-        Vec3::new(rhs.data().x * self, rhs.data().y * self, rhs.data().z * self)
+        Vec3::new(
+            rhs.data().x * self,
+            rhs.data().y * self,
+            rhs.data().z * self,
+        )
     }
 }
 
@@ -144,7 +160,11 @@ impl Mul<&Dir3> for f64 {
     #[inline]
     #[must_use]
     fn mul(self, rhs: &Dir3) -> Vec3 {
-        Vec3::new(rhs.data().x * self, rhs.data().y * self, rhs.data().z * self)
+        Vec3::new(
+            rhs.data().x * self,
+            rhs.data().y * self,
+            rhs.data().z * self,
+        )
     }
 }
 
@@ -152,7 +172,7 @@ impl Neg for Dir3 {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        return Self::new(-self.x(), -self.y(), self.z())
+        return Self::new(-self.x(), -self.y(), self.z());
     }
 }
 
@@ -160,7 +180,11 @@ impl Add<Dir3> for Dir3 {
     type Output = Dir3;
 
     fn add(self, rhs: Dir3) -> Self::Output {
-        Dir3::new( self.data.x + rhs.data.x, self.data.y + rhs.data.y, self.data.z + rhs.data.z )
+        Dir3::new(
+            self.data.x + rhs.data.x,
+            self.data.y + rhs.data.y,
+            self.data.z + rhs.data.z,
+        )
     }
 }
 

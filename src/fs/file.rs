@@ -1,5 +1,5 @@
-//! The trait for the file loading interface. 
-//! Types implementing this trait can be loaded from a file by Aetherus. 
+//! The trait for the file loading interface.
+//! Types implementing this trait can be loaded from a file by Aetherus.
 
 use crate::err::Error;
 use std::path::Path;

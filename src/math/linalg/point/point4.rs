@@ -2,10 +2,10 @@
 
 use crate::{core::Real, math::Vec4};
 use nalgebra::Point4 as P4;
+use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
-use serde_derive::{Serialize, Deserialize};
 /// Four-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Point4 {

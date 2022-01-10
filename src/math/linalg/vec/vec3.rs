@@ -2,7 +2,7 @@
 
 use crate::{clone, core::Real, math::Dir3};
 use nalgebra::{Const, Unit, Vector3};
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, BitXor, BitXorAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg,
     Sub, SubAssign,
@@ -102,12 +102,28 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn iter(&self) -> nalgebra::base::iter::MatrixIter<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+    pub fn iter(
+        &self,
+    ) -> nalgebra::base::iter::MatrixIter<
+        '_,
+        f64,
+        Const<3>,
+        Const<1>,
+        nalgebra::ArrayStorage<f64, 3, 1>,
+    > {
         self.data.iter()
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> nalgebra::base::iter::MatrixIterMut<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+    pub fn iter_mut(
+        &mut self,
+    ) -> nalgebra::base::iter::MatrixIterMut<
+        '_,
+        f64,
+        Const<3>,
+        Const<1>,
+        nalgebra::ArrayStorage<f64, 3, 1>,
+    > {
         self.data.iter_mut()
     }
 }

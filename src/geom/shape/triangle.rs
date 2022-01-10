@@ -1,14 +1,14 @@
 //! Flat Triangle
-//! 
-//! This module provides `Triangle`---an implementation of a flat triangle. 
+//!
+//! This module provides `Triangle`---an implementation of a flat triangle.
 //! As an an example, a new instance of an isoceles triangle can be created using:
 //! ```rust
 //! # use Aetherus::geom::Triangle;
 //! # use Aetherus::math::Point3;
 //! let tri = Triangle::new([Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0), Point3::new(0.5, 1.0, 0.0)]);
-//! 
+//!
 //! // The geometric properties of this triangle can be interrogated
-//! // Perimeter. 
+//! // Perimeter.
 //! println!("{}", tri.perimeter())
 //! ```
 
@@ -160,7 +160,8 @@ impl Collide for Triangle {
 
             let r = e.z().mul_add(
                 u2.dot(&axis.dir()).abs(),
-                e.x().mul_add(u0.dot(&axis.dir()).abs(), e.y() * u1.dot(&axis.dir()).abs()),
+                e.x()
+                    .mul_add(u0.dot(&axis.dir()).abs(), e.y() * u1.dot(&axis.dir()).abs()),
             );
 
             if (-(p0.max(p1).max(p2))).max(p0.min(p1).min(p2)) > r {
@@ -293,12 +294,9 @@ impl Emit for Triangle {
 mod tests {
     // We implement the transformable for the triangle primitive, so we shall use this for tests.
     use super::{Trans3, Transformable};
+    use crate::{geom::Triangle, math::Point3};
     use nalgebra::Vector3;
     use std::f64;
-    use crate::{
-        geom::Triangle,
-        math::Point3,
-    };
 
     fn unit_triangle() -> Triangle {
         Triangle::new([
@@ -313,20 +311,34 @@ mod tests {
         let mut tri = unit_triangle();
 
         // First Scale up.
-        tri.transform(&Trans3::new(Vector3::new(0., 0., 0.), Vector3::new(0., 0., 0.), 2.0));
-        assert_eq!(*tri.verts(), [
-            Point3::new(0., 0., 0.),
-            Point3::new(2., 0., 0.),
-            Point3::new(2., 2., 0.),
-        ]);
+        tri.transform(&Trans3::new(
+            Vector3::new(0., 0., 0.),
+            Vector3::new(0., 0., 0.),
+            2.0,
+        ));
+        assert_eq!(
+            *tri.verts(),
+            [
+                Point3::new(0., 0., 0.),
+                Point3::new(2., 0., 0.),
+                Point3::new(2., 2., 0.),
+            ]
+        );
 
-        // Now check it is reversible and scale back down. 
-        tri.transform(&Trans3::new(Vector3::new(0., 0., 0.), Vector3::new(0., 0., 0.), 0.25));
-        assert_eq!(*tri.verts(), [
-            Point3::new(0., 0., 0.),
-            Point3::new(0.5, 0., 0.),
-            Point3::new(0.5, 0.5, 0.),
-        ]);
+        // Now check it is reversible and scale back down.
+        tri.transform(&Trans3::new(
+            Vector3::new(0., 0., 0.),
+            Vector3::new(0., 0., 0.),
+            0.25,
+        ));
+        assert_eq!(
+            *tri.verts(),
+            [
+                Point3::new(0., 0., 0.),
+                Point3::new(0.5, 0., 0.),
+                Point3::new(0.5, 0.5, 0.),
+            ]
+        );
     }
 
     #[test]
@@ -334,29 +346,47 @@ mod tests {
         let mut tri = unit_triangle();
 
         // First Scale up.
-        tri.transform(&Trans3::new(Vector3::new(1.5, 1.5, 1.5), Vector3::new(0., 0., 0.), 1.0));
-        assert_eq!(*tri.verts(), [
-            Point3::new(1.5, 1.5, 1.5),
-            Point3::new(2.5, 1.5, 1.5),
-            Point3::new(2.5, 2.5, 1.5),
-        ]);
+        tri.transform(&Trans3::new(
+            Vector3::new(1.5, 1.5, 1.5),
+            Vector3::new(0., 0., 0.),
+            1.0,
+        ));
+        assert_eq!(
+            *tri.verts(),
+            [
+                Point3::new(1.5, 1.5, 1.5),
+                Point3::new(2.5, 1.5, 1.5),
+                Point3::new(2.5, 2.5, 1.5),
+            ]
+        );
 
-        // Now check it is reversible and scale back down. 
-        tri.transform(&Trans3::new(Vector3::new(-4., -4., -4.), Vector3::new(0., 0., 0.), 1.0));
-        assert_eq!(*tri.verts(), [
-            Point3::new(-2.5, -2.5, -2.5),
-            Point3::new(-1.5, -2.5, -2.5),
-            Point3::new(-1.5, -1.5, -2.5),
-        ]);
+        // Now check it is reversible and scale back down.
+        tri.transform(&Trans3::new(
+            Vector3::new(-4., -4., -4.),
+            Vector3::new(0., 0., 0.),
+            1.0,
+        ));
+        assert_eq!(
+            *tri.verts(),
+            [
+                Point3::new(-2.5, -2.5, -2.5),
+                Point3::new(-1.5, -2.5, -2.5),
+                Point3::new(-1.5, -1.5, -2.5),
+            ]
+        );
     }
 
     #[test]
     fn rotation_test() {
         let mut tri = unit_triangle();
 
-        // Let us rotate around the y Axis by Pi radians (90 degrees). 
-        tri.transform(&Trans3::new(Vector3::new(0., 0., 0.), Vector3::y() * f64::consts::FRAC_PI_2, 1.0));
-        // Check that the components have correctly transformed into the correct axis. 
+        // Let us rotate around the y Axis by Pi radians (90 degrees).
+        tri.transform(&Trans3::new(
+            Vector3::new(0., 0., 0.),
+            Vector3::y() * f64::consts::FRAC_PI_2,
+            1.0,
+        ));
+        // Check that the components have correctly transformed into the correct axis.
         assert_eq!(tri.verts()[1][2], -1.0);
         assert_eq!(tri.verts()[2][2], -1.0);
     }

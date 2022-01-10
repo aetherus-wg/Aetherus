@@ -1,5 +1,6 @@
-pub mod shape;
-pub mod rt;
+pub mod domain;
 pub mod properties;
+pub mod rt;
+pub mod shape;
 
-pub use self::{shape::*, rt::*, properties::*};
+pub use self::{domain::*, properties::*, rt::*, shape::*};

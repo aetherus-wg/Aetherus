@@ -1,6 +1,6 @@
 //! The Save Trait
-//! 
-//! Types that implement this trait can be saved to a file. 
+//!
+//! Types that implement this trait can be saved to a file.
 
 use crate::err::Error;
 use serde::Serialize;

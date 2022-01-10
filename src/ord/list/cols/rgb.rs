@@ -21,9 +21,9 @@ pub const BLUE: usize = Rgb::Blue as usize;
 
 #[cfg(test)]
 mod tests {
-    use super::{RED, GREEN, BLUE};
+    use super::{BLUE, GREEN, RED};
 
-    /// Checking that each index pulls back the expected index. 
+    /// Checking that each index pulls back the expected index.
     #[test]
     fn colour_index_test() {
         let rgb_value = vec![255, 128, 0];

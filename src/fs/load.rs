@@ -1,7 +1,7 @@
 //! This file contains the Load trait.
-//! 
+//!
 //! Types that implemnent this trait can be built into another type byt loading
-//! additional resources. 
+//! additional resources.
 
 use crate::err::Error;
 use std::path::Path;

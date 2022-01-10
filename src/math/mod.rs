@@ -1,6 +1,8 @@
 //! Mathematics module.
 
-pub mod linalg;
 pub mod alias;
+pub mod linalg;
 
-pub use self::{linalg::*, alias::*};
+pub mod trans3_builder;
+
+pub use self::{alias::*, linalg::*, trans3_builder::*};

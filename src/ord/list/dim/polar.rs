@@ -8,18 +8,18 @@ pub enum Polar {
     Theta,
 }
 
-/// Polar Rho convenience indexing constant. 
+/// Polar Rho convenience indexing constant.
 pub const RHO: usize = Polar::Rho as usize;
 
-/// Polar Rho convenience indexing constant. 
+/// Polar Rho convenience indexing constant.
 pub const THETA: usize = Polar::Theta as usize;
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
     use super::{RHO, THETA};
+    use std::f64::consts::PI;
 
-    /// Checking that each index pulls back the expected index. 
+    /// Checking that each index pulls back the expected index.
     #[test]
     fn polar_index_test() {
         let polar_vector = vec![1.0, 2.0 * PI];

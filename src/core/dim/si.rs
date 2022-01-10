@@ -53,8 +53,8 @@ mod tests {
     use super::*;
 
     /// A test of dimensional analysis using Newton's Second Law.
-    /// The final measurement should have the correct value and units of Newton. 
-    /// This should not compile if the equations are not dimensionally correct. 
+    /// The final measurement should have the correct value and units of Newton.
+    /// This should not compile if the equations are not dimensionally correct.
     #[test]
     fn test_newtons_second_law() {
         let mass = 6.0 * Kilogram;
@@ -67,7 +67,7 @@ mod tests {
 
     /// A test of dimensional analysis using Archemedes Principle.
     /// The final measurements should have the correct value and units of Newton.
-    /// This should not compile if the equations are not dimensionally correct. 
+    /// This should not compile if the equations are not dimensionally correct.
     #[test]
     fn test_archimedes_principle() {
         let fluid_density = 0.9 * KilogramPerMeter3;
@@ -80,7 +80,7 @@ mod tests {
     }
 
     /// A further test of our dimensional analysis module using Ohm's Law.
-    /// The final measurement should have units of Volt / Ohm, which is Ampere, and the correct value. 
+    /// The final measurement should have units of Volt / Ohm, which is Ampere, and the correct value.
     /// This example should not compile if the dimensionality of the equations is not correct.
     #[test]
     fn test_ohms_law() {
@@ -94,7 +94,7 @@ mod tests {
 
     /// Another test of our dimensional analysis module using Coulomb's law.
     /// A more complicated example of composition of units which should come out in the end with Newton, and the correct value.
-    /// This example should not compile if the dimensionality of the equations is not correct. 
+    /// This example should not compile if the dimensionality of the equations is not correct.
     #[test]
     fn test_coulombs_law() {
         let charge_a = 0.1 * Coulomb;
@@ -110,7 +110,7 @@ mod tests {
 
     /// A test of our dimensional analysis code using Stefan-Boltzmann Law.
     /// Another complicated example that should result in the correct result in units of Watt.
-    /// This example should not compile if the dimensionality of the equations is not correct. 
+    /// This example should not compile if the dimensionality of the equations is not correct.
     #[test]
     fn test_stefans_law() {
         let area = 2.0 * Meter2;
@@ -124,8 +124,8 @@ mod tests {
     }
 
     /// A test of our dimensional analysis code using Pascal's law (thermodynamics).
-    /// Given a force over a given area, the result should be a pressure, measured in Pascals, with the correct value. 
-    /// This example should not compile if the dimensionality of the equations is not correct. 
+    /// Given a force over a given area, the result should be a pressure, measured in Pascals, with the correct value.
+    /// This example should not compile if the dimensionality of the equations is not correct.
     #[test]
     fn test_pascals_law() {
         let force = 2000.0 * Newton;
@@ -138,7 +138,7 @@ mod tests {
 
     /// A test of our dimensional analysis using Hooke's law.
     /// This is a test that dimensions can cancel, i.g. that displacement (m) * k (N / m) correctly produce a force.
-    /// This example should not compile if the dimensionality of the equations is not correct. 
+    /// This example should not compile if the dimensionality of the equations is not correct.
     #[test]
     fn test_hookes_law() {
         let length = 0.1 * Meter;
@@ -149,7 +149,7 @@ mod tests {
 
     /// A test of our dimensional analysis code using Bernoulli's principle (https://en.wikipedia.org/wiki/Bernoulli's_principle).
     /// This is another complex example making sure that the units on output reconcile, and present the correct value.
-    /// This example should not compile if the dimensionality of the equations is not correct. 
+    /// This example should not compile if the dimensionality of the equations is not correct.
     #[test]
     fn test_bernoullis_law() {
         let vel = 2.0 * MeterPerSecond;
@@ -166,8 +166,8 @@ mod tests {
     }
 
     /// A test of our dimensional analysis code using the classic $E=mc^2$ example.
-    /// Given a mass and the speed of light, this should come out as an energy with the correct value. 
-    /// This example should not compile if the dimensionality of the equations is not correct. 
+    /// Given a mass and the speed of light, this should come out as an energy with the correct value.
+    /// This example should not compile if the dimensionality of the equations is not correct.
     #[test]
     fn test_einsteins_law() {
         let mass = 0.1 * Kilogram;

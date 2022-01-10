@@ -70,9 +70,7 @@ impl Trace for SmoothTriangle {
                 Side::new(
                     ray.dir(),
                     Dir3::from(
-                        (self.norms[BETA] * u)
-                            + (self.norms[GAMMA] * v)
-                            + (self.norms[ALPHA] * w),
+                        (self.norms[BETA] * u) + (self.norms[GAMMA] * v) + (self.norms[ALPHA] * w),
                     ),
                 ),
             ))
@@ -110,11 +108,8 @@ impl Emit for SmoothTriangle {
         let edge_a_c = self.tri.verts()[GAMMA] - self.tri.verts()[ALPHA];
 
         let pos = self.tri.verts()[ALPHA] + (edge_a_b * u) + (edge_a_c * v);
-        let dir = Dir3::from(
-            (self.norms[BETA] * u)
-                + (self.norms[GAMMA] * v)
-                + (self.norms[ALPHA] * w),
-        );
+        let dir =
+            Dir3::from((self.norms[BETA] * u) + (self.norms[GAMMA] * v) + (self.norms[ALPHA] * w));
 
         Ray::new(pos, dir)
     }

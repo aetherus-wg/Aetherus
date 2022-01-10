@@ -1,12 +1,12 @@
-//! Hit struct. 
+//! Hit struct.
 
 use crate::{access, clone, geom::Side};
 
 /// # Hit
-/// 
+///
 /// This is the main struct that is returned from the hit-scan system that is used
 /// for ray tracing photon packets in the simulation. This contains information about
-/// the hit, including the distance to the hit and the side which is being hit. 
+/// the hit, including the distance to the hit and the side which is being hit.
 #[derive(Clone)]
 pub struct Hit<'a, T> {
     /// Tag reference.
