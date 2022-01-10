@@ -22,7 +22,7 @@ arctk-proc = "0.4.*"
 
 assert_approx_eq = "1.1.*"
 dimensioned = "0.7.*"
-nalgebra = { version = "0.29.*", features = ["serde-serialize"] }
+nalgebra = { version = "0.30.*", features = ["serde-serialize"] }
 rand = "0.8.*"
 serde = "1.0.*"
 serde_derive = "1.0.*"
