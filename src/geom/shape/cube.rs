@@ -116,7 +116,9 @@ impl Cube {
     #[must_use]
     pub fn area(&self) -> f64 {
         let ws = self.widths();
-        2.0 * ws.z().mul_add(ws.x(), ws.x().mul_add(ws.y(), ws.y() * ws.z()))
+        2.0 * ws
+            .z()
+            .mul_add(ws.x(), ws.x().mul_add(ws.y(), ws.y() * ws.z()))
     }
 
     /// Calculate the volume.
@@ -323,7 +325,11 @@ impl Display for Cube {
             "maxs (m)"
         );
         let c = self.centre();
-        fmt_report!(fmt, &format!("({}, {}, {})", c.x(), c.y(), c.z()), "center (m)");
+        fmt_report!(
+            fmt,
+            &format!("({}, {}, {})", c.x(), c.y(), c.z()),
+            "center (m)"
+        );
         fmt_report!(fmt, self.area(), "area (m^2)");
         fmt_report!(fmt, self.vol(), "volume (m^3)");
         Ok(())

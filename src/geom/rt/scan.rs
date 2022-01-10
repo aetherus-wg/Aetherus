@@ -3,10 +3,10 @@
 use crate::geom::Hit;
 
 /// # Hit-scan result enumeration
-/// 
+///
 /// An enum that describes the nature of a hit resulting from a hit-scan.
 /// In this case, are we reaching the boundary of a grid cell, or are we hitting
-/// the surface of an interface between media. 
+/// the surface of an interface between media.
 #[derive(Clone)]
 pub enum Scan<'a, T> {
     /// Boundary collision.

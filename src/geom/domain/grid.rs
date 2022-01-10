@@ -67,9 +67,12 @@ impl Grid {
             let maxs = self.boundary.maxs();
 
             [
-                (((p.x() - mins.x()) / (maxs.x() - mins.x())) * self.res[X] as f64).floor() as usize,
-                (((p.y() - mins.y()) / (maxs.y() - mins.y())) * self.res[Y] as f64).floor() as usize,
-                (((p.z() - mins.z()) / (maxs.z() - mins.z())) * self.res[Z] as f64).floor() as usize,
+                (((p.x() - mins.x()) / (maxs.x() - mins.x())) * self.res[X] as f64).floor()
+                    as usize,
+                (((p.y() - mins.y()) / (maxs.y() - mins.y())) * self.res[Y] as f64).floor()
+                    as usize,
+                (((p.z() - mins.z()) / (maxs.z() - mins.z())) * self.res[Z] as f64).floor()
+                    as usize,
             ]
         })
     }
@@ -135,7 +138,9 @@ impl Display for Grid {
             fmt,
             &format!(
                 "({}, {}, {})",
-                self.voxel_size.x(), self.voxel_size.y(), self.voxel_size.z()
+                self.voxel_size.x(),
+                self.voxel_size.y(),
+                self.voxel_size.z()
             ),
             "voxel size"
         );

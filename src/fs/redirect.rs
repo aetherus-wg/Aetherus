@@ -1,11 +1,11 @@
 //! File Redirection Struct
-//! 
-//! Enables for file redirection in serialised and deserialised types. 
-//! This enables us to employ the 'builder' pattern for constructing deserialised objects. 
+//!
+//! Enables for file redirection in serialised and deserialised types.
+//! This enables us to employ the 'builder' pattern for constructing deserialised objects.
 //! This means that we can include either the type to be deserialised, or a the path to a file
 //! that contains the type to be deserialised in its place. This struct will then
-//! load the file in the appropriate place, using the appropriate loader. 
-//! 
+//! load the file in the appropriate place, using the appropriate loader.
+//!
 //! An example implementation of this pattern, using redirect can be seen below:
 //! ```ignore
 //! # use Aetherus::fs::{from_json_str, Redirect, Load};
@@ -18,7 +18,7 @@
 //! # let mut redirect_file = NamedTempFile::new().unwrap();
 //! // Create a structure that we are going to deserialise.
 //! // Note that we have redirected fields here: we will directly load one
-//! // and redirect the other to a temporary file. 
+//! // and redirect the other to a temporary file.
 //! #[file]
 //! struct TestStructBuilder {
 //!     struct1: Redirect<NestedStruct>,
@@ -43,7 +43,7 @@
 //!     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
 //!         let struct1 = self.struct1.load(in_dir)?;
 //!         let struct2 = self.struct2.load(in_dir)?;
-//! 
+//!
 //!         Ok(Self::Inst { struct1, struct2 })
 //!     }
 //! }
@@ -57,7 +57,7 @@
 //! redirect_file.reopen().unwrap();
 //! redirect_file.write_all(b"{ val1: 4.0, val2: 5.0 }").unwrap();
 //!
-//! // Now we can directly deserialise these objects. 
+//! // Now we can directly deserialise these objects.
 //! let deserialised = from_json_str::<TestStructBuilder>(&file_contents).unwrap();
 //! let out = deserialised.load(Path::new("/")).unwrap();
 //!
@@ -128,21 +128,21 @@ impl<T: Display> Display for Redirect<T> {
 mod tests {
     #[test]
     fn test_redirect() {
-        use super::{super::from_json_str, Redirect, Load};
+        use super::{super::from_json_str, Load, Redirect};
         use crate::err::Error;
-        use tempfile::NamedTempFile;
+        use arctk_attr::file;
         use std::io::Write;
         use std::path::Path;
-        use arctk_attr::file;
+        use tempfile::NamedTempFile;
 
         let mut redirect_file = NamedTempFile::new().unwrap();
         // Create a structure that we are going to deserialise.
         // Note that we have redirected fields here: we will directly load one
-        // and redirect the other to a temporary file. 
+        // and redirect the other to a temporary file.
         #[file]
         struct TestStructBuilder {
             struct1: Redirect<NestedStruct>,
-            struct2 : Redirect<NestedStruct>,
+            struct2: Redirect<NestedStruct>,
         }
 
         struct TestStruct {
@@ -153,7 +153,7 @@ mod tests {
         #[file]
         struct NestedStruct {
             pub val1: f32,
-            pub val2 : f32,
+            pub val2: f32,
         }
 
         impl Load for TestStructBuilder {
@@ -167,21 +167,26 @@ mod tests {
                 Ok(Self::Inst { struct1, struct2 })
             }
         }
-        
+
         // Create the JSON string to deserialise, making sure to include the
         // Here and There variants where required.
-        let file_contents = format!("{{
+        let file_contents = format!(
+            "{{
             struct1 : {{ Here: {{ val1: 1.0, val2: 2.0 }} }},
             struct2 : {{ There: \"{}\" }}
-        }}", redirect_file.path().display());
+        }}",
+            redirect_file.path().display()
+        );
         redirect_file.reopen().unwrap();
-        redirect_file.write_all(b"{ val1: 4.0, val2: 5.0 }").unwrap();
-        
-        // Now we can directly deserialise these objects. 
+        redirect_file
+            .write_all(b"{ val1: 4.0, val2: 5.0 }")
+            .unwrap();
+
+        // Now we can directly deserialise these objects.
         let deserialised = from_json_str::<TestStructBuilder>(&file_contents).unwrap();
         let out = deserialised.load(Path::new("/")).unwrap();
-        
-        // Check that we got the correct values back from the Here / There variants. 
+
+        // Check that we got the correct values back from the Here / There variants.
         assert_eq!(out.struct1.val1, 1.0);
         assert_eq!(out.struct1.val2, 2.0);
         assert_eq!(out.struct2.val1, 4.0);

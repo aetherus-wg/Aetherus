@@ -1,8 +1,8 @@
-pub mod valid;
-pub mod index;
-pub mod range;
 pub mod binner;
+pub mod index;
 pub mod progress_bar;
+pub mod range;
 pub mod silent_progress_bar;
+pub mod valid;
 
-pub use {valid::*, range::*, binner::*, index::*, progress_bar::*, silent_progress_bar::*};
+pub use {binner::*, index::*, progress_bar::*, range::*, silent_progress_bar::*, valid::*};

@@ -23,7 +23,7 @@ pub const GAMMA: usize = Greek::Gamma as usize;
 mod tests {
     use super::{ALPHA, BETA, GAMMA};
 
-    /// Checking that each index pulls back the expected index. 
+    /// Checking that each index pulls back the expected index.
     #[test]
     fn greek_list_test() {
         let items = vec![1.0, 2.0, 3.0];

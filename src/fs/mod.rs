@@ -1,5 +1,5 @@
 //! Aetherus File I/O module.
-//! 
+//!
 //! In this module we have implemented:
 //! - Foundational traits to enabled file load / save / redirect operations.
 
@@ -12,6 +12,6 @@ pub use self::{file::*, load::*, save::*};
 /// File redirection type.
 pub mod redirect;
 pub use redirect::Redirect;
-/// Extensions for the implementation of different file types. 
+/// Extensions for the implementation of different file types.
 pub mod extensions;
-pub use self::extensions::{json::*};
+pub use self::extensions::json::*;

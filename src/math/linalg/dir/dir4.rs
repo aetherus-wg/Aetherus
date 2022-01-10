@@ -2,7 +2,7 @@
 
 use crate::core::Real;
 use nalgebra::{Unit, Vector4};
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 /// Normalised four dimensional real-number vector.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

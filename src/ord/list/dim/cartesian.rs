@@ -23,7 +23,7 @@ pub const Z: usize = Cartesian::Z as usize;
 mod tests {
     use super::{X, Y, Z};
 
-    /// Checking that each index pulls back the expected index. 
+    /// Checking that each index pulls back the expected index.
     #[test]
     fn cartesian_index_test() {
         let cart_vector = vec![10.0, 25.0, 32.0];

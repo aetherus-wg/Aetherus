@@ -71,8 +71,8 @@ impl AddAssign<Real> for Average {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::prelude::*;
     use assert_approx_eq::assert_approx_eq;
+    use rand::prelude::*;
 
     /// This test checks that the constructor works as intended, and that
     /// the fields in the struct are zero-initialised.
@@ -92,9 +92,9 @@ mod tests {
         assert_eq!(a.ave(), 0.0);
     }
 
-    /// This test checks to see whether we can accurately sum a uniform value, and 
+    /// This test checks to see whether we can accurately sum a uniform value, and
     /// checks to see that whether we can also retrieve the receive the correct
-    /// average value from this summation. 
+    /// average value from this summation.
     #[test]
     fn test_sum() {
         let mut a = Average::new();
@@ -111,13 +111,13 @@ mod tests {
     /// This drawns numbers from a random uniform distribution, whose average should
     /// always converge toward the centre of the tophat with enough values sampled.
     /// I have intentionally left the tollerance high here so that we don't get
-    /// false negatives when the randomness doesn't fall in our favour. 
+    /// false negatives when the randomness doesn't fall in our favour.
     #[test]
     fn test_random() {
         let mut a = Average::new();
         let low = 1.0;
 
-        // Init a random number generator and generate flows between 0.0 and 1.0. 
+        // Init a random number generator and generate flows between 0.0 and 1.0.
         let mut rng = rand::thread_rng();
         for _ in 0..10_000 {
             a += low + rng.gen::<f64>();

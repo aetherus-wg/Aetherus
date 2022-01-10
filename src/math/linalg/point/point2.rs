@@ -2,10 +2,10 @@
 
 use crate::{core::Real, math::Vec2};
 use nalgebra::Point2 as P2;
+use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
-use serde_derive::{Serialize, Deserialize};
 
 /// Two-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

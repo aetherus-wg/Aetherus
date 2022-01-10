@@ -8,13 +8,13 @@
 /// pub struct DocStruct {
 ///     str_prop: String,   
 /// }
-/// 
+///
 /// impl DocStruct {
 ///     access!(str_prop: String);   
 /// }
 /// ```
 /// which generates a getter at `DocStruct::str_prop()`.
-/// 
+///
 /// ## Generation of Setter Method
 /// In addition, this macro can optionally generate a 'setter' method, which
 /// returns a mutable reference to the variable. To do this, the above code can
@@ -24,18 +24,18 @@
 /// pub struct DocStruct {
 ///     str_prop: String,
 /// }
-/// 
+///
 /// impl DocStruct {
 ///     access!(str_prop, str_prop_mut: String);
 /// }
 /// ```
-/// which produces a setter at `DocStruct::str_prop_mut()`. 
-/// 
+/// which produces a setter at `DocStruct::str_prop_mut()`.
+///
 /// ## Warning - Usage with `clone!()`
-/// As both the `access!()` and `clone!()` macros are generating getters and 
+/// As both the `access!()` and `clone!()` macros are generating getters and
 /// setters with the name of the provided property, they are mutually exclusive.
-/// Attempting to use both on the same property will result in a compilation 
-/// error. 
+/// Attempting to use both on the same property will result in a compilation
+/// error.
 #[macro_export]
 macro_rules! access {
     ($field:ident: $type:ty) => {
@@ -89,7 +89,7 @@ mod tests {
         assert_eq!(testy.b(), &"two");
     }
 
-    /// A simple test for mutable access with an access-generated setter. 
+    /// A simple test for mutable access with an access-generated setter.
     #[test]
     fn test_mut_access() {
         let mut testy = Testy {

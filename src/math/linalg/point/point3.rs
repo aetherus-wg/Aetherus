@@ -1,11 +1,11 @@
 //! Three-dimensional point.
 
 use crate::{clone, core::Real, math::Vec3, math::Vec4};
-use nalgebra::{Point3 as P3, Vector3, Const};
+use nalgebra::{Const, Point3 as P3, Vector3};
+use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
-use serde_derive::{Serialize, Deserialize};
 
 /// Three-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -75,12 +75,28 @@ impl Point3 {
     }
 
     #[inline]
-    pub fn iter(&self) -> nalgebra::base::iter::MatrixIter<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+    pub fn iter(
+        &self,
+    ) -> nalgebra::base::iter::MatrixIter<
+        '_,
+        f64,
+        Const<3>,
+        Const<1>,
+        nalgebra::ArrayStorage<f64, 3, 1>,
+    > {
         self.data.iter()
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> nalgebra::base::iter::MatrixIterMut<'_, f64, Const<3>, Const<1>, nalgebra::ArrayStorage<f64, 3, 1>> {
+    pub fn iter_mut(
+        &mut self,
+    ) -> nalgebra::base::iter::MatrixIterMut<
+        '_,
+        f64,
+        Const<3>,
+        Const<1>,
+        nalgebra::ArrayStorage<f64, 3, 1>,
+    > {
         self.data.iter_mut()
     }
 }
@@ -117,7 +133,11 @@ impl Add<Point3> for Point3 {
     #[inline]
     #[must_use]
     fn add(self, rhs: Self) -> Point3 {
-        Self::new(self.data.x + rhs.data.x, self.data.y + rhs.data.y, self.data.z + rhs.data.z)
+        Self::new(
+            self.data.x + rhs.data.x,
+            self.data.y + rhs.data.y,
+            self.data.z + rhs.data.z,
+        )
     }
 }
 
