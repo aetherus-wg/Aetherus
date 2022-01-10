@@ -8,8 +8,9 @@
 //! Please see the documentation in the appropriate module for specifics on each
 //! format.
 
+pub mod csv;
 pub mod json;
 pub mod netcdf;
 pub mod wavefront;
 
-pub use self::{json::*, netcdf::*, wavefront::*};
+pub use self::{csv::*, json::*, netcdf::*, wavefront::*};
