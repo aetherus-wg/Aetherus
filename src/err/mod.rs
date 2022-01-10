@@ -26,6 +26,8 @@ pub enum Error {
     InvalidShape(ndarray::ShapeError),
     /// Min/max error.
     MinMax(ndarray_stats::errors::MinMaxError),
+    /// NetCDF io error.
+    NetCdf(netcdf::error::Error),
 }
 
 macro_rules! impl_from_for_err {
@@ -62,6 +64,7 @@ impl_from_for_err!(Self::ReadJson, json5::Error);
 impl_from_for_err!(Self::WriteJson, serde_json::Error);
 impl_from_for_err!(Self::InvalidShape, ndarray::ShapeError);
 impl_from_for_err!(Self::MinMax, ndarray_stats::errors::MinMaxError);
+impl_from_for_err!(Self::NetCdf, netcdf::error::Error);
 
 impl Debug for Error {
     #[inline]
@@ -81,6 +84,7 @@ impl Debug for Error {
                 Self::WriteJson { .. } => "Json writing",
                 Self::InvalidShape { .. } => "Invalid array shape",
                 Self::MinMax { .. } => "MinMax",
+                Self::NetCdf { .. } => "NetCDF IO",
             },
             match *self {
                 Self::Text { 0: ref err } => format!("{:?}", err),
@@ -94,6 +98,7 @@ impl Debug for Error {
                 Self::WriteJson { 0: ref err } => format!("{:?}", err),
                 Self::InvalidShape { 0: ref err } => format!("{:?}", err),
                 Self::MinMax { 0: ref err } => format!("{:?}", err),
+                Self::NetCdf { 0: ref err } => format!("{:?}", err),
             }
         )
     }

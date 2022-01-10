@@ -2,11 +2,14 @@
 //! 
 //! This module contains the loader implementations for the file extensions:
 //! - JSON / JSON5 Files
+//! - Wavefront / .obj Files
+//! - NetCDF Files
 //! 
 //! Please see the documentation in the appropriate module for specifics on each
 //! format. 
 
 pub mod json;
 pub mod wavefront;
+pub mod netcdf;
 
-pub use self::{json::*, wavefront::*};
+pub use self::{json::*, wavefront::*, netcdf::*};
