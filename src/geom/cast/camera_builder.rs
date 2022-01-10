@@ -29,7 +29,13 @@ impl CameraBuilder {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(pos: Point3, tar: Point3, fov: f64, res: [usize; 2], ss_power: Option<usize>) -> Self {
+    pub fn new(
+        pos: Point3,
+        tar: Point3,
+        fov: f64,
+        res: [usize; 2],
+        ss_power: Option<usize>,
+    ) -> Self {
         debug_assert!(fov > 0.0);
         debug_assert!(res[X] > 0);
         debug_assert!(res[Y] > 0);

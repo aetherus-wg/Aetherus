@@ -78,7 +78,6 @@ impl Mul<Vec3> for Rot3 {
     }
 }
 
-
 impl Mul<&Vec3> for Rot3 {
     type Output = Vec3;
 
