@@ -58,12 +58,33 @@ impl Mul<Dir3> for Rot3 {
     }
 }
 
+impl Mul<&Dir3> for Rot3 {
+    type Output = Dir3;
+
+    #[inline]
+    #[must_use]
+    fn mul(self, rhs: &Dir3) -> Self::Output {
+        Self::Output::from(self.data * rhs.data())
+    }
+}
+
 impl Mul<Vec3> for Rot3 {
     type Output = Vec3;
 
     #[inline]
     #[must_use]
     fn mul(self, rhs: Vec3) -> Self::Output {
+        Self::Output::from(self.data * rhs.data())
+    }
+}
+
+
+impl Mul<&Vec3> for Rot3 {
+    type Output = Vec3;
+
+    #[inline]
+    #[must_use]
+    fn mul(self, rhs: &Vec3) -> Self::Output {
         Self::Output::from(self.data * rhs.data())
     }
 }
