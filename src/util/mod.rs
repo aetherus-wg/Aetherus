@@ -1,3 +1,4 @@
+pub mod env;
 pub mod fmt;
 
-pub use fmt::*;
+pub use self::{env::*, fmt::*};

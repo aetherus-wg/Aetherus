@@ -18,7 +18,7 @@ pub enum AttributeLinkerLinker {
     /// Partially reflective mirror, reflection fraction.
     Mirror(f64),
     /// Spectrometer id, range, resolution.
-    Spectrometer(Name, [f64; 2], u64),
+    Spectrometer(Name, [f64; 2], usize),
     /// Imager id, horizontal size, orientation.
     Imager(usize, f64, Orient),
     /// CCD detector id, width, orientation, binner.

@@ -53,3 +53,6 @@ netcdf = {git = "https://github.com/georust/netcdf"}
 tempfile = "3.2.*"
 
 [lib]
+
+[[bin]]
+name = "mcrt"
