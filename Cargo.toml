@@ -22,16 +22,21 @@ arctk-proc = "0.4.*"
 
 assert_approx_eq = "1.1.*"
 dimensioned = "0.7.*"
+hex = "0.4.*"
+indicatif = "0.16.*"
+lazy_static = "1.4.*"
 nalgebra = { version = "0.30.*", features = ["serde-serialize"] }
-rand = "0.8.*"
-serde = "1.0.*"
-serde_derive = "1.0.*"
-serde_json = "^1.0.*"
 ndarray = { version = "0.15.*", features = ["rayon", "serde-1"] }
 ndarray-stats = "0.5.*"
 ndarray-parallel = "0.9.*"
-indicatif = "0.16.*"
-lazy_static = "1.4.*"
+num_cpus = "1.13.*"
+palette = "0.6.*"
+physical_constants = "0.4.*"
+rand = "0.8.*"
+rayon = "1.5.*"
+serde = "1.0.*"
+serde_derive = "1.0.*"
+serde_json = "^1.0.*"
 
 # Formats for the File I/O Library. 
 json5 = "0.4.*"
