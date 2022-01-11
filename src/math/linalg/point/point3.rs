@@ -1,5 +1,6 @@
 //! Three-dimensional point.
 
+use std::fmt::Display;
 use crate::{clone, core::Real, math::Vec3, math::Vec4};
 use nalgebra::{Const, Point3 as P3, Vector3};
 use serde_derive::{Deserialize, Serialize};
@@ -356,6 +357,12 @@ impl PartialOrd for Point3 {
 impl PartialEq for Point3 {
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
+    }
+}
+
+impl Display for Point3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
     }
 }
 

@@ -6,6 +6,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
+use std::fmt::Display;
 
 /// Two-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -148,6 +149,12 @@ impl IndexMut<usize> for Point2 {
             1 => &mut self.data.y,
             _ => panic!("Out of bounds index for two-dimensional point."),
         }
+    }
+}
+
+impl Display for Point2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
     }
 }
 

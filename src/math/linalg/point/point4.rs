@@ -1,11 +1,13 @@
 //! Four-dimensional point.
 
-use crate::{core::Real, math::Vec4};
+use crate::{clone, core::Real, math::{Vec4, Point3}};
 use nalgebra::Point4 as P4;
 use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
+use std::fmt::Display;
+
 /// Four-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Point4 {
@@ -14,6 +16,8 @@ pub struct Point4 {
 }
 
 impl Point4 {
+    clone!(data: P4<Real>);
+
     /// Construct a new instance.
     #[inline]
     #[must_use]
@@ -49,6 +53,12 @@ impl Point4 {
     #[must_use]
     pub fn w(&self) -> Real {
         self.data.w
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn xyz(&self) -> Point3 {
+        self.data.xyz().into()
     }
 }
 
@@ -165,6 +175,12 @@ impl IndexMut<usize> for Point4 {
             3 => &mut self.data.w,
             _ => panic!("Out of bounds index for four-dimensional point."),
         }
+    }
+}
+
+impl Display for Point4 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
     }
 }
 

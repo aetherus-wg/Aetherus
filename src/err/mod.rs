@@ -22,6 +22,8 @@ pub enum Error {
     ReadJson(json5::Error),
     /// Json writing error.
     WriteJson(serde_json::Error),
+    /// Png writing error.
+    WritePng(png::EncodingError),
     /// Shape error.
     InvalidShape(ndarray::ShapeError),
     /// Min/max error.
@@ -65,6 +67,7 @@ impl_from_for_err!(Self::WriteJson, serde_json::Error);
 impl_from_for_err!(Self::InvalidShape, ndarray::ShapeError);
 impl_from_for_err!(Self::MinMax, ndarray_stats::errors::MinMaxError);
 impl_from_for_err!(Self::NetCdf, netcdf::error::Error);
+impl_from_for_err!(Self::WritePng, png::EncodingError);
 
 impl Debug for Error {
     #[inline]
@@ -82,6 +85,7 @@ impl Debug for Error {
                 Self::ParseFloat { .. } => "Float parsing",
                 Self::ReadJson { .. } => "Json reading",
                 Self::WriteJson { .. } => "Json writing",
+                Self::WritePng { .. } => "PNG writing",
                 Self::InvalidShape { .. } => "Invalid array shape",
                 Self::MinMax { .. } => "MinMax",
                 Self::NetCdf { .. } => "NetCDF IO",
@@ -96,6 +100,7 @@ impl Debug for Error {
                 Self::ParseFloat { 0: ref err } => format!("{:?}", err),
                 Self::ReadJson { 0: ref err } => format!("{:?}", err),
                 Self::WriteJson { 0: ref err } => format!("{:?}", err),
+                Self::WritePng { 0: ref err } => format!("{:?}", err),
                 Self::InvalidShape { 0: ref err } => format!("{:?}", err),
                 Self::MinMax { 0: ref err } => format!("{:?}", err),
                 Self::NetCdf { 0: ref err } => format!("{:?}", err),

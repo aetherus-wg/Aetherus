@@ -4,6 +4,7 @@ use crate::{core::Real, math::Vec3};
 use nalgebra::Matrix3;
 
 /// Three-by-three real-number matrix.
+#[derive(Debug, Clone, Copy)]
 pub struct Mat3 {
     /// Internal data.
     data: Matrix3<Real>,
