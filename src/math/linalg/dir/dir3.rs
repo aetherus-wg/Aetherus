@@ -91,6 +91,12 @@ impl Dir3 {
     }
 
     #[inline]
+    #[must_use]
+    pub fn into_inner(&self) -> nalgebra::Vector3<Real> {
+        self.data.into_inner()
+    }
+
+    #[inline]
     pub fn iter(
         &self,
     ) -> nalgebra::base::iter::MatrixIter<
