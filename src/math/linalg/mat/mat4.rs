@@ -1,15 +1,19 @@
 //! Square fourth-order matrix.
 
-use crate::{core::Real, math::Vec4};
+use std::ops::Mul;
+use crate::{clone, core::Real, math::{Vec4, Point3, Dir3}};
 use nalgebra::Matrix4;
 
 /// Four-by-four real-number matrix.
+#[derive(Debug, Clone, Copy)]
 pub struct Mat4 {
     /// Internal data.
     data: Matrix4<Real>,
 }
 
 impl Mat4 {
+    clone!(data: Matrix4<Real>);
+
     /// Construct a new instance from component row vectors.
     #[inline]
     #[must_use]
@@ -59,6 +63,20 @@ impl Mat4 {
                 col_z.w(),
                 col_w.w(),
             ),
+        }
+    }
+
+    /// A function that builds a right-handed look at view matrix.
+    pub fn look_at_rh(eye: &Point3, target: &Point3, up: &Dir3) -> Self {
+        Self {
+            data: nalgebra::Matrix4::look_at_rh(&eye.data(), &target.data(), &up.data())
+        }
+    }
+
+    /// Builds a new homogeneous matrix for orthographic projection. 
+    pub fn new_perspective(aspect_ratio: Real, fovy: Real, znear: Real, zfar: Real) -> Self {
+        Self {
+            data: nalgebra::Matrix4::new_perspective(aspect_ratio, fovy, znear, zfar)
         }
     }
 
@@ -187,6 +205,23 @@ impl From<Matrix4<Real>> for Mat4 {
     #[must_use]
     fn from(d: Matrix4<Real>) -> Self {
         Self { data: d }
+    }
+}
+
+impl Mul<Mat4> for Mat4 {
+    type Output = Mat4;
+    fn mul(self, rhs: Mat4) -> Self::Output {
+        Self {
+            data: self.data * rhs.data
+        }
+    }
+}
+
+impl Mul<Vec4> for Mat4 {
+    type Output = Vec4;
+
+    fn mul(self, rhs: Vec4) -> Self::Output {
+        Vec4::from(self.data * rhs.data())
     }
 }
 

@@ -4,6 +4,7 @@ use crate::{core::Real, math::Vec2};
 use nalgebra::Matrix2;
 
 /// Two-by-two real-number matrix.
+#[derive(Debug, Clone, Copy)]
 pub struct Mat2 {
     /// Internal data.
     data: Matrix2<Real>,

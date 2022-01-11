@@ -20,18 +20,29 @@ default = []
 arctk-attr = "0.3.*"
 arctk-proc = "0.4.*"
 
+ansi_rgb = "0.2.*"
 assert_approx_eq = "1.1.*"
+colored = "2.0.*"
 dimensioned = "0.7.*"
+hex = "0.4.*"
+indicatif = "0.16.*"
+lazy_static = "1.4.*"
 nalgebra = { version = "0.30.*", features = ["serde-serialize"] }
-rand = "0.8.*"
-serde = "1.0.*"
-serde_derive = "1.0.*"
-serde_json = "^1.0.*"
 ndarray = { version = "0.15.*", features = ["rayon", "serde-1"] }
 ndarray-stats = "0.5.*"
 ndarray-parallel = "0.9.*"
-indicatif = "0.16.*"
-lazy_static = "1.4.*"
+num_cpus = "1.13.*"
+palette = "0.6.*"
+physical_constants = "0.4.*"
+png = "0.17.*"
+rand = "0.8.*"
+rayon = "1.5.*"
+rgb = "0.8.*"
+serde = "1.0.*"
+serde_derive = "1.0.*"
+serde_json = "^1.0.*"
+slice-of-array = "0.3.*"
+terminal_size = "0.1.*"
 
 # Formats for the File I/O Library. 
 json5 = "0.4.*"
@@ -42,3 +53,6 @@ netcdf = {git = "https://github.com/georust/netcdf"}
 tempfile = "3.2.*"
 
 [lib]
+
+[[bin]]
+name = "mcrt"

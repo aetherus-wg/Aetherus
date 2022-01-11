@@ -185,6 +185,12 @@ impl IndexMut<usize> for Vec2 {
     }
 }
 
+impl std::fmt::Display for Vec2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.data.fmt(f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
