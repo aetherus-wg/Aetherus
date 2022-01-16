@@ -4,6 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::ops::Mul;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
 /// Three-dimensional rotation.
 pub struct Rot3 {
     /// Internal data.

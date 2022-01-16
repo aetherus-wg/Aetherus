@@ -3,9 +3,11 @@
 use std::ops::Mul;
 use crate::{clone, core::Real, math::{Vec4, Point3, Dir3}};
 use nalgebra::Matrix4;
+use serde_derive::{Deserialize, Serialize};
 
 /// Four-by-four real-number matrix.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Mat4 {
     /// Internal data.
     data: Matrix4<Real>,

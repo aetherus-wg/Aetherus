@@ -9,6 +9,7 @@ use std::ops::{
 };
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 /// Three-dimensional real-number vector.
 pub struct Vec3 {
     /// Internal data.

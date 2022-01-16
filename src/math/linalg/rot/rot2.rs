@@ -3,6 +3,7 @@ use nalgebra::{Rotation2, Unit};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
 /// Two-dimensional rotation.
 pub struct Rot2 {
     data: Rotation2<f64>,

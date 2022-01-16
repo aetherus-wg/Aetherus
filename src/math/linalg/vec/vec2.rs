@@ -2,10 +2,13 @@
 
 use crate::{clone, core::Real, math::Dir2};
 use nalgebra::{Unit, Vector2};
+use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, BitXor, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 /// Two-dimensional real-number vector.
 pub struct Vec2 {
     /// Internal data.

@@ -6,10 +6,13 @@ use crate::{
     math::{Dir4, Point3},
 };
 use nalgebra::{Unit, Vector4};
+use serde_derive::{Deserialize, Serialize};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 /// Four-dimensional real-number vector.
 pub struct Vec4 {
     /// Internal data.

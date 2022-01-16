@@ -10,8 +10,10 @@ use std::fmt::Display;
 
 /// Two-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Point2 {
     /// Internal data.
+    #[serde(flatten)]
     data: P2<Real>,
 }
 

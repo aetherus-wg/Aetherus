@@ -10,6 +10,7 @@ use std::ops::{
 
 /// Three-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Point3 {
     /// Internal data.
     data: P3<Real>,

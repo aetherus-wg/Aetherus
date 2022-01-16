@@ -10,6 +10,7 @@ use std::fmt::Display;
 
 /// Four-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Point4 {
     /// Internal data.
     data: P4<Real>,

@@ -2,9 +2,11 @@
 
 use crate::{core::Real, math::Vec3};
 use nalgebra::Matrix3;
+use serde_derive::{Deserialize, Serialize};
 
 /// Three-by-three real-number matrix.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Mat3 {
     /// Internal data.
     data: Matrix3<Real>,

@@ -1,10 +1,12 @@
 //! Square second-order matrix.
 
 use crate::{core::Real, math::Vec2};
+use serde_derive::{Deserialize, Serialize};
 use nalgebra::Matrix2;
 
 /// Two-by-two real-number matrix.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Mat2 {
     /// Internal data.
     data: Matrix2<Real>,
