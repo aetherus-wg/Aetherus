@@ -6,9 +6,7 @@ use crate::{
     geom::{GridBuilder, SurfaceLinkerLoader, TreeSettings},
     ord::Set,
     phys::{LightLinkerBuilderLoader, MaterialBuilder},
-    sim::{
-        AttributeLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings,
-    },
+    sim::{AttributeLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings},
 };
 use arctk_attr::file;
 use std::path::Path;

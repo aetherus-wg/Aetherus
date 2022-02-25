@@ -1,13 +1,6 @@
+use crate::{err::Error, fs::File, math::stat::SphericalCdf, ord::Spherical};
 use lidrs::photweb;
-use crate::{
-    fs::File,
-    math::stat::SphericalCdf,
-    err::Error, ord::Spherical,
-};
-use std::{
-    path::Path,
-    str::FromStr,
-};
+use std::{path::Path, str::FromStr};
 
 impl File for SphericalCdf {
     #[inline]
@@ -22,15 +15,12 @@ impl File for SphericalCdf {
 #[cfg(test)]
 mod tests {
     use nalgebra::Storage;
-    use serde_json::to_string_pretty;
-    use tempfile::{tempdir};
-    use std::io::{Write};
     use rand::Rng;
+    use serde_json::to_string_pretty;
+    use std::io::Write;
+    use tempfile::tempdir;
 
-    use crate::{
-        fs::{File},
-        math::stat::SphericalCdf,
-    };
+    use crate::{fs::File, math::stat::SphericalCdf};
 
     const IES_STR: &str = "IESNA: LM-63-2002 
 [TEST] ABC1234 
@@ -66,13 +56,13 @@ TILT=INCLUDE
 
     #[test]
     fn test_convert_photweb_to_cdf() {
-        // First write to a temporary file so that we can run the conversion from scratch. 
+        // First write to a temporary file so that we can run the conversion from scratch.
         let dir = tempdir().unwrap();
         let file_path = dir.path().join("iesna-2002-demon.ies");
         let mut file = std::fs::File::create(&file_path).unwrap();
         let _ = file.write_all(IES_STR.as_bytes());
 
-        // Now attempt to read. 
+        // Now attempt to read.
         match SphericalCdf::load(file_path.as_path()) {
             Ok(cdf) => {
                 let json_str = to_string_pretty(&cdf).unwrap();
@@ -85,7 +75,7 @@ TILT=INCLUDE
                     let _ = pl.cdf().write_to_file(&format!("plane{}.cdf", ipl));
                 }
 
-                // Now check that we have the correct number of planes. 
+                // Now check that we have the correct number of planes.
                 assert_eq!(cdf.planes().iter().count(), 8);
 
                 // Now test the sampling of the CDF
@@ -95,13 +85,12 @@ TILT=INCLUDE
                     let (azim, pol) = cdf.sample(&mut rng);
                     let _ = write!(test_file, "{}\t{}\n", azim, pol);
                 }
-            },
+            }
             Err(e) => {
                 assert!(false, "{:?}", &e);
-            },
+            }
         };
 
         let _ = dir.close();
     }
-
 }

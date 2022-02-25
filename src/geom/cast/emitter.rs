@@ -2,12 +2,15 @@
 
 use crate::{
     geom::{Emit, Grid, Mesh, Ray},
-    math::{rand_isotropic_dir, Point3},
+    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf},
     tools::linear_to_three_dim,
 };
 use ndarray::Array3;
 use rand::Rng;
-use std::fmt::{Display, Error, Formatter};
+use std::{
+    f64::consts::PI,
+    fmt::{Display, Error, Formatter},
+};
 
 /// Ray emission structure.
 pub enum Emitter {
@@ -21,6 +24,8 @@ pub enum Emitter {
     Surface(Mesh),
     /// Volume map.
     Volume(Array3<f64>, Grid),
+    /// Non-isotropic point source.
+    NonIsotropicPoints(Vec<Point3>, SphericalCdf),
 }
 
 impl Emitter {
@@ -75,6 +80,13 @@ impl Emitter {
         Self::Volume(map, grid)
     }
 
+    /// Construct a new non-isotropic point source instance.
+    #[inline]
+    #[must_use]
+    pub fn new_non_isotropic_points(points: Vec<Point3>, cdf: SphericalCdf) -> Self {
+        Self::NonIsotropicPoints(points, cdf)
+    }
+
     /// Emit a new ray.
     #[inline]
     #[must_use]
@@ -108,6 +120,18 @@ impl Emitter {
                 }
                 panic!("Failed to emit ray from volume.")
             }
+            Self::NonIsotropicPoints(ref points, ref cdf) => {
+                // Using the logic from the isotropic emission case.
+                let (az, pol) = cdf.sample(rng);
+
+                // Note that we have to invert the polar angle, as this is taken from
+                // vertically up, whereas the light intensities assume vertically down.
+                let x = az.cos() * (PI - pol).sin();
+                let y = az.sin() * (PI - pol).sin();
+                let z = (PI - pol).cos();
+
+                Ray::new(points[rng.gen_range(0..points.len())], Dir3::new(x, y, z))
+            }
         }
     }
 }
@@ -121,6 +145,7 @@ impl Display for Emitter {
             Self::WeightedPoints { .. } => "WeightedPoints",
             Self::Surface { .. } => "Surface",
             Self::Volume { .. } => "Volume",
+            Self::NonIsotropicPoints { .. } => "Non-isotropic Points",
         };
         write!(fmt, "{}", kind)
     }

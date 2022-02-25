@@ -45,7 +45,7 @@ pub fn peel_off(input: &Input, mut phot: Photon, env: &Local, pos: Point3) -> Op
         num_loops += 1;
 
         // Interaction distances.
-        // TODO: Make this interface a little neater, and abstract away the nalgebra function. 
+        // TODO: Make this interface a little neater, and abstract away the nalgebra function.
         tar_dist = distance(&pos.data(), &phot.ray().pos().data());
         let surf_hit = input.tree.scan(phot.ray().clone(), bump_dist, tar_dist);
 

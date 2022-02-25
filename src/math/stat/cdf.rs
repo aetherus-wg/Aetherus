@@ -1,16 +1,13 @@
 //! Cumulative Density Function Implementation.
-use crate::{
-    core::Real,
-    err::Error,
-};
+use crate::{core::Real, err::Error};
 use rand::Rng;
-use std::{fs::File, io::Write, default::Default};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::{default::Default, fs::File, io::Write};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CDFBin {
-    pub step_cumulative_probability: Real, 
-    pub value: Real, 
+    pub step_cumulative_probability: Real,
+    pub value: Real,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -20,22 +17,24 @@ pub enum CumulativeDistributionFunction {
 
 impl CumulativeDistributionFunction {
     pub fn from_cdf_data(cumulative_probability: Vec<Real>, values: Vec<Real>) -> Self {
-
         let bins: Vec<CDFBin> = (0..cumulative_probability.iter().count())
             .map(|i| {
                 let edge = match i {
-                    0 => 0.0, 
-                    _ => (cumulative_probability[i] + cumulative_probability[i - 1]) / 2.0
+                    0 => 0.0,
+                    _ => (cumulative_probability[i] + cumulative_probability[i - 1]) / 2.0,
                 };
 
-                CDFBin { step_cumulative_probability: edge, value: values[i] }
+                CDFBin {
+                    step_cumulative_probability: edge,
+                    value: values[i],
+                }
             })
             .collect();
 
         Self::Data(bins)
     }
-    
-    /// Takes in a correctly normalised probability density and converts to a cumulative density. 
+
+    /// Takes in a correctly normalised probability density and converts to a cumulative density.
     pub fn from_pdf(prob: Vec<Real>, values: Vec<Real>) -> Self {
         let mut accum: Real = 0.0;
         let mut cumulative_prob: Vec<Real> = prob
@@ -64,11 +63,14 @@ impl CumulativeDistributionFunction {
             Self::Data(ref bins) => {
                 // We should iterate through the bin values until we find the first
                 // that is lower than the random sample, as this is the bin that contains
-                // the value we want to sample. 
-                let ibin = match bins.iter().position(|bin| bin.step_cumulative_probability > rand_sample) {
+                // the value we want to sample.
+                let ibin = match bins
+                    .iter()
+                    .position(|bin| bin.step_cumulative_probability > rand_sample)
+                {
                     // This is the first bin edge that is greater than the search, so go to the previous one.
                     Some(ibin) => ibin - 1,
-                    // If no bin edge is greater, then it must lie in the final bin. 
+                    // If no bin edge is greater, then it must lie in the final bin.
                     None => bins.iter().count() - 1,
                 };
                 bins[ibin].value
@@ -84,7 +86,11 @@ impl CumulativeDistributionFunction {
             Self::Data(ref bins) => {
                 for i in 0..bins.iter().count() {
                     outfile.write_all(
-                        format!("{}\t{}\n", bins[i].value, bins[i].step_cumulative_probability).as_bytes(),
+                        format!(
+                            "{}\t{}\n",
+                            bins[i].value, bins[i].step_cumulative_probability
+                        )
+                        .as_bytes(),
                     )?;
                 }
             }
@@ -127,7 +133,7 @@ mod tests {
             ave += cdf.sample(&mut rng);
         }
 
-        // Check that we get the value to within 1 percent. 
+        // Check that we get the value to within 1 percent.
         assert_approx_eq!(ave.ave(), norm.mean().unwrap(), 1E-2);
     }
 }

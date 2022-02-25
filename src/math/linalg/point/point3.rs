@@ -1,9 +1,9 @@
 //! Three-dimensional point.
 
-use std::fmt::Display;
 use crate::{clone, core::Real, math::Vec3, math::Vec4};
 use nalgebra::{Const, Point3 as P3, Vector3};
 use serde_derive::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
