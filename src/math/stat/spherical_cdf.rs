@@ -4,11 +4,11 @@ use crate::{
 use dimensioned::{si::L, typenum::False};
 use lidrs::photweb::{PhotometricWeb, Plane};
 use rand::Rng;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::default::Default;
 use std::f64::consts::PI;
 
-#[derive(Default, Debug, Serialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct SphericalCdfPlane {
     /// The central azimurhal angle of the plane.
     azimuth_angle: Real,
@@ -58,7 +58,7 @@ impl SphericalCdfPlane {
     }
 }
 
-#[derive(Default, Debug, Serialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 /// The spherical CDF object.
 pub struct SphericalCdf {
     planes: Vec<SphericalCdfPlane>,
@@ -106,6 +106,13 @@ impl From<PhotometricWeb> for SphericalCdf {
     fn from(photweb: PhotometricWeb) -> SphericalCdf {
         let mut cdf = SphericalCdf::new();
 
+        let mut azim_angles: Vec<Real> = vec![];
+        let mut azim_probs: Vec<Real> = vec![];
+        let mut azim_accum = 0.0;
+
+        // Calculate the azimuth angles.
+        let total_intens = photweb.total_intensity();
+
         // Iterate through the planes in the photometric web and convert them to CDFs for each plane.
         let cdf_planes = photweb
             .planes()
@@ -131,26 +138,24 @@ impl From<PhotometricWeb> for SphericalCdf {
                     plane.angles().clone().to_vec(),
                 );
 
+                // Construct this plane constibution to the azimuthal CDF here as we are iterating through. 
+                if iplane == 0 {
+                    // The first plane will constribute two spline points - this is for the lower edge of the first plane.
+                    azim_angles.push(curr_cdf_plane.azimuth_angle() - (curr_cdf_plane.delta_aziumuth() / 2.0));
+                    azim_probs.push(azim_accum);
+                }
+                // Now we just add on the upper edge of each of the planes. 
+                azim_accum += plane_intensity / total_intens;
+                azim_angles.push(curr_cdf_plane.azimuth_angle() + (curr_cdf_plane.delta_aziumuth() / 2.0));
+                azim_probs.push(azim_accum);
+
                 curr_cdf_plane
             })
             .collect::<Vec<SphericalCdfPlane>>();
 
-        // Calculate the azimuth angles.
-        let total_intens = photweb.total_intensity();
-        let azim_angles = photweb
-            .planes()
-            .iter()
-            .map(|plane| plane.angle())
-            .collect::<Vec<Real>>();
-        let azim_probs = photweb
-            .planes()
-            .iter()
-            .map(|plane| plane.integrate_intensity() / total_intens)
-            .collect::<Vec<Real>>();
-
         // Load the finalised variables into the CDF.
         *cdf.planes_mut() = cdf_planes;
-        *cdf.azimuth_cdf_mut() = CumulativeDistributionFunction::from_pdf(azim_probs, azim_angles);
+        *cdf.azimuth_cdf_mut() = CumulativeDistributionFunction::from_spline_points(azim_probs, azim_angles);
 
         cdf
     }

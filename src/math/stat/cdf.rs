@@ -3,35 +3,50 @@ use crate::{core::Real, err::Error};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::{default::Default, fs::File, io::Write};
+use splines::{Spline, Key, Interpolation};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CDFBin {
-    pub step_cumulative_probability: Real,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CumulativeDistributionBin {
+    pub cumulative_prob: Real,
+    pub width: Real, 
     pub value: Real,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+impl CumulativeDistributionBin {
+    pub fn contains(&self, val: Real) -> bool {
+        (val - self.cumulative_prob).abs() < self.width / 2.0
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CumulativeDistributionFunction {
-    Data(Vec<CDFBin>),
+    Bins(Vec<CumulativeDistributionBin>),
+    Spline(Spline<Real, Real>),
 }
 
 impl CumulativeDistributionFunction {
-    pub fn from_cdf_data(cumulative_probability: Vec<Real>, values: Vec<Real>) -> Self {
-        let bins: Vec<CDFBin> = (0..cumulative_probability.iter().count())
+    pub fn from_bins(cumulative_probability: Vec<Real>, values: Vec<Real>, bin_width: Real) -> Self {
+        let bins = (0..cumulative_probability.iter().count())
             .map(|i| {
-                let edge = match i {
-                    0 => 0.0,
-                    _ => (cumulative_probability[i] + cumulative_probability[i - 1]) / 2.0,
-                };
-
-                CDFBin {
-                    step_cumulative_probability: edge,
+                CumulativeDistributionBin {
+                    cumulative_prob: cumulative_probability[i],
+                    width: bin_width,
                     value: values[i],
                 }
             })
+            .collect::<Vec<CumulativeDistributionBin>>();
+
+        Self::Bins(bins)
+    }
+
+    pub fn from_spline_points(probs: Vec<Real>, values: Vec<Real>) -> Self {
+        let keys = (0..probs.iter().count())
+            .map(|i| {
+                Key::new(probs[i], values[i], Interpolation::Linear)
+            })
             .collect();
 
-        Self::Data(bins)
+        Self::Spline(Spline::from_vec(keys))
     }
 
     /// Takes in a correctly normalised probability density and converts to a cumulative density.
@@ -52,7 +67,7 @@ impl CumulativeDistributionFunction {
             .map(|prob_unnorm| prob_unnorm / accum)
             .collect();
 
-        Self::from_cdf_data(cumulative_prob, values)
+        Self::from_spline_points(cumulative_prob, values)
     }
 
     /// Takes a random sample from the CDF.
@@ -60,13 +75,13 @@ impl CumulativeDistributionFunction {
         let rand_sample = rng.gen_range(0.0..1.0);
 
         match self {
-            Self::Data(ref bins) => {
+            Self::Bins(ref bins) => {
                 // We should iterate through the bin values until we find the first
                 // that is lower than the random sample, as this is the bin that contains
                 // the value we want to sample.
                 let ibin = match bins
                     .iter()
-                    .position(|bin| bin.step_cumulative_probability > rand_sample)
+                    .position(|bin| bin.contains(rand_sample))
                 {
                     // This is the first bin edge that is greater than the search, so go to the previous one.
                     Some(ibin) => ibin - 1,
@@ -74,6 +89,13 @@ impl CumulativeDistributionFunction {
                     None => bins.iter().count() - 1,
                 };
                 bins[ibin].value
+            },
+            Self::Spline(ref spline) => {
+                // As we are using a splint interpolation, we can just sample the spline here.
+                match spline.sample(rand_sample) {
+                    Some(val) => val, 
+                    None => spline.keys().last().unwrap().value,
+                }
             }
         }
     }
@@ -83,12 +105,27 @@ impl CumulativeDistributionFunction {
         let mut outfile = File::create(filename)?;
 
         match self {
-            Self::Data(ref bins) => {
+            Self::Bins(ref bins) => {
+                // Write the header
+                writeln!(outfile, "# cdf_bin_centre\tcdf_bin_width\tvalue");
                 for i in 0..bins.iter().count() {
                     outfile.write_all(
                         format!(
+                            "{}\t{}\t{}\n",
+                            bins[i].cumulative_prob, bins[i].width, bins[i].value
+                        )
+                        .as_bytes(),
+                    )?;
+                }
+            },
+            Self::Spline(ref spline) => {
+                // Write the header
+                writeln!(outfile, "# cumulative_prob\tvalue");
+                for i in 0..spline.keys().iter().count() {
+                    outfile.write_all(
+                        format!(
                             "{}\t{}\n",
-                            bins[i].value, bins[i].step_cumulative_probability
+                            spline.keys()[i].t, spline.keys()[i].value
                         )
                         .as_bytes(),
                     )?;
@@ -102,7 +139,7 @@ impl CumulativeDistributionFunction {
 
 impl Default for CumulativeDistributionFunction {
     fn default() -> Self {
-        Self::Data(vec![])
+        Self::Spline(Spline::from_vec(vec![]))
     }
 }
 
