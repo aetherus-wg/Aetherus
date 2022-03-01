@@ -93,7 +93,6 @@ impl SphericalCdf {
             .iter()
             .position(|pl| pl.azimuthal_angle_in_plane(azim_draw))
             .unwrap();
-        println!("{}", iplane);
         let polar_draw = self.planes[iplane].sample(rng);
 
         (azim_draw, polar_draw)
