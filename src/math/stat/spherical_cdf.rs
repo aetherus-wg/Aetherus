@@ -120,11 +120,17 @@ impl From<PhotometricWeb> for SphericalCdf {
             .map(|(iplane, plane)| {
                 // First calculate the normalised probabilities for reach of the angles - this is our PDF.
                 let plane_intensity = plane.integrate_intensity();
-                let probs = plane
-                    .intensities()
-                    .iter()
-                    .map(|intens| intens / plane_intensity)
-                    .collect();
+                
+                // Iterate through the surfaces in the current plane to get the spline points for the CDF.
+                let mut plane_accum = 0.0;
+                let mut probs = vec![];
+                let mut angles = vec![];
+
+                for (isurf, intens) in plane.intensities().iter().enumerate() {
+                    plane_accum += (intens * plane.delta_angle(isurf) * plane.width() * plane.angles()[isurf].sin()) / plane_intensity;
+                    probs.push(plane_accum);
+                    angles.push(plane.angles()[isurf]);
+                }
 
                 // Now load the calculated properties into our CDF Plane.
                 let mut curr_cdf_plane = SphericalCdfPlane::new();
@@ -132,9 +138,9 @@ impl From<PhotometricWeb> for SphericalCdf {
                 *curr_cdf_plane.delta_aziumuth_mut() = photweb.delta_angle(iplane);
 
                 // Construct the CDF for this plane using the probabilities and values that we have already extracted.
-                *curr_cdf_plane.cdf_mut() = CumulativeDistributionFunction::from_pdf(
+                *curr_cdf_plane.cdf_mut() = CumulativeDistributionFunction::from_spline_points(
                     probs,
-                    plane.angles().clone().to_vec(),
+                    angles,
                 );
 
                 // Construct this plane constibution to the azimuthal CDF here as we are iterating through. 
