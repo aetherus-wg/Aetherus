@@ -58,7 +58,7 @@ TILT=INCLUDE
     fn test_convert_photweb_to_cdf() {
         // First write to a temporary file so that we can run the conversion from scratch.
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("iesna-2002-demon.ies");
+        let file_path = dir.path().join("iesna-2002-demo.ies");
         let mut file = std::fs::File::create(&file_path).unwrap();
         let _ = file.write_all(IES_STR.as_bytes());
 
