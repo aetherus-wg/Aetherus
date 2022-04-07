@@ -65,14 +65,12 @@ TILT=INCLUDE
         // Now attempt to read.
         match SphericalCdf::load(file_path.as_path()) {
             Ok(cdf) => {
-                let json_str = to_string_pretty(&cdf).unwrap();
-                let mut file = std::fs::File::create("test.json").unwrap();
-                let _ = write!(file, "{}", json_str);
-
                 // output to file for analysis.
-                cdf.azimuth_cdf().write_to_file("azim.cdf");
+                let _ = cdf.azimuth_cdf().cdf_to_file("azim.cdf");
+                let _ = cdf.azimuth_cdf().pdf_to_file("azim.pdf");
                 for (ipl, pl) in cdf.planes().iter().enumerate() {
-                    let _ = pl.cdf().write_to_file(&format!("plane{}.cdf", ipl));
+                    let _ = pl.cdf().cdf_to_file(&format!("plane{}.cdf", ipl));
+                    let _ = pl.cdf().pdf_to_file(&format!("plane{}.pdf", ipl));
                 }
 
                 // Now check that we have the correct number of planes.
@@ -81,7 +79,7 @@ TILT=INCLUDE
                 // Now test the sampling of the CDF
                 let mut rng = rand::thread_rng();
                 let mut test_file = std::fs::File::create("test_sph_cdf.dat").unwrap();
-                for _ in 0..10_000 {
+                for _ in 0..100_000 {
                     let (azim, pol) = cdf.sample(&mut rng);
                     let _ = write!(test_file, "{}\t{}\n", azim, pol);
                 }

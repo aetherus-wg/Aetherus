@@ -1,36 +1,39 @@
 use crate::{
-    access, clone, core::Real, math::stat::CumulativeDistributionFunction, ord::Spherical,
+    access, core::Real, math::{
+        rng::Probability,
+    }
 };
-use dimensioned::{si::L, typenum::False};
-use lidrs::photweb::{PhotometricWeb, Plane};
+use lidrs::photweb::{PhotometricWeb};
 use rand::Rng;
-use serde::{Serialize, Deserialize};
+use ndarray::Array1;
 use statrs::statistics::Statistics;
-use std::default::Default;
 use std::f64::consts::PI;
+use splines::{Spline, Key, Interpolation};
 
 /// This is the target number of polar angles that we are aiming for for the spherical CDF.
 /// If more than this, we will not interpolate, however, if less we will interpolate data points
 /// to ensure that we can sample the sin(theta) area term well enough. 
 const TARGET_NANGLES: usize = 360;
 
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct SphericalCdfPlane {
     /// The central azimurhal angle of the plane.
     azimuth_angle: Real,
     /// The angular diameter of the plane in the azimuthal axis.
     delta_aziumuth: Real,
-    cdf: CumulativeDistributionFunction,
+    cdf: Probability,
 }
 
 impl SphericalCdfPlane {
     access!(azimuth_angle, azimuth_angle_mut: Real);
     access!(delta_aziumuth, delta_aziumuth_mut: Real);
-    access!(cdf, cdf_mut: CumulativeDistributionFunction);
+    access!(cdf, cdf_mut: Probability);
 
     pub fn new() -> Self {
         Self {
-            ..Default::default()
+            azimuth_angle: 0.,
+            delta_aziumuth: 2.0 * PI,
+            cdf: Probability::new_point(0.),
         }
     }
 
@@ -49,8 +52,10 @@ impl SphericalCdfPlane {
             offset_angle = -(self.azimuth_angle + half_dazimuth - 2.0 * PI);
         }
 
-        if azimuthal_angle + offset_angle >= self.azimuth_angle + offset_angle - half_dazimuth
-            && azimuthal_angle + offset_angle < self.azimuth_angle + offset_angle + half_dazimuth
+        if (azimuthal_angle + offset_angle >= self.azimuth_angle + offset_angle - half_dazimuth
+            && azimuthal_angle + offset_angle < self.azimuth_angle + offset_angle + half_dazimuth)
+            || (azimuthal_angle - 2.0 * PI + offset_angle >= self.azimuth_angle + offset_angle - half_dazimuth
+            && azimuthal_angle - 2.0 * PI + offset_angle < self.azimuth_angle + offset_angle + half_dazimuth)
         {
             true
         } else {
@@ -64,21 +69,22 @@ impl SphericalCdfPlane {
     }
 }
 
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 /// The spherical CDF object.
 pub struct SphericalCdf {
     planes: Vec<SphericalCdfPlane>,
-    azimuth_cdf: CumulativeDistributionFunction,
+    azimuth_cdf: Probability,
 }
 
 impl SphericalCdf {
     access!(planes, planes_mut: Vec<SphericalCdfPlane>);
-    access!(azimuth_cdf, azimuth_cdf_mut: CumulativeDistributionFunction);
+    access!(azimuth_cdf, azimuth_cdf_mut: Probability);
 
     /// Returns a new default spherical cumulative distribution function.
     pub fn new() -> Self {
         Self {
-            ..Default::default()
+            planes: vec![],
+            azimuth_cdf: Probability::new_point(0.0),
         }
     }
 
@@ -90,7 +96,7 @@ impl SphericalCdf {
     /// Samples the CDF and returns a tuple containing the azimuthal and polar angles in radians.
     /// These angles are randomly chosen based on the underlying CDF.
     pub fn sample<R: Rng>(&self, rng: &mut R) -> (Real, Real) {
-        // First, draw the azimuthal angle from the azimuthal CDF.
+        // First, draw the azimuthal angle from the azimuthal CDF and apply the offset to map back into an appropriate system.
         let azim_draw = self.azimuth_cdf.sample(rng);
 
         // Now find the plane for which this azimuthal angle corresponds, so that we can sampe polar angle.
@@ -111,12 +117,11 @@ impl From<PhotometricWeb> for SphericalCdf {
     fn from(photweb: PhotometricWeb) -> SphericalCdf {
         let mut cdf = SphericalCdf::new();
 
-        let mut azim_angles: Vec<Real> = vec![];
-        let mut azim_probs: Vec<Real> = vec![];
-        let mut azim_accum = 0.0;
+        let mut azim_angles: Vec<Real> = Vec::with_capacity(photweb.n_planes() + 1);
+        let mut azim_probs: Vec<Real> = Vec::with_capacity(photweb.n_planes() + 1);
 
         // Calculate the azimuth angles.
-        let total_intens = photweb.total_intensity();
+        let total_intens = photweb.total_intensity() + photweb.planes()[0].integrate_intensity();
 
         // Iterate through the planes in the photometric web and convert them to CDFs for each plane.
         let cdf_planes = photweb
@@ -128,18 +133,30 @@ impl From<PhotometricWeb> for SphericalCdf {
                 let plane_intensity = plane.integrate_intensity();
                 
                 // Iterate through the surfaces in the current plane to get the spline points for the CDF.
-                let mut plane_accum = 0.0;
-                let mut probs = vec![];
-                let mut angles = vec![];
-                let mut unnorm_probs = vec![];
+                debug_assert!(plane.n_samples() > 0);
+                let mut probs = Vec::with_capacity(plane.n_samples());
+                let mut angles = Vec::with_capacity(plane.n_samples());
 
-                if true {
-                    for (isurf, intens) in plane.intensities().iter().enumerate() {
-                        plane_accum += (intens * plane.delta_angle(isurf) * plane.width() * plane.angles()[isurf].sin()) / plane_intensity;
-                        probs.push(plane_accum);
-                        angles.push(plane.angles()[isurf]);
-                    }
-                } else {
+                for (ipts, intens) in plane.intensities().iter().enumerate() {
+                    probs.push((intens * plane.delta_angle(ipts) * plane.width()) / plane_intensity);
+                    angles.push(plane.angles()[ipts]);
+                }
+
+                // If the number of angles in the CDF is too small, we should upsample using an interpolation. 
+                if plane.n_samples() < TARGET_NANGLES {
+
+                    let keys = angles.iter()
+                        .zip(probs)
+                        .map(|(ang, prob)| {
+                            Key::new(*ang, prob, Interpolation::Linear)
+                        })
+                        .collect();
+                    let prob_spline = Spline::from_vec(keys);
+
+                    // Clear the probs and angles vectors.
+                    probs = Vec::with_capacity(TARGET_NANGLES + 1);
+                    angles = Vec::with_capacity(TARGET_NANGLES + 1);
+
                     // Interpolate this term.
                     let min_angle = plane.angles().min();
                     let max_angle = plane.angles().max();
@@ -147,22 +164,23 @@ impl From<PhotometricWeb> for SphericalCdf {
                     for iang in 0..TARGET_NANGLES {
                         let curr_ang = min_angle + (iang as Real * dtheta);
 
-                        // Find the surface we are interested in. 
-                        let isurf = plane.angles().iter()
-                            .position(|theta| {
-                                curr_ang <= *theta
-                            }).unwrap();
-
-                        let intens = plane.intensities()[isurf];
-                        plane_accum += (intens * dtheta * curr_ang.sin());
-                        unnorm_probs.push(plane_accum);
+                        let intens = prob_spline.sample(curr_ang).unwrap();
+                        probs.push(intens * dtheta * curr_ang.sin());
                         angles.push(curr_ang);
                     }
                     // Now, we will instead normalise with our accumulator.
                     // The integrated intensity is not accurate enough, as it negates the sin theta term. 
-                    // TODO: If you think you can do a better job than this in the future, please do. 
-                    probs = unnorm_probs.iter()
-                        .map(|val| *val / plane_accum)
+                    let norm_factor: Real = probs.iter().sum();
+                    probs = probs.into_iter()
+                        .map(|val| val / norm_factor)
+                        .collect();
+                } else {
+                    // Apple the Sin Theta term to the angles / probabilities that are well enough sampled.
+                    probs = angles.iter()
+                        .zip(probs)
+                        .map(|(ang, prob)| {
+                            ang * prob.sin()
+                        })
                         .collect();
                 }
                 
@@ -172,30 +190,25 @@ impl From<PhotometricWeb> for SphericalCdf {
                 *curr_cdf_plane.delta_aziumuth_mut() = photweb.delta_angle(iplane);
 
                 // Construct the CDF for this plane using the probabilities and values that we have already extracted.
-                *curr_cdf_plane.cdf_mut() = CumulativeDistributionFunction::from_spline_points(
-                    probs,
-                    angles,
+                *curr_cdf_plane.cdf_mut() = Probability::new_linear_spline(
+                    &Array1::from(angles),
+                    &Array1::from(probs),
                 );
 
-                // Construct this plane constibution to the azimuthal CDF here as we are iterating through. 
-                if iplane == 0 {
-                    // The first plane will constribute two spline points - this is for the lower edge of the first plane.
-                    azim_angles.push(curr_cdf_plane.azimuth_angle() - (curr_cdf_plane.delta_aziumuth() / 2.0));
-                    azim_probs.push(azim_accum);
-                }
                 // Now we just add on the upper edge of each of the planes. 
-                azim_accum += plane_intensity / total_intens;
-                azim_angles.push(curr_cdf_plane.azimuth_angle() + (curr_cdf_plane.delta_aziumuth() / 2.0));
-                azim_probs.push(azim_accum);
+                azim_angles.push(*curr_cdf_plane.azimuth_angle());
+                azim_probs.push(plane_intensity / total_intens);
 
                 curr_cdf_plane
             })
             .collect::<Vec<SphericalCdfPlane>>();
-
+        
+        azim_angles.push(photweb.planes()[0].angle() + 2.0 * PI);
+        azim_probs.push(photweb.planes()[0].integrate_intensity() / total_intens);
+        
         // Load the finalised variables into the CDF.
         *cdf.planes_mut() = cdf_planes;
-        *cdf.azimuth_cdf_mut() = CumulativeDistributionFunction::from_spline_points(azim_probs, azim_angles);
-
+        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_angles), &Array1::from(azim_probs));
         cdf
     }
 }
@@ -204,6 +217,7 @@ impl From<PhotometricWeb> for SphericalCdf {
 pub mod tests {
     use crate::{
         math::CumulativeDistributionFunction,
+        math::Probability,
         data::Average,
     };
     use std::{
@@ -214,6 +228,7 @@ pub mod tests {
     use serde_json::to_string_pretty;
     use super::{ SphericalCdf, SphericalCdfPlane };
     use assert_approx_eq::assert_approx_eq;
+    use ndarray::Array1;
 
     /// Tests that when we create an isotropic CDF we end up with a consistent outputs distribution
     /// from the sampling. 
@@ -231,17 +246,15 @@ pub mod tests {
             let mut plane = SphericalCdfPlane::new();
         
             // Iterate through the surfaces in the current plane to get the spline points for the CDF.
-            let mut plane_accum = 0.0;
             let mut probs = vec![];
             let mut angles = vec![];
 
             for (_, ang) in (0..190).step_by(10).enumerate() {
-                plane_accum += 1.0 / 18.0;
-                probs.push(plane_accum);
+                probs.push(1.0 / 18.0);
                 angles.push(ang as f64 * (PI / 180.));
             }
             
-            *plane.cdf_mut() = CumulativeDistributionFunction::from_spline_points(probs, angles);
+            *plane.cdf_mut() = Probability::new_linear_spline( &Array1::from(angles), &Array1::from(probs));
             *plane.azimuth_angle_mut() = ang as f64 * (std::f64::consts::PI / 180.0);
             *plane.delta_aziumuth_mut() = std::f64::consts::PI / 2.0;
 
@@ -252,9 +265,8 @@ pub mod tests {
                 azim_probs.push(azim_accum);
             }
             // Now we just add on the upper edge of each of the planes. 
-            azim_accum += 1.0 / 4.0;
             azim_angs.push(plane.azimuth_angle() + (plane.delta_aziumuth() / 2.0));
-            azim_probs.push(azim_accum);
+            azim_probs.push(1.0 / 4.0);
 
             plane
         })
@@ -262,7 +274,15 @@ pub mod tests {
         
         let mut cdf = SphericalCdf::new();
         *cdf.planes_mut() = planes;
-        *cdf.azimuth_cdf_mut() = CumulativeDistributionFunction::from_spline_points(azim_probs, azim_angs);
+        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_angs), &Array1::from(azim_probs));
+
+        // output to file for analysis.
+        cdf.azimuth_cdf().cdf_to_file("azim.cdf").unwrap();
+        cdf.azimuth_cdf().pdf_to_file("azim.pdf").unwrap();
+        for (ipl, pl) in cdf.planes().iter().enumerate() {
+            let _ = pl.cdf().cdf_to_file(&format!("plane{}.cdf", ipl));
+            let _ = pl.cdf().pdf_to_file(&format!("plane{}.pdf", ipl));
+        }
 
         // Now sample the distribution. 
         let mut rng = rand::thread_rng();
@@ -310,7 +330,6 @@ pub mod tests {
                 angles.push(ang as f64 * (PI / 180.));
             }
             
-            *plane.cdf_mut() = CumulativeDistributionFunction::from_spline_points(probs, angles);
             *plane.azimuth_angle_mut() = ang as f64 * (std::f64::consts::PI / 180.0);
             *plane.delta_aziumuth_mut() = std::f64::consts::PI / 2.0;
 
@@ -331,7 +350,7 @@ pub mod tests {
         
         let mut cdf = SphericalCdf::new();
         *cdf.planes_mut() = planes;
-        *cdf.azimuth_cdf_mut() = CumulativeDistributionFunction::from_spline_points(azim_probs, azim_angs);
+        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_probs), &Array1::from(azim_angs));
 
         // Now sample the distribution. 
         let mut rng = rand::thread_rng();
@@ -376,7 +395,7 @@ pub mod tests {
                 angles.push(ang as f64 * (PI / 180.));
             }
             
-            *plane.cdf_mut() = CumulativeDistributionFunction::from_spline_points(probs, angles);
+            *plane.cdf_mut() = Probability::new_linear_spline(&Array1::from(probs), &Array1::from(angles));
             *plane.azimuth_angle_mut() = ang as f64 * (std::f64::consts::PI / 180.0);
             *plane.delta_aziumuth_mut() = std::f64::consts::PI / 2.0;
 
@@ -397,11 +416,7 @@ pub mod tests {
         
         let mut cdf = SphericalCdf::new();
         *cdf.planes_mut() = planes;
-        *cdf.azimuth_cdf_mut() = CumulativeDistributionFunction::from_spline_points(azim_probs, azim_angs);
-
-        let json_str = to_string_pretty(&cdf).unwrap();
-        let mut file = std::fs::File::create("test.json").unwrap();
-        let _ = write!(file, "{}", json_str);
+        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_probs), &Array1::from(azim_angs));
 
         // Now sample the distribution. 
         let mut rng = rand::thread_rng();
@@ -429,7 +444,6 @@ pub mod tests {
 
         let mut azim_probs = vec![];
         let mut azim_angs = vec![];
-        let mut azim_accum = 0.0;
 
         let planes = (0..360)
             .step_by(90)
@@ -438,17 +452,15 @@ pub mod tests {
             let mut plane = SphericalCdfPlane::new();
         
             // Iterate through the surfaces in the current plane to get the spline points for the CDF.
-            let mut plane_accum = 0.0;
             let mut probs = vec![];
             let mut angles = vec![];
 
             for (_, ang) in (0..190).step_by(10).enumerate() {
-                probs.push(plane_accum);
-                plane_accum += 1.0 / 18.0;
+                probs.push(1.0 / 18.0);
                 angles.push(ang as f64 * (PI / 180.));
             }
             
-            *plane.cdf_mut() = CumulativeDistributionFunction::from_spline_points(probs, angles);
+            *plane.cdf_mut() = Probability::new_linear_spline(&Array1::from(angles), &Array1::from(probs));
             *plane.azimuth_angle_mut() = ang as f64 * (std::f64::consts::PI / 180.0);
             *plane.delta_aziumuth_mut() = std::f64::consts::PI / 2.0;
 
@@ -456,12 +468,11 @@ pub mod tests {
             if ipl == 0 {
                 // The first plane will constribute two spline points - this is for the lower edge of the first plane.
                 azim_angs.push(plane.azimuth_angle() - (plane.delta_aziumuth() / 2.0));
-                azim_probs.push(azim_accum);
+                azim_probs.push(0.0);
             }
             // Now we just add on the upper edge of each of the planes. 
-            azim_accum += if ang == 90 { 1.0 }  else { 0.0 };
             azim_angs.push(plane.azimuth_angle() + (plane.delta_aziumuth() / 2.0));
-            azim_probs.push(azim_accum);
+            azim_probs.push(if ang == 90 { 1.0 }  else { 0.0 });
 
             plane
         })
@@ -469,7 +480,15 @@ pub mod tests {
         
         let mut cdf = SphericalCdf::new();
         *cdf.planes_mut() = planes;
-        *cdf.azimuth_cdf_mut() = CumulativeDistributionFunction::from_spline_points(azim_probs, azim_angs);
+        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_angs), &Array1::from(azim_probs));
+
+        // output to file for analysis.
+        cdf.azimuth_cdf().cdf_to_file("azim.cdf").unwrap();
+        cdf.azimuth_cdf().pdf_to_file("azim.pdf").unwrap();
+        for (ipl, pl) in cdf.planes().iter().enumerate() {
+            let _ = pl.cdf().cdf_to_file(&format!("plane{}.cdf", ipl));
+            let _ = pl.cdf().pdf_to_file(&format!("plane{}.pdf", ipl));
+        }
 
         // Now sample the distribution. 
         let mut rng = rand::thread_rng();

@@ -1,12 +1,20 @@
 //! Probability distribution implementation.
 
-use crate::math::{distribution, Formula};
+use crate::{
+    math::{distribution, Formula},
+     err::Error
+};
 use ndarray::Array1;
 use rand::Rng;
-use std::fmt::{Display, Formatter, Result};
+use std::{
+    fmt::{Display, Formatter},
+    result::Result,
+    io::Write,
+    fs::File,
+};
 
 /// Probability distribution formulae.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Probability {
     /// Point.
     Point {
@@ -60,6 +68,8 @@ pub enum Probability {
         areas: Array1<f64>,
         /// Cumulative distribution function.
         cdf: Array1<f64>,
+        /// The values that correspond to the CDF.
+        xs: Array1<f64>,
     },
 }
 
@@ -192,9 +202,10 @@ impl Probability {
             offsets: Array1::from(offsets),
             areas: Array1::from(areas),
             cdf,
+            xs: xs.clone(),
         }
     }
-
+    
     /// Sample a number from the described distribution.
     #[inline]
     #[must_use]
@@ -224,6 +235,7 @@ impl Probability {
                 ref offsets,
                 ref areas,
                 ref cdf,
+                ref xs,
             } => {
                 let a = rng.gen_range(0.0..1.0);
                 for (index, c) in cdf.iter().enumerate() {
@@ -245,11 +257,59 @@ impl Probability {
             }
         }
     }
+    
+    #[inline]
+    #[must_use]
+    pub fn pdf_to_file(&self, filename: &str) -> Result<(), Error> {
+        let mut outfile = File::create(filename)?;
+
+        match *self {
+            Self::LinearSpline {
+                ref grads,
+                ref intercepts,
+                ref offsets,
+                ref areas,
+                ref cdf,
+                ref xs,
+            } => {
+                let mut prev = 0.0;
+                for (index, cumulative_prob) in cdf.iter().enumerate() {
+                    writeln!(outfile, "{}\t{}", xs[index],  cumulative_prob - prev)?;
+                    prev = *cumulative_prob;
+                }
+                Ok(())
+            },
+            _ => { unimplemented!() }
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn cdf_to_file(&self, filename: &str) -> Result<(), Error> {
+        let mut outfile = File::create(filename)?;
+
+        match *self {
+            Self::LinearSpline {
+                ref grads,
+                ref intercepts,
+                ref offsets,
+                ref areas,
+                ref cdf,
+                ref xs,
+            } => {
+                for (index, cumulative_prob) in cdf.iter().enumerate() {
+                    writeln!(outfile, "{}\t{}", xs[index + 1], cumulative_prob)?;
+                }
+                Ok(())
+            },
+            _ => { unimplemented!() }
+        }
+    }
 }
 
 impl Display for Probability {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         let kind = match *self {
             Self::Point { .. } => "Point",
             Self::Points { .. } => "Points",
