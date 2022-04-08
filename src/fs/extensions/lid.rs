@@ -1,6 +1,5 @@
-use crate::{err::Error, fs::File, math::stat::SphericalCdf, ord::Spherical};
-use lidrs::photweb;
-use std::{path::Path, str::FromStr};
+use crate::{err::Error, fs::File, math::stat::SphericalCdf};
+use std::{path::Path};
 
 impl File for SphericalCdf {
     #[inline]
@@ -14,9 +13,6 @@ impl File for SphericalCdf {
 
 #[cfg(test)]
 mod tests {
-    use nalgebra::Storage;
-    use rand::Rng;
-    use serde_json::to_string_pretty;
     use std::io::Write;
     use tempfile::tempdir;
 

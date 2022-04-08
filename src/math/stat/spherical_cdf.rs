@@ -7,8 +7,11 @@ use lidrs::photweb::{PhotometricWeb};
 use rand::Rng;
 use ndarray::Array1;
 use statrs::statistics::Statistics;
-use std::f64::consts::PI;
-use splines::{Spline, Key, Interpolation};
+use std::{
+    f64::consts::PI,
+    io::Write,
+};
+use cubic_splines;
 
 /// This is the target number of polar angles that we are aiming for for the spherical CDF.
 /// If more than this, we will not interpolate, however, if less we will interpolate data points
@@ -145,13 +148,15 @@ impl From<PhotometricWeb> for SphericalCdf {
                 // If the number of angles in the CDF is too small, we should upsample using an interpolation. 
                 if plane.n_samples() < TARGET_NANGLES {
 
-                    let keys = angles.iter()
+                    let keys: Vec<(Real, Real)> = angles.iter()
                         .zip(probs)
                         .map(|(ang, prob)| {
-                            Key::new(*ang, prob, Interpolation::Linear)
+                            //Key::new(*ang, prob, Interpolation::Linear)
+                            (*ang, prob)
                         })
                         .collect();
-                    let prob_spline = Spline::from_vec(keys);
+                    //let prob_spline = Spline::from_vec(keys);
+                    let prob_spline = cubic_splines::Spline::new(keys.clone(), cubic_splines::BoundaryCondition::Natural);
 
                     // Clear the probs and angles vectors.
                     probs = Vec::with_capacity(TARGET_NANGLES + 1);
@@ -164,7 +169,7 @@ impl From<PhotometricWeb> for SphericalCdf {
                     for iang in 0..TARGET_NANGLES {
                         let curr_ang = min_angle + (iang as Real * dtheta);
 
-                        let intens = prob_spline.sample(curr_ang).unwrap();
+                        let intens = prob_spline.eval(curr_ang);
                         probs.push(intens * dtheta * curr_ang.sin());
                         angles.push(curr_ang);
                     }
@@ -172,8 +177,9 @@ impl From<PhotometricWeb> for SphericalCdf {
                     // The integrated intensity is not accurate enough, as it negates the sin theta term. 
                     let norm_factor: Real = probs.iter().sum();
                     probs = probs.into_iter()
-                        .map(|val| val / norm_factor)
+                        .map(|val| val / norm_factor )
                         .collect();
+                    
                 } else {
                     // Apple the Sin Theta term to the angles / probabilities that are well enough sampled.
                     probs = angles.iter()
