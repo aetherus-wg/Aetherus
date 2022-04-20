@@ -74,7 +74,7 @@ TILT=INCLUDE
 
                 // Now test the sampling of the CDF
                 let mut rng = rand::thread_rng();
-                let mut test_file = std::fs::File::create("test_sph_cdf.dat").unwrap();
+                let mut test_file = std::fs::File::create("samples.dat").unwrap();
                 for _ in 0..100_000 {
                     let (azim, pol) = cdf.sample(&mut rng);
                     let _ = write!(test_file, "{}\t{}\n", azim, pol);

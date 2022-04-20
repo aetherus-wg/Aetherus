@@ -246,11 +246,16 @@ impl Probability {
                         let area = areas[index];
 
                         let r = rng.gen_range(0.0..1.0_f64);
-                        return ((2.0 * grad)
+                        // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin. 
+                        if grad.abs() > 1E-9 {
+                            return ((2.0 * grad)
                             .mul_add(r.mul_add(area, offset), intercept * intercept)
                             .sqrt()
                             - intercept)
                             / grad;
+                        } else {
+                            return r.mul_add(area, offset) / intercept;
+                        }
                     }
                 }
                 0.0
