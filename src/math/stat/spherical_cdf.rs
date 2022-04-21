@@ -217,17 +217,15 @@ impl From<PhotometricWeb> for SphericalCdf {
 #[cfg(test)]
 pub mod tests {
     use crate::{
-        math::Probability,
         data::Average,
     };
     use std::{
         f64::consts::PI,
         io::Write
     };
-    use super::{ SphericalCdf, SphericalCdfPlane };
+    use super::{ SphericalCdf };
     use lidrs::photweb::{PhotometricWeb, Plane};
     use assert_approx_eq::assert_approx_eq;
-    use ndarray::Array1;
 
     /// Tests that when we create an isotropic CDF we end up with a consistent outputs distribution
     /// from the sampling. 
@@ -294,59 +292,44 @@ pub mod tests {
         // Check that the average is correct given the input planes.  
         assert_approx_eq!(pol_ave.ave(), PI / 2.0, 0.1);
     }
-    /*
+    
     /// Tests that when we create a CDF with all probability concentrated in the lower hemisphere
     /// the output distribution of reflective of that. In this case, we want to check that all 
     /// photons are emitted from the lower half of the hemisphere (polar angle < PI / 2 radians).
     #[test]
     fn spherical_cdf_hemisphere_test() {
 
-        let mut azim_probs = vec![];
-        let mut azim_angs = vec![];
-        let mut azim_accum = 0.0;
-
         let planes = (0..360)
             .step_by(90)
             .enumerate()
             .map(|(ipl, ang)| {
-            let mut plane = SphericalCdfPlane::new();
-        
-            // Iterate through the surfaces in the current plane to get the spline points for the CDF.
-            let mut plane_accum = 0.0;
-            let mut probs = vec![];
-            let mut angles = vec![];
+            let mut plane = Plane::new();
 
+            let mut intens = vec![];
+            let mut angles = vec![];
+        
             for (_, ang) in (0..190).step_by(10).enumerate() {
-                probs.push(plane_accum);
-                plane_accum += if ang <= 90 { 1.0 / 10.0 } else { 0.0 };
+                intens.push(if ang <= 90 { 1.0 } else { 0.0 });
                 angles.push(ang as f64 * (PI / 180.));
             }
-            
-            *plane.azimuth_angle_mut() = ang as f64 * (std::f64::consts::PI / 180.0);
-            *plane.delta_aziumuth_mut() = std::f64::consts::PI / 2.0;
 
-            // Construct this plane constibution to the azimuthal CDF here as we are iterating through. 
-            if ipl == 0 {
-                // The first plane will constribute two spline points - this is for the lower edge of the first plane.
-                azim_angs.push(plane.azimuth_angle() - (plane.delta_aziumuth() / 2.0));
-                azim_probs.push(azim_accum);
-            }
-            // Now we just add on the upper edge of each of the planes. 
-            azim_accum += 1.0 / 4.0;
-            azim_angs.push(plane.azimuth_angle() + (plane.delta_aziumuth() / 2.0));
-            azim_probs.push(azim_accum);
-
+            plane.set_angles_degrees(&angles);
+            plane.set_intensities(intens);
+            plane.set_angle_degrees(ang as f64);
+            plane.set_units(lidrs::photweb::IntensityUnits::Candela);
+            plane.set_orientation(lidrs::photweb::PlaneOrientation::Vertical);
             plane
         })
         .collect();
         
-        let mut cdf = SphericalCdf::new();
-        *cdf.planes_mut() = planes;
-        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_probs), &Array1::from(azim_angs));
+        let mut photweb = PhotometricWeb::new();
+        photweb.set_planes(planes);
+        let cdf: SphericalCdf = photweb.into();
 
         // Now sample the distribution. 
         let mut rng = rand::thread_rng();
         let mut az_ave = Average::new();
+        
 
         for _ in 0..10_000 {
             let (az, pol) = cdf.sample(&mut rng);
@@ -356,9 +339,10 @@ pub mod tests {
         }
 
         // Check that the average is correct given the input planes.  
-        assert_approx_eq!(az_ave.ave() * (180. / PI), (315. - 45.) / 2.0, 2.0);
+        assert_approx_eq!(az_ave.ave(), PI, 0.1);
     }
 
+    /*
     /// This test checks that we can emit consistently from two connical sections. 
     /// In this case, the conical sections are emitting from the upper and lower
     /// 45 degrees of the distribution, hence there should be no photons outside of this.
@@ -366,116 +350,108 @@ pub mod tests {
     #[test]
     fn spherical_cdf_connical_test() {
 
-        let mut azim_probs = vec![];
-        let mut azim_angs = vec![];
-        let mut azim_accum = 0.0;
-
         let planes = (0..360)
             .step_by(90)
             .enumerate()
             .map(|(ipl, ang)| {
-            let mut plane = SphericalCdfPlane::new();
+            let mut plane = Plane::new();
         
             // Iterate through the surfaces in the current plane to get the spline points for the CDF.
-            let mut plane_accum = 0.0;
-            let mut probs = vec![];
+            let mut intens = vec![];
             let mut angles = vec![];
 
             for (_, ang) in (0..185).step_by(5).enumerate() {
-                plane_accum += if ang <= 45 || ang >= 135 { 1.0 / 19.0 } else { 0.0 };
-                probs.push(plane_accum);
-                angles.push(ang as f64 * (PI / 180.));
+                intens.push(if ang <= 45 || ang >= 135 { 1.0 } else { 0.0 });
+                angles.push(ang as f64);
             }
-            
-            *plane.cdf_mut() = Probability::new_linear_spline(&Array1::from(probs), &Array1::from(angles));
-            *plane.azimuth_angle_mut() = ang as f64 * (std::f64::consts::PI / 180.0);
-            *plane.delta_aziumuth_mut() = std::f64::consts::PI / 2.0;
 
-            // Construct this plane constibution to the azimuthal CDF here as we are iterating through. 
-            if ipl == 0 {
-                // The first plane will constribute two spline points - this is for the lower edge of the first plane.
-                azim_angs.push(plane.azimuth_angle() - (plane.delta_aziumuth() / 2.0));
-                azim_probs.push(azim_accum);
-            }
-            // Now we just add on the upper edge of each of the planes. 
-            azim_accum += 1.0 / 4.0;
-            azim_angs.push(plane.azimuth_angle() + (plane.delta_aziumuth() / 2.0));
-            azim_probs.push(azim_accum);
-
+            plane.set_angles_degrees(&angles);
+            plane.set_intensities(intens);
+            plane.set_angle_degrees(ang as f64);
+            plane.set_units(lidrs::photweb::IntensityUnits::Candela);
+            plane.set_orientation(lidrs::photweb::PlaneOrientation::Vertical);
             plane
         })
         .collect();
         
-        let mut cdf = SphericalCdf::new();
-        *cdf.planes_mut() = planes;
-        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_probs), &Array1::from(azim_angs));
+        let mut photweb = PhotometricWeb::new();
+        photweb.set_planes(planes);
+
+        // Convert from photometric web to spherical CDF and check that the planes made it across. 
+        let cdf: SphericalCdf = photweb.into();
 
         // Now sample the distribution. 
         let mut rng = rand::thread_rng();
         let mut az_ave = Average::new();
         let mut pol_ave = Average::new();
 
+        // Output to file for analysis.
+        cdf.azimuth_cdf().cdf_to_file("azim.cdf").unwrap();
+        cdf.azimuth_cdf().pdf_to_file("azim.pdf").unwrap();
+        for (ipl, pl) in cdf.planes().iter().enumerate() {
+            let _ = pl.cdf().cdf_to_file(&format!("plane{}.cdf", ipl));
+            let _ = pl.cdf().pdf_to_file(&format!("plane{}.pdf", ipl));
+        }
+
+        let mut samples_file = std::fs::File::create("samples.dat").unwrap();
         for _ in 0..10_000 {
             let (az, pol) = cdf.sample(&mut rng);
             az_ave += az;
             pol_ave += pol;
+            let _ = writeln!{samples_file, "{}\t{}", az, pol};
             
 
             // Check that the polar samples are within the conical sections. 
-            assert!(pol <= PI / 4.0 || pol >= 3.0 * PI / 4.0)
+            assert!(pol <= (PI / 4.0) + 0.25 || pol >= (3.0 * PI / 4.0) - 0.25)
         }
 
         // Check that the average is correct given the input planes.  
-        assert_approx_eq!(az_ave.ave() * (180. / PI), (315. - 45.) / 2.0, 2.0);
+        assert_approx_eq!(az_ave.ave(), PI, 2.0);
 
         // Check that the average is correct given the input planes.  
         assert_approx_eq!(pol_ave.ave(), PI / 2.0, 0.2);
     }
+    */
 
+    /*
     #[test]
     fn spherical_cdf_quadrant_test() {
 
-        let mut azim_probs = vec![];
-        let mut azim_angs = vec![];
-
         let planes = (0..360)
-            .step_by(90)
+            .step_by(10)
             .enumerate()
-            .map(|(ipl, ang)| {
-            let mut plane = SphericalCdfPlane::new();
+            .map(|(ipl, azim_ang)| {
+            let mut plane = Plane::new();
         
             // Iterate through the surfaces in the current plane to get the spline points for the CDF.
-            let mut probs = vec![];
+            let mut intens = vec![];
             let mut angles = vec![];
 
             for (_, ang) in (0..190).step_by(10).enumerate() {
-                probs.push(1.0 / 18.0);
-                angles.push(ang as f64 * (PI / 180.));
+                intens.push(if azim_ang >= 90 && azim_ang <= 180 { (azim_ang as f64  90 as f64).sin() }  else { 0.0 });
+                angles.push(ang as f64);
             }
-            
-            *plane.cdf_mut() = Probability::new_linear_spline(&Array1::from(angles), &Array1::from(probs));
-            *plane.azimuth_angle_mut() = ang as f64 * (std::f64::consts::PI / 180.0);
-            *plane.delta_aziumuth_mut() = std::f64::consts::PI / 2.0;
 
-            // Construct this plane constibution to the azimuthal CDF here as we are iterating through. 
-            if ipl == 0 {
-                // The first plane will constribute two spline points - this is for the lower edge of the first plane.
-                azim_angs.push(plane.azimuth_angle() - (plane.delta_aziumuth() / 2.0));
-                azim_probs.push(0.0);
-            }
-            // Now we just add on the upper edge of each of the planes. 
-            azim_angs.push(plane.azimuth_angle() + (plane.delta_aziumuth() / 2.0));
-            azim_probs.push(if ang == 90 { 1.0 }  else { 0.0 });
-
+            plane.set_angles_degrees(&angles);
+            plane.set_intensities(intens);
+            plane.set_angle_degrees(azim_ang as f64);
+            plane.set_units(lidrs::photweb::IntensityUnits::Candela);
+            plane.set_orientation(lidrs::photweb::PlaneOrientation::Vertical);
             plane
         })
         .collect();
-        
-        let mut cdf = SphericalCdf::new();
-        *cdf.planes_mut() = planes;
-        *cdf.azimuth_cdf_mut() = Probability::new_linear_spline(&Array1::from(azim_angs), &Array1::from(azim_probs));
 
-        // output to file for analysis.
+        let mut photweb = PhotometricWeb::new();
+        photweb.set_planes(planes);
+        
+        // Check that the web has been correctly assembled. 
+        assert_eq!(photweb.n_planes(), 36);
+
+        // Convert from photometric web to spherical CDF and check that the planes made it across. 
+        let cdf: SphericalCdf = photweb.into();
+        assert_eq!(cdf.planes().iter().count(), 36);
+
+        // Output to file for analysis.
         cdf.azimuth_cdf().cdf_to_file("azim.cdf").unwrap();
         cdf.azimuth_cdf().pdf_to_file("azim.pdf").unwrap();
         for (ipl, pl) in cdf.planes().iter().enumerate() {
@@ -488,9 +464,10 @@ pub mod tests {
         let mut az_ave = Average::new();
         let mut pol_ave = Average::new();
 
+        let mut samples_file = std::fs::File::create("samples.dat").unwrap();
         for _ in 0..10_000 {
             let (az, pol) = cdf.sample(&mut rng);
-            // Check that all samples lie in the lower hemisphere.
+            let _ = writeln!{samples_file, "{}\t{}", az, pol};
             az_ave += az;
             pol_ave += pol;
         }
