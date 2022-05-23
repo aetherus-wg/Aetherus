@@ -479,4 +479,50 @@ pub mod tests {
         assert_approx_eq!(pol_ave.ave(), PI / 2.0, 0.2);
     }
     */
+
+    /// An analytical check that our sin(θ)cos(θ) integration of the PDF works. 
+    /// In this case, we put in a cos(θ) as the intensity distribution, yielding a 1/2N sin2(θ) CDF.
+    /// If this test passes that means we are exceeding the 0.01% level. 
+    #[test]
+    fn spherical_cdf_analytical_case_test() {
+        // For this test case, we only have a single, axially symmetric plane. 
+        let mut plane = Plane::new();
+    
+        // Iterate through the surfaces in the current plane to get the spline points for the CDF.
+        let mut intens = vec![];
+        let mut angles = vec![];
+
+        for (_, ang) in (0..100).step_by(10).enumerate() {
+            intens.push((ang as f64 * (PI / 180_f64)).cos());
+            angles.push(ang as f64);
+        }
+        
+        plane.set_angles_degrees(&angles);
+        plane.set_intensities(intens);
+        plane.set_angle_degrees(0.0);
+        plane.set_units(lidrs::photweb::IntensityUnits::Candela);
+        plane.set_orientation(lidrs::photweb::PlaneOrientation::Vertical);
+        
+        let mut photweb = PhotometricWeb::new();
+        photweb.set_planes(vec![plane]);
+        
+        // Check that the web has been correctly assembled. 
+        assert_eq!(photweb.n_planes(), 1);
+
+        // Convert from photometric web to spherical CDF and check that the planes made it across. 
+        let cdf: SphericalCdf = photweb.into();
+        assert_eq!(cdf.planes().iter().count(), 1);
+
+        // Now check that the polar CDF is correct.
+        let ps: Vec<f64> = (0..100).map(|x| x as f64 / 100.0).collect();
+        let _: Vec<()> = ps.iter()
+            .map(|x| {
+                // We are checking to around the 0.01% level. 
+                assert_approx_eq!(
+                    cdf.planes[0].cdf().sample_at(*x), 
+                    ((x).sqrt()).asin(), (PI / 2_f64) / 10000.
+                )
+            })
+            .collect();
+    }
 }
