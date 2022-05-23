@@ -265,14 +265,6 @@ pub mod tests {
         let cdf: SphericalCdf = photweb.into();
         assert_eq!(cdf.planes().iter().count(), 36);
 
-        // Output to file for analysis.
-        cdf.azimuth_cdf().cdf_to_file("azim.cdf").unwrap();
-        cdf.azimuth_cdf().pdf_to_file("azim.pdf").unwrap();
-        for (ipl, pl) in cdf.planes().iter().enumerate() {
-            let _ = pl.cdf().cdf_to_file(&format!("plane{}.cdf", ipl));
-            let _ = pl.cdf().pdf_to_file(&format!("plane{}.pdf", ipl));
-        }
-
         // Now sample the distribution. 
         let mut rng = rand::thread_rng();
         let mut az_ave = Average::new();

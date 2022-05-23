@@ -107,7 +107,7 @@ impl CumulativeDistributionFunction {
         match self {
             Self::Bins(ref bins) => {
                 // Write the header
-                writeln!(outfile, "# cdf_bin_centre\tcdf_bin_width\tvalue");
+                let _ = writeln!(outfile, "# cdf_bin_centre\tcdf_bin_width\tvalue");
                 for i in 0..bins.iter().count() {
                     outfile.write_all(
                         format!(
@@ -120,7 +120,7 @@ impl CumulativeDistributionFunction {
             },
             Self::Spline(ref spline) => {
                 // Write the header
-                writeln!(outfile, "# cumulative_prob\tvalue");
+                let _ = writeln!(outfile, "# cumulative_prob\tvalue");
                 for i in 0..spline.keys().iter().count() {
                     outfile.write_all(
                         format!(

@@ -59,23 +59,15 @@ TILT=INCLUDE
         let _ = file.write_all(IES_STR.as_bytes());
 
         // Now attempt to read.
-        match SphericalCdf::load(file_path.as_path()) {
+        match SphericalCdf::load(&file_path) {
             Ok(cdf) => {
-                // output to file for analysis.
-                let _ = cdf.azimuth_cdf().cdf_to_file("azim.cdf");
-                let _ = cdf.azimuth_cdf().pdf_to_file("azim.pdf");
-                for (ipl, pl) in cdf.planes().iter().enumerate() {
-                    let _ = pl.cdf().cdf_to_file(&format!("plane{}.cdf", ipl));
-                    let _ = pl.cdf().pdf_to_file(&format!("plane{}.pdf", ipl));
-                }
-
                 // Now check that we have the correct number of planes.
                 assert_eq!(cdf.planes().iter().count(), 8);
 
                 // Now test the sampling of the CDF
                 let mut rng = rand::thread_rng();
                 let mut test_file = std::fs::File::create("samples.dat").unwrap();
-                for _ in 0..100_000 {
+                for _ in 0..10_000 {
                     let (azim, pol) = cdf.sample(&mut rng);
                     let _ = write!(test_file, "{}\t{}\n", azim, pol);
                 }
