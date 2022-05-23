@@ -262,6 +262,67 @@ impl Probability {
             }
         }
     }
+
+    #[inline]
+    #[must_use]
+    pub fn sample_at(&self, pt: f64) -> f64 {
+        debug_assert!(pt >= 0.0);
+        debug_assert!(pt <= 1.0);
+
+        match *self {
+            Self::Point { ref c} => *c,
+            Self::Points { ref cs} => cs[pt as usize],
+            Self::Uniform { ref min, ref max } => min + (max - min) * pt,
+            Self::Linear {
+                grad,
+                intercept,
+                offset,
+                area,
+            } => {
+                let r = pt;
+                ((2.0 * grad)
+                    .mul_add(r.mul_add(area, offset), intercept * intercept)
+                    .sqrt()
+                    - intercept)
+                    / grad
+            },
+            Self::Gaussian { mu: _, sigma: _ } => todo!(),
+            Self::ConstantSpline { ref cdf } => cdf.y(pt),
+            Self::LinearSpline {
+                ref grads,
+                ref intercepts,
+                ref offsets,
+                ref areas,
+                ref cdf,
+                ref xs,
+            } => {
+                let a = pt;
+                for (index, c) in cdf.iter().enumerate() {
+                    if a < *c {
+                        let grad = grads[index];
+                        let intercept = intercepts[index];
+                        let offset = offsets[index];
+                        let area = areas[index];
+
+                        let bin_start = if index == 0 {0.0} else {cdf[index - 1]};
+                        let bin_width = if index == 0 { cdf[index] } else {cdf[index] - cdf[index - 1]};
+                        let r = (pt - bin_start) / (bin_width);
+                        // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin. 
+                        if grad.abs() > 1E-9 {
+                            return ((2.0 * grad)
+                            .mul_add(r.mul_add(area, offset), intercept * intercept)
+                            .sqrt()
+                            - intercept)
+                            / grad;
+                        } else {
+                            return r.mul_add(area, offset) / intercept;
+                        }
+                    }
+                }
+                0.0
+            }
+        }
+    }
     
     #[inline]
     #[must_use]
@@ -270,10 +331,10 @@ impl Probability {
 
         match *self {
             Self::LinearSpline {
-                ref grads,
-                ref intercepts,
-                ref offsets,
-                ref areas,
+                grads: _,
+                intercepts: _,
+                offsets: _,
+                areas: _,
                 ref cdf,
                 ref xs,
             } => {
@@ -295,15 +356,15 @@ impl Probability {
 
         match *self {
             Self::LinearSpline {
-                ref grads,
-                ref intercepts,
-                ref offsets,
-                ref areas,
+                grads: _,
+                intercepts: _,
+                offsets: _,
+                areas: _,
                 ref cdf,
                 ref xs,
             } => {
                 for (index, cumulative_prob) in cdf.iter().enumerate() {
-                    writeln!(outfile, "{}\t{}", xs[index + 1], cumulative_prob)?;
+                    writeln!(outfile, "{}\t{}", xs[index], cumulative_prob)?;
                 }
                 Ok(())
             },
