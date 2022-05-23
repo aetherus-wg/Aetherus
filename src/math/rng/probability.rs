@@ -388,3 +388,33 @@ impl Display for Probability {
         write!(fmt, "{}", kind)
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use super::Probability;
+    use std::f64::consts::PI;
+    use ndarray::Array1;
+    use assert_approx_eq::assert_approx_eq;
+
+    /// A unit test that implements the analytical test case of a PDF f(x) = cos(theta).
+    /// In this case, the analytical solution is F(x) = sin(theta). 
+    /// If this test case passes it means that we are reproducing the CDF to the better
+    /// than the 0.1% level. 
+    #[test]
+    fn analytical_linear_spline_check() {
+        // Construct our PDF using a typical cos() function between 0 -> PI / 2 rad.
+        let xs: Vec<f64> = (0..90).map(|iang| (iang as f64) * (PI / 180.) ).collect();
+        let ps: Vec<f64> = xs.iter().map(|xs| xs.cos() ).collect();
+        let pdf = Probability::new_linear_spline(&Array1::from(xs), &Array1::from(ps));
+
+        // Now perform the test - check that we do get sin(theta) back. 
+        let test_x: Vec<f64> = (0..100).map(|x| x as f64 / 100.0).collect();
+        let _: Vec<()> = test_x.iter()
+            .map(|x| {
+                let sampl = pdf.sample_at(*x);
+                // We are checking to around the 0.1% level. 
+                assert_approx_eq!(sampl, (x).asin(), (PI / 2_f64) / 1000.)
+            })
+            .collect();
+    }
+}
