@@ -1,12 +1,16 @@
 //! Four-dimensional point.
 
-use crate::{clone, core::Real, math::{Vec4, Point3}};
+use crate::{
+    clone,
+    core::Real,
+    math::{Point3, Vec4},
+};
 use nalgebra::Point4 as P4;
 use serde_derive::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
-use std::fmt::Display;
 
 /// Four-dimensional real-number point.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

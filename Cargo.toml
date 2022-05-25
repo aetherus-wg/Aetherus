@@ -42,15 +42,25 @@ serde = "1.0.*"
 serde_derive = "1.0.*"
 serde_json = "^1.0.*"
 slice-of-array = "0.3.*"
+splines = { version = "4.0.*", features = ["serde"] }
+statrs = "0.15.*"
 terminal_size = "0.1.*"
+cubic-splines = "0.2.0"
+lidrs = "0.2.*"
 
 # Formats for the File I/O Library. 
 json5 = "0.4.*"
-# We are currently using the repository instead of the released version, because of unfixed issues in the underlying hdf5 library support on M1 macs. 
-netcdf = {git = "https://github.com/georust/netcdf"}
+netcdf = "0.7.*"
 
 [dev-dependencies]
 tempfile = "3.2.*"
+statrs = "0.15.*"
+
+[build]
+rustdocflags = [ "--html-in-header", "./src/docs-header.html" ]
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "./src/docs-header.html" ]
 
 [lib]
 

@@ -1,9 +1,13 @@
 //! Square fourth-order matrix.
 
-use std::ops::Mul;
-use crate::{clone, core::Real, math::{Vec4, Point3, Dir3}};
+use crate::{
+    clone,
+    core::Real,
+    math::{Dir3, Point3, Vec4},
+};
 use nalgebra::Matrix4;
 use serde_derive::{Deserialize, Serialize};
+use std::ops::Mul;
 
 /// Four-by-four real-number matrix.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -71,14 +75,14 @@ impl Mat4 {
     /// A function that builds a right-handed look at view matrix.
     pub fn look_at_rh(eye: &Point3, target: &Point3, up: &Dir3) -> Self {
         Self {
-            data: nalgebra::Matrix4::look_at_rh(&eye.data(), &target.data(), &up.data())
+            data: nalgebra::Matrix4::look_at_rh(&eye.data(), &target.data(), &up.data()),
         }
     }
 
-    /// Builds a new homogeneous matrix for orthographic projection. 
+    /// Builds a new homogeneous matrix for orthographic projection.
     pub fn new_perspective(aspect_ratio: Real, fovy: Real, znear: Real, zfar: Real) -> Self {
         Self {
-            data: nalgebra::Matrix4::new_perspective(aspect_ratio, fovy, znear, zfar)
+            data: nalgebra::Matrix4::new_perspective(aspect_ratio, fovy, znear, zfar),
         }
     }
 
@@ -214,7 +218,7 @@ impl Mul<Mat4> for Mat4 {
     type Output = Mat4;
     fn mul(self, rhs: Mat4) -> Self::Output {
         Self {
-            data: self.data * rhs.data
+            data: self.data * rhs.data,
         }
     }
 }

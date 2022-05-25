@@ -1,6 +1,11 @@
 //! Monte-Carlo radiative transfer simulation binary.
 //! Compute the radiative field for a given set of setup and light source.
 
+use ndarray::Array3;
+use std::{
+    env::current_dir,
+    path::{Path, PathBuf},
+};
 use Aetherus::{
     args,
     data::Histogram,
@@ -18,11 +23,6 @@ use Aetherus::{
         dir,
         fmt::term,
     },
-};
-use ndarray::Array3;
-use std::{
-    env::current_dir,
-    path::{Path, PathBuf},
 };
 
 /// Backup print width if the terminal width can not be determined.

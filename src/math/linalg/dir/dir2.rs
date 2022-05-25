@@ -35,6 +35,12 @@ impl Dir2 {
     pub fn y(&self) -> Real {
         self.data.y
     }
+
+    #[inline]
+    #[must_use]
+    pub fn dot(&self, b: &Dir2) -> f64 {
+        self.data.dot(&b.data)
+    }
 }
 
 impl From<Unit<Vector2<Real>>> for Dir2 {

@@ -10,8 +10,9 @@
 
 pub mod csv;
 pub mod json;
+pub mod lid;
 pub mod netcdf;
 pub mod png;
 pub mod wavefront;
 
-pub use self::{csv::*, json::*, netcdf::*, png::*, wavefront::*};
+pub use self::{csv::*, json::*, lid::*, netcdf::*, png::*, wavefront::*};
