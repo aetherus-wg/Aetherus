@@ -2,13 +2,13 @@
 use crate::{core::Real, err::Error};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use splines::{Interpolation, Key, Spline};
 use std::{default::Default, fs::File, io::Write};
-use splines::{Spline, Key, Interpolation};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CumulativeDistributionBin {
     pub cumulative_prob: Real,
-    pub width: Real, 
+    pub width: Real,
     pub value: Real,
 }
 
@@ -25,14 +25,16 @@ pub enum CumulativeDistributionFunction {
 }
 
 impl CumulativeDistributionFunction {
-    pub fn from_bins(cumulative_probability: Vec<Real>, values: Vec<Real>, bin_width: Real) -> Self {
+    pub fn from_bins(
+        cumulative_probability: Vec<Real>,
+        values: Vec<Real>,
+        bin_width: Real,
+    ) -> Self {
         let bins = (0..cumulative_probability.iter().count())
-            .map(|i| {
-                CumulativeDistributionBin {
-                    cumulative_prob: cumulative_probability[i],
-                    width: bin_width,
-                    value: values[i],
-                }
+            .map(|i| CumulativeDistributionBin {
+                cumulative_prob: cumulative_probability[i],
+                width: bin_width,
+                value: values[i],
             })
             .collect::<Vec<CumulativeDistributionBin>>();
 
@@ -41,9 +43,7 @@ impl CumulativeDistributionFunction {
 
     pub fn from_spline_points(probs: Vec<Real>, values: Vec<Real>) -> Self {
         let keys = (0..probs.iter().count())
-            .map(|i| {
-                Key::new(probs[i], values[i], Interpolation::Linear)
-            })
+            .map(|i| Key::new(probs[i], values[i], Interpolation::Linear))
             .collect();
 
         Self::Spline(Spline::from_vec(keys))
@@ -79,21 +79,18 @@ impl CumulativeDistributionFunction {
                 // We should iterate through the bin values until we find the first
                 // that is lower than the random sample, as this is the bin that contains
                 // the value we want to sample.
-                let ibin = match bins
-                    .iter()
-                    .position(|bin| bin.contains(rand_sample))
-                {
+                let ibin = match bins.iter().position(|bin| bin.contains(rand_sample)) {
                     // This is the first bin edge that is greater than the search, so go to the previous one.
                     Some(ibin) => ibin - 1,
                     // If no bin edge is greater, then it must lie in the final bin.
                     None => bins.iter().count() - 1,
                 };
                 bins[ibin].value
-            },
+            }
             Self::Spline(ref spline) => {
                 // As we are using a splint interpolation, we can just sample the spline here.
                 match spline.sample(rand_sample) {
-                    Some(val) => val, 
+                    Some(val) => val,
                     None => spline.keys().last().unwrap().value,
                 }
             }
@@ -117,17 +114,13 @@ impl CumulativeDistributionFunction {
                         .as_bytes(),
                     )?;
                 }
-            },
+            }
             Self::Spline(ref spline) => {
                 // Write the header
                 let _ = writeln!(outfile, "# cumulative_prob\tvalue");
                 for i in 0..spline.keys().iter().count() {
                     outfile.write_all(
-                        format!(
-                            "{}\t{}\n",
-                            spline.keys()[i].t, spline.keys()[i].value
-                        )
-                        .as_bytes(),
+                        format!("{}\t{}\n", spline.keys()[i].t, spline.keys()[i].value).as_bytes(),
                     )?;
                 }
             }

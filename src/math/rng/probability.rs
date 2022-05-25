@@ -1,16 +1,16 @@
 //! Probability distribution implementation.
 
 use crate::{
+    err::Error,
     math::{distribution, Formula},
-     err::Error
 };
 use ndarray::Array1;
 use rand::Rng;
 use std::{
     fmt::{Display, Formatter},
-    result::Result,
-    io::Write,
     fs::File,
+    io::Write,
+    result::Result,
 };
 
 /// Probability distribution formulae.
@@ -205,7 +205,7 @@ impl Probability {
             xs: xs.clone(),
         }
     }
-    
+
     /// Sample a number from the described distribution.
     #[inline]
     #[must_use]
@@ -246,13 +246,13 @@ impl Probability {
                         let area = areas[index];
 
                         let r = rng.gen_range(0.0..1.0_f64);
-                        // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin. 
+                        // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin.
                         if grad.abs() > 1E-9 {
                             return ((2.0 * grad)
-                            .mul_add(r.mul_add(area, offset), intercept * intercept)
-                            .sqrt()
-                            - intercept)
-                            / grad;
+                                .mul_add(r.mul_add(area, offset), intercept * intercept)
+                                .sqrt()
+                                - intercept)
+                                / grad;
                         } else {
                             return r.mul_add(area, offset) / intercept;
                         }
@@ -270,8 +270,8 @@ impl Probability {
         debug_assert!(pt <= 1.0);
 
         match *self {
-            Self::Point { ref c} => *c,
-            Self::Points { ref cs} => cs[pt as usize],
+            Self::Point { ref c } => *c,
+            Self::Points { ref cs } => cs[pt as usize],
             Self::Uniform { ref min, ref max } => min + (max - min) * pt,
             Self::Linear {
                 grad,
@@ -285,7 +285,7 @@ impl Probability {
                     .sqrt()
                     - intercept)
                     / grad
-            },
+            }
             Self::Gaussian { mu: _, sigma: _ } => todo!(),
             Self::ConstantSpline { ref cdf } => cdf.y(pt),
             Self::LinearSpline {
@@ -304,16 +304,20 @@ impl Probability {
                         let offset = offsets[index];
                         let area = areas[index];
 
-                        let bin_start = if index == 0 {0.0} else {cdf[index - 1]};
-                        let bin_width = if index == 0 { cdf[index] } else {cdf[index] - cdf[index - 1]};
+                        let bin_start = if index == 0 { 0.0 } else { cdf[index - 1] };
+                        let bin_width = if index == 0 {
+                            cdf[index]
+                        } else {
+                            cdf[index] - cdf[index - 1]
+                        };
                         let r = (pt - bin_start) / (bin_width);
-                        // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin. 
+                        // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin.
                         if grad.abs() > 1E-9 {
                             return ((2.0 * grad)
-                            .mul_add(r.mul_add(area, offset), intercept * intercept)
-                            .sqrt()
-                            - intercept)
-                            / grad;
+                                .mul_add(r.mul_add(area, offset), intercept * intercept)
+                                .sqrt()
+                                - intercept)
+                                / grad;
                         } else {
                             return r.mul_add(area, offset) / intercept;
                         }
@@ -323,7 +327,7 @@ impl Probability {
             }
         }
     }
-    
+
     #[inline]
     #[must_use]
     pub fn pdf_to_file(&self, filename: &str) -> Result<(), Error> {
@@ -340,12 +344,14 @@ impl Probability {
             } => {
                 let mut prev = 0.0;
                 for (index, cumulative_prob) in cdf.iter().enumerate() {
-                    writeln!(outfile, "{}\t{}", xs[index],  cumulative_prob - prev)?;
+                    writeln!(outfile, "{}\t{}", xs[index], cumulative_prob - prev)?;
                     prev = *cumulative_prob;
                 }
                 Ok(())
-            },
-            _ => { unimplemented!() }
+            }
+            _ => {
+                unimplemented!()
+            }
         }
     }
 
@@ -367,8 +373,10 @@ impl Probability {
                     writeln!(outfile, "{}\t{}", xs[index], cumulative_prob)?;
                 }
                 Ok(())
-            },
-            _ => { unimplemented!() }
+            }
+            _ => {
+                unimplemented!()
+            }
         }
     }
 }
@@ -392,27 +400,28 @@ impl Display for Probability {
 #[cfg(test)]
 pub mod tests {
     use super::Probability;
-    use std::f64::consts::PI;
-    use ndarray::Array1;
     use assert_approx_eq::assert_approx_eq;
+    use ndarray::Array1;
+    use std::f64::consts::PI;
 
     /// A unit test that implements the analytical test case of a PDF f(x) = cos(theta).
-    /// In this case, the analytical solution is F(x) = sin(theta). 
+    /// In this case, the analytical solution is F(x) = sin(theta).
     /// If this test case passes it means that we are reproducing the CDF to the better
-    /// than the 0.1% level. 
+    /// than the 0.1% level.
     #[test]
     fn analytical_linear_spline_check() {
         // Construct our PDF using a typical cos() function between 0 -> PI / 2 rad.
-        let xs: Vec<f64> = (0..90).map(|iang| (iang as f64) * (PI / 180.) ).collect();
-        let ps: Vec<f64> = xs.iter().map(|xs| xs.cos() ).collect();
+        let xs: Vec<f64> = (0..90).map(|iang| (iang as f64) * (PI / 180.)).collect();
+        let ps: Vec<f64> = xs.iter().map(|xs| xs.cos()).collect();
         let pdf = Probability::new_linear_spline(&Array1::from(xs), &Array1::from(ps));
 
-        // Now perform the test - check that we do get sin(theta) back. 
+        // Now perform the test - check that we do get sin(theta) back.
         let test_x: Vec<f64> = (0..100).map(|x| x as f64 / 100.0).collect();
-        let _: Vec<()> = test_x.iter()
+        let _: Vec<()> = test_x
+            .iter()
             .map(|x| {
                 let sampl = pdf.sample_at(*x);
-                // We are checking to around the 0.1% level. 
+                // We are checking to around the 0.1% level.
                 assert_approx_eq!(sampl, (x).asin(), (PI / 2_f64) / 1000.)
             })
             .collect();

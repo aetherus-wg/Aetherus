@@ -5,7 +5,7 @@ use crate::{
     err::Error,
     fs::{File, Load, Redirect},
     geom::{Emitter, GridBuilder, MeshLoader, Ray},
-    math::{Dir3, Point3, stat::SphericalCdf},
+    math::{stat::SphericalCdf, Dir3, Point3},
     ord::{Build, X, Y, Z},
 };
 use arctk_attr::file;
@@ -66,7 +66,7 @@ impl Load for EmitterLoader {
             Self::Volume(spatial_map, grid) => {
                 let spatial_map: Array3<f64> = Array3::new_from_file(&in_dir.join(spatial_map))?;
                 Self::Inst::new_volume(spatial_map, grid.load(in_dir)?.build())
-            },
+            }
             Self::NonIsotropicPoints(points_path, lid_path) => {
                 let points_data = Table::new_from_file(&in_dir.join(points_path))?;
                 let points = points_data
@@ -74,9 +74,9 @@ impl Load for EmitterLoader {
                     .iter()
                     .map(|row| Point3::new(row[X], row[Y], row[Z]))
                     .collect();
-                
+
                 let cdf = SphericalCdf::load(&in_dir.join(lid_path))?;
-            
+
                 Self::Inst::new_non_isotropic_points(points, cdf)
             }
         })

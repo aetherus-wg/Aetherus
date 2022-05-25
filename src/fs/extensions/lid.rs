@@ -1,5 +1,5 @@
 use crate::{err::Error, fs::File, math::stat::SphericalCdf};
-use std::{path::Path};
+use std::path::Path;
 
 impl File for SphericalCdf {
     #[inline]
@@ -66,10 +66,10 @@ TILT=INCLUDE
 
                 // Now test the sampling of the CDF
                 let mut rng = rand::thread_rng();
-                let mut test_file = std::fs::File::create("samples.dat").unwrap();
+                //let mut test_file = std::fs::File::create("samples.dat").unwrap();
                 for _ in 0..10_000 {
                     let (azim, pol) = cdf.sample(&mut rng);
-                    let _ = write!(test_file, "{}\t{}\n", azim, pol);
+                    //let _ = write!(test_file, "{}\t{}\n", azim, pol);
                 }
             }
             Err(e) => {
