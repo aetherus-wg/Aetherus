@@ -14,6 +14,18 @@ use std::{
 };
 
 /// Probability distribution formulae.
+/// 
+/// This enum provides easy sampling from and manipulation of probability distribution functions (PDFs). 
+/// The most important function that this object serves is performing random sampling from PDFs. 
+/// This enum supports a variety of different formulae:
+/// - `Probability::Point`: A constant value.
+/// - `Probability::Points`: Randomly sample one of a number of provided values.
+/// - `Probability::Linear`: Sample from a single linear spline. 
+/// - `Probability::Uniform`: Uniform probability between two values. 
+/// - `Probability::Gaussian`: A Gaussian (normal) distribution. 
+/// - `Probability::ConstantSpline`: Sample from a CDF whose value is determined by a `Formula`. 
+/// - `Probability::LinearSpline`: Sample from a PDF where an arbitrary dataset is represented by (N - 1) linear splines. 
+
 #[derive(Clone, Debug)]
 pub enum Probability {
     /// Point.
@@ -263,23 +275,27 @@ impl Probability {
         }
     }
 
+    /// Whereas the `sample` method performs random draws to sample from the distribution contained in the object, 
+    /// this method returns the value of the CDF at a given cumulative probability, effectively performing a manual sampling of the CDF. 
+    /// The input
     #[inline]
     #[must_use]
-    pub fn sample_at(&self, pt: f64) -> f64 {
-        debug_assert!(pt >= 0.0);
-        debug_assert!(pt <= 1.0);
+    pub fn sample_at(&self, ps: f64) -> f64 {
 
         match *self {
             Self::Point { ref c } => *c,
-            Self::Points { ref cs } => cs[pt as usize],
-            Self::Uniform { ref min, ref max } => min + (max - min) * pt,
+            Self::Points { ref cs } => cs[ps as usize],
+            Self::Uniform { ref min, ref max } => min + (max - min) * ps,
             Self::Linear {
                 grad,
                 intercept,
                 offset,
                 area,
             } => {
-                let r = pt;
+                debug_assert!(ps >= 0.0);
+                debug_assert!(ps <= 1.0);
+                
+                let r = ps;
                 ((2.0 * grad)
                     .mul_add(r.mul_add(area, offset), intercept * intercept)
                     .sqrt()
@@ -287,7 +303,7 @@ impl Probability {
                     / grad
             }
             Self::Gaussian { mu: _, sigma: _ } => todo!(),
-            Self::ConstantSpline { ref cdf } => cdf.y(pt),
+            Self::ConstantSpline { ref cdf } => cdf.y(ps),
             Self::LinearSpline {
                 ref grads,
                 ref intercepts,
@@ -296,7 +312,10 @@ impl Probability {
                 ref cdf,
                 ref xs,
             } => {
-                let a = pt;
+                debug_assert!(ps >= 0.0);
+                debug_assert!(ps <= 1.0);
+
+                let a = ps;
                 for (index, c) in cdf.iter().enumerate() {
                     if a < *c {
                         let grad = grads[index];
@@ -310,7 +329,7 @@ impl Probability {
                         } else {
                             cdf[index] - cdf[index - 1]
                         };
-                        let r = (pt - bin_start) / (bin_width);
+                        let r = (ps - bin_start) / (bin_width);
                         // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin.
                         if grad.abs() > 1E-9 {
                             return ((2.0 * grad)
@@ -328,6 +347,9 @@ impl Probability {
         }
     }
 
+    /// Outputs the PDF currently contained in this instance to a file at the provided path.
+    /// 
+    /// **Note:** this is only implemented for `LinearSpline` variants. 
     #[inline]
     #[must_use]
     pub fn pdf_to_file(&self, filename: &str) -> Result<(), Error> {
@@ -355,6 +377,9 @@ impl Probability {
         }
     }
 
+    /// Outputs the CDF currently contained in this instance to a file at the provided path.
+    /// 
+    /// **Note:** this is only implemented for `LinearSpline` variants. 
     #[inline]
     #[must_use]
     pub fn cdf_to_file(&self, filename: &str) -> Result<(), Error> {
