@@ -9,7 +9,7 @@ use crate::{
 ///
 /// This is the type at the core of our ray tracing / hit scan implementation.
 /// This is also the type at the core of our photon implementation.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Ray {
     /// Ray origin.
     pos: Point3,

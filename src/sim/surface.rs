@@ -95,6 +95,10 @@ pub fn surface(
 
             phot.kill();
         }
+        Attribute::Reflector(ref reflectance) => {
+            // TODO: Implement the reflection code for a ray hitting a surface. 
+            todo!()
+        }
     }
 }
 

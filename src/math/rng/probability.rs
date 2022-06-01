@@ -14,17 +14,17 @@ use std::{
 };
 
 /// Probability distribution formulae.
-/// 
-/// This enum provides easy sampling from and manipulation of probability distribution functions (PDFs). 
-/// The most important function that this object serves is performing random sampling from PDFs. 
+///
+/// This enum provides easy sampling from and manipulation of probability distribution functions (PDFs).
+/// The most important function that this object serves is performing random sampling from PDFs.
 /// This enum supports a variety of different formulae:
 /// - `Probability::Point`: A constant value.
 /// - `Probability::Points`: Randomly sample one of a number of provided values.
-/// - `Probability::Linear`: Sample from a single linear spline. 
-/// - `Probability::Uniform`: Uniform probability between two values. 
-/// - `Probability::Gaussian`: A Gaussian (normal) distribution. 
-/// - `Probability::ConstantSpline`: Sample from a CDF whose value is determined by a `Formula`. 
-/// - `Probability::LinearSpline`: Sample from a PDF where an arbitrary dataset is represented by (N - 1) linear splines. 
+/// - `Probability::Linear`: Sample from a single linear spline.
+/// - `Probability::Uniform`: Uniform probability between two values.
+/// - `Probability::Gaussian`: A Gaussian (normal) distribution.
+/// - `Probability::ConstantSpline`: Sample from a CDF whose value is determined by a `Formula`.
+/// - `Probability::LinearSpline`: Sample from a PDF where an arbitrary dataset is represented by (N - 1) linear splines.
 
 #[derive(Clone, Debug)]
 pub enum Probability {
@@ -275,13 +275,12 @@ impl Probability {
         }
     }
 
-    /// Whereas the `sample` method performs random draws to sample from the distribution contained in the object, 
-    /// this method returns the value of the CDF at a given cumulative probability, effectively performing a manual sampling of the CDF. 
+    /// Whereas the `sample` method performs random draws to sample from the distribution contained in the object,
+    /// this method returns the value of the CDF at a given cumulative probability, effectively performing a manual sampling of the CDF.
     /// The input
     #[inline]
     #[must_use]
     pub fn sample_at(&self, ps: f64) -> f64 {
-
         match *self {
             Self::Point { ref c } => *c,
             Self::Points { ref cs } => cs[ps as usize],
@@ -294,7 +293,7 @@ impl Probability {
             } => {
                 debug_assert!(ps >= 0.0);
                 debug_assert!(ps <= 1.0);
-                
+
                 let r = ps;
                 ((2.0 * grad)
                     .mul_add(r.mul_add(area, offset), intercept * intercept)
@@ -348,8 +347,8 @@ impl Probability {
     }
 
     /// Outputs the PDF currently contained in this instance to a file at the provided path.
-    /// 
-    /// **Note:** this is only implemented for `LinearSpline` variants. 
+    ///
+    /// **Note:** this is only implemented for `LinearSpline` variants.
     #[inline]
     #[must_use]
     pub fn pdf_to_file(&self, filename: &str) -> Result<(), Error> {
@@ -378,8 +377,8 @@ impl Probability {
     }
 
     /// Outputs the CDF currently contained in this instance to a file at the provided path.
-    /// 
-    /// **Note:** this is only implemented for `LinearSpline` variants. 
+    ///
+    /// **Note:** this is only implemented for `LinearSpline` variants.
     #[inline]
     #[must_use]
     pub fn cdf_to_file(&self, filename: &str) -> Result<(), Error> {
