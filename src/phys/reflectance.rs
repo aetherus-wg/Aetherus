@@ -51,7 +51,8 @@ impl Reflectance {
 
                 if should_reflect {
                     let theta = rng.gen_range(0.0..2.0 * PI);
-                    let phi = rng.gen_range(-PI / 2.0..PI / 2.0);
+                    // We sample the phi angle using PDF = sin(theta)
+                    let phi = (rng.gen_range(0.0..1.0) as Real).asin();
 
                     let mut reflected_ray =
                         Ray::new(incident_ray.pos().clone(), hit.side().norm().clone());
@@ -117,11 +118,11 @@ mod tests {
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
 
-        let mut phi_hist = Histogram::new(0.0, PI / 2.0, 180);
-        let theta_hist = Histogram::new(0.0, 2.0 * PI, 360);
+        let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
+        let theta_hist = Histogram::new(0.0, 2.0 * PI, 36);
 
         let mut n_killed = 0;
-        for i in 0..10_000 {
+        for _ in 0..10_000 {
             match reflect.reflect(&mut rng, &incoming_ray, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
