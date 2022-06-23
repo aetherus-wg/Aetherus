@@ -7,6 +7,7 @@ use std::ops::{Add, Mul, Neg};
 
 /// Normalised three dimensional real-number vector.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Dir3 {
     /// Internal data.
     data: Unit<Vector3<Real>>,

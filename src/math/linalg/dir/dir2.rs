@@ -2,9 +2,11 @@
 
 use crate::{clone, core::Real};
 use nalgebra::{Unit, Vector2};
+use serde_derive::{Deserialize, Serialize};
 
 /// Normalised two dimensional real-number vector.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Dir2 {
     /// Internal data.
     data: Unit<Vector2<Real>>,
