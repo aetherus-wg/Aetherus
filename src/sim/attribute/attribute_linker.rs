@@ -8,6 +8,7 @@ use crate::{
     phys::Material,
     sim::attribute::Attribute,
     tools::Binner,
+    phys::Reflectance, 
 };
 use std::fmt::{Display, Formatter};
 
@@ -23,6 +24,8 @@ pub enum AttributeLinker {
     Imager(usize, f64, Orient),
     /// CCD detector id, width, orientation, binner.
     Ccd(usize, f64, Orient, Binner),
+    /// A purely reflecting material, with a provided reflectance model.
+    Reflector(Reflectance),
 }
 
 impl<'a> Link<'a, Material> for AttributeLinker {
@@ -32,7 +35,7 @@ impl<'a> Link<'a, Material> for AttributeLinker {
     fn requires(&self) -> Vec<Name> {
         match *self {
             Self::Interface(ref inside, ref outside) => vec![inside.clone(), outside.clone()],
-            Self::Mirror(..) | Self::Spectrometer(..) | Self::Imager(..) | Self::Ccd(..) => {
+            Self::Mirror(..) | Self::Spectrometer(..) | Self::Imager(..) | Self::Ccd(..) | Self::Reflector(..) => {
                 vec![]
             }
         }
@@ -53,6 +56,7 @@ impl<'a> Link<'a, Material> for AttributeLinker {
             Self::Spectrometer(id) => Self::Inst::Spectrometer(id),
             Self::Imager(id, width, orient) => Self::Inst::Imager(id, width, orient),
             Self::Ccd(id, width, orient, binner) => Self::Inst::Ccd(id, width, orient, binner),
+            Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance),
         })
     }
 }
@@ -83,6 +87,11 @@ impl Display for AttributeLinker {
                 fmt_report!(fmt, width, "width (m)");
                 fmt_report!(fmt, orient, "orientation");
                 fmt_report!(fmt, binner, "binner");
+                Ok(())
+            }
+            Self::Reflector(ref reflectance) => {
+                writeln!(fmt, "Reflector: ...")?;
+                fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
             }
         }

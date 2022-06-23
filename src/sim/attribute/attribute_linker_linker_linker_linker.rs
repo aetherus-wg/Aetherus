@@ -6,7 +6,8 @@ use crate::{
     geom::{Orient, Ray},
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
-    sim::attribute::AttributeLinkerLinkerLinker,
+    sim::{attribute::AttributeLinkerLinkerLinker},
+    phys::Reflectance,
     tools::{Binner, Range},
 };
 use arctk_attr::file;
@@ -26,6 +27,9 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     Imager(Name, [usize; 2], f64, Point3, Vec3),
     /// Imager id, resolution, horizontal width (m), center, forward direction, wavelength binner (m).
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
+    /// A purely reflecting material, with a provided reflectance model.
+    /// The first coefficient is diffuse albedo, the second is specular. 
+    Reflector(f64, f64),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
@@ -54,6 +58,19 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
                 Orient::new(Ray::new(center, Dir3::from(forward))),
                 binner,
             ),
+            Self::Reflector(diff_alb, spec_alb) => {
+                let ref_model = if diff_alb > 0.0 {
+                    if spec_alb > 0.0 {
+                        Reflectance::Phong { diffuse_albedo: diff_alb, specular_albedo: spec_alb }
+                    } else {
+                        Reflectance::Lambertian { albedo: diff_alb }
+                    }
+                } else {
+                    Reflectance::Specular { albedo: spec_alb }
+                }; 
+
+                Self::Inst::Reflector(ref_model)
+            },
         })
     }
 }
@@ -94,6 +111,12 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, center, "center (m)");
                 fmt_report!(fmt, forward, "forward");
                 fmt_report!(fmt, binner, "binner");
+                Ok(())
+            }
+            Self::Reflector(ref diff_alb, ref spec_alb) => {
+                writeln!(fmt, "Reflector: ...")?;
+                fmt_report!(fmt, diff_alb, "diffuse albedo");
+                fmt_report!(fmt, spec_alb, "specular albedo");
                 Ok(())
             }
         }

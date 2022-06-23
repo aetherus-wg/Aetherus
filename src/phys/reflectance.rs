@@ -9,7 +9,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::{f64::consts::PI, fmt::Display};
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Reflectance {
     /// Lambertian Reflectance.
     ///
