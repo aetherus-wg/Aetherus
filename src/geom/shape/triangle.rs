@@ -116,7 +116,7 @@ impl Triangle {
         }
 
         let q = rel_pos.cross(&e1);
-        let v = inv_e1_dot_d_cross_e2 * ray.dir().dot(&q.dir());
+        let v = inv_e1_dot_d_cross_e2 * ray.dir().dot_vec(&q);
 
         if (v < 0.0) || ((u + v) > 1.0) {
             return None;
@@ -159,9 +159,9 @@ impl Collide for Triangle {
             let p2 = v2.dot(axis);
 
             let r = e.z().mul_add(
-                u2.dot(&axis.dir()).abs(),
+                u2.dot_vec(axis).abs(),
                 e.x()
-                    .mul_add(u0.dot(&axis.dir()).abs(), e.y() * u1.dot(&axis.dir()).abs()),
+                    .mul_add(u0.dot_vec(axis).abs(), e.y() * u1.dot_vec(axis).abs()),
             );
 
             if (-(p0.max(p1).max(p2))).max(p0.min(p1).min(p2)) > r {

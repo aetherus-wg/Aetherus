@@ -87,6 +87,12 @@ impl Dir3 {
 
     #[inline]
     #[must_use]
+    pub fn dot_vec(&self, b: &Vec3) -> f64 {
+        self.data.dot(&b.data())
+    }
+
+    #[inline]
+    #[must_use]
     pub fn renormalize(&mut self) {
         self.data.renormalize();
     }
