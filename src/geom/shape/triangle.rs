@@ -100,7 +100,7 @@ impl Triangle {
         let e1 = verts[BETA] - verts[ALPHA];
         let e2 = verts[GAMMA] - verts[ALPHA];
 
-        let d_cross_e2 = ray.dir().cross(&e2.into());
+        let d_cross_e2 = ray.dir().cross_vec(&e2.into());
         let e1_dot_d_cross_e2 = e1.dot(&d_cross_e2);
 
         if e1_dot_d_cross_e2.abs() <= 0.0 {
@@ -181,17 +181,17 @@ impl Collide for Triangle {
             return false;
         }
 
-        let axis_u0_f0 = u0.cross(&f0);
-        let axis_u0_f1 = u0.cross(&f1);
-        let axis_u0_f2 = u0.cross(&f2);
+        let axis_u0_f0 = u0.cross_vec(&f0);
+        let axis_u0_f1 = u0.cross_vec(&f1);
+        let axis_u0_f2 = u0.cross_vec(&f2);
 
-        let axis_u1_f0 = u1.cross(&f0);
-        let axis_u1_f1 = u1.cross(&f1);
-        let axis_u1_f2 = u1.cross(&f2);
+        let axis_u1_f0 = u1.cross_vec(&f0);
+        let axis_u1_f1 = u1.cross_vec(&f1);
+        let axis_u1_f2 = u1.cross_vec(&f2);
 
-        let axis_u2_f0 = u2.cross(&f0);
-        let axis_u2_f1 = u2.cross(&f1);
-        let axis_u2_f2 = u2.cross(&f2);
+        let axis_u2_f0 = u2.cross_vec(&f0);
+        let axis_u2_f1 = u2.cross_vec(&f1);
+        let axis_u2_f2 = u2.cross_vec(&f2);
 
         if !axis_test(&axis_u0_f0) {
             return false;

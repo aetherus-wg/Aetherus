@@ -53,7 +53,7 @@ impl Ray {
             Vec3::y_axis()
         };
 
-        let pitch_axis = self.dir.cross(&arbitrary_axis.into());
+        let pitch_axis = self.dir.cross_vec(&arbitrary_axis.into());
         let pitch_rot = Rot3::from_axis_angle(&Vec3::from(pitch_axis), pitch);
         let roll_rot = Rot3::from_axis_angle(&Vec3::from(self.dir), roll);
 

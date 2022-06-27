@@ -69,13 +69,13 @@ impl Dir3 {
 
     #[inline]
     #[must_use]
-    pub fn cross(&self, b: &Vec3) -> Vec3 {
+    pub fn cross_vec(&self, b: &Vec3) -> Vec3 {
         Vec3::from(self.data.cross(&b.data()))
     }
 
     #[inline]
     #[must_use]
-    pub fn cross_dir(&self, b: &Dir3) -> Vec3 {
+    pub fn cross(&self, b: &Dir3) -> Vec3 {
         Vec3::from(self.data.cross(&b.data()))
     }
 
