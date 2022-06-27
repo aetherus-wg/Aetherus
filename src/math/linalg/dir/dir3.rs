@@ -185,7 +185,7 @@ impl Neg for Dir3 {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        return Self::new(-self.x(), -self.y(), self.z());
+        return Self::new(-self.x(), -self.y(), -self.z());
     }
 }
 
