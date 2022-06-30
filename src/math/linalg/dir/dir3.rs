@@ -184,6 +184,7 @@ impl Mul<&Dir3> for f64 {
 impl Neg for Dir3 {
     type Output = Self;
 
+    /// Negation implementation for Dir3. 
     fn neg(self) -> Self::Output {
         return Self::new(-self.x(), -self.y(), -self.z());
     }
@@ -210,5 +211,36 @@ impl PartialOrd for Dir3 {
 impl PartialEq for Dir3 {
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_approx_eq::assert_approx_eq;
+
+    #[test]
+    fn test_init() {
+        let v = Dir3::new(3.0, -4.0, 3.0);
+
+        assert_approx_eq!(v.x(), 0.5144957554275265);
+        assert_approx_eq!(v.y(), -0.6859943405700353);
+        assert_approx_eq!(v.z(), 0.5144957554275265);
+    }
+
+    #[test]
+    fn test_dir3_neg() {
+        let test_pos = Dir3::new(1.0, 1.0, 1.0);
+        let test_neg = Dir3::new(-1.0, -1.0, -1.0);
+
+        // First test that positive components get made negative.
+        assert_approx_eq!(-test_pos.x(), test_neg.x());
+        assert_approx_eq!(-test_pos.y(), test_neg.y());
+        assert_approx_eq!(-test_pos.z(), test_neg.z());
+
+        // Now test the inverse. 
+        assert_approx_eq!(-test_neg.x(), test_pos.x());
+        assert_approx_eq!(-test_neg.y(), test_pos.y());
+        assert_approx_eq!(-test_neg.z(), test_pos.z());
     }
 }
