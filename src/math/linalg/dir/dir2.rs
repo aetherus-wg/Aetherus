@@ -60,6 +60,8 @@ impl Neg for Dir2 {
     type Output = Self;
 
     /// Negation implementation for Dir2. 
+    #[inline]
+    #[must_use]
     fn neg(self) -> Self::Output {
         return Self::new(-self.x(), -self.y());
     }
@@ -68,12 +70,16 @@ impl Neg for Dir2 {
 impl Sub<Dir2> for Dir2 {
     type Output = Self;
 
+    #[inline]
+    #[must_use]
     fn sub(self, rhs: Dir2) -> Self::Output {
         Self::new(self.x() - rhs.x(), self.y() - rhs.y())
     }
 }
 
 impl PartialEq for Dir2 {
+    #[inline]
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
     }

@@ -148,6 +148,8 @@ impl From<Unit<Vector3<Real>>> for Dir3 {
 impl Mul<f64> for Dir3 {
     type Output = Vec3;
 
+    #[inline]
+    #[must_use]
     fn mul(self, rhs: f64) -> Vec3 {
         return Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs);
     }
@@ -185,6 +187,8 @@ impl Neg for Dir3 {
     type Output = Self;
 
     /// Negation implementation for Dir3. 
+    #[inline]
+    #[must_use]
     fn neg(self) -> Self::Output {
         return Self::new(-self.x(), -self.y(), -self.z());
     }
@@ -193,6 +197,8 @@ impl Neg for Dir3 {
 impl Add<Dir3> for Dir3 {
     type Output = Dir3;
 
+    #[inline]
+    #[must_use]
     fn add(self, rhs: Dir3) -> Self::Output {
         Dir3::new(
             self.data.x + rhs.data.x,
@@ -203,6 +209,8 @@ impl Add<Dir3> for Dir3 {
 }
 
 impl PartialOrd for Dir3 {
+    #[inline]
+    #[must_use]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.data.partial_cmp(&other.data)
     }
