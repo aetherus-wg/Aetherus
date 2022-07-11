@@ -48,7 +48,6 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinker {
             Self::Imager(id, width, orient) => Self::Inst::Imager(id, width, orient),
             Self::Ccd(id, width, orient, binner) => Self::Inst::Ccd(id, width, orient, binner),
             Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance),
-            Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance),
         })
     }
 }
@@ -85,11 +84,6 @@ impl Display for AttributeLinkerLinker {
                 fmt_report!(fmt, width, "width (m)");
                 fmt_report!(fmt, orient, "orientation");
                 fmt_report!(fmt, binner, "binner");
-                Ok(())
-            }
-            Self::Reflector(ref reflectance) => {
-                writeln!(fmt, "Reflector: ...")?;
-                fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
             }
             Self::Reflector(ref reflectance) => {

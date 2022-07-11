@@ -4,7 +4,7 @@ use crate::{
     err::Error,
     fs::File,
     geom::{Mesh, SmoothTriangle},
-    math::{Dir3, Point3, Vec3},
+    math::{Dir3, Point3},
 };
 use std::{
     io::{BufRead, BufReader},

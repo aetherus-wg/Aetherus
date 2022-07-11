@@ -2,7 +2,6 @@ use crate::{
     core::Real,
     fmt_report,
     geom::{Hit, Ray},
-    math::{Dir3, Rot3, Trans3, Trans3Builder, Vec3},
     sim::Attribute,
 };
 use rand::Rng;
@@ -98,7 +97,9 @@ impl Display for Reflectance {
 mod tests {
     use super::Reflectance;
     use std::f64::consts::PI;
+    use assert_approx_eq::assert_approx_eq;
     use crate::{
+        core::Real,
         geom::{Hit, Ray, Side},
         math::{Dir3, Point3},
         data::Histogram,
@@ -122,7 +123,8 @@ mod tests {
         let theta_hist = Histogram::new(0.0, 2.0 * PI, 36);
 
         let mut n_killed = 0;
-        for _ in 0..10_000 {
+        let n_phot: usize = 10_000;
+        for _ in 0..n_phot {
             match reflect.reflect(&mut rng, &incoming_ray, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
@@ -139,6 +141,12 @@ mod tests {
 
         // As the albedo is 1.0, there should be none killed.
         assert_eq!(n_killed, 0);
+
+        // Check that the distribution is what we theoretically expect. 
+        for (bin, count) in phi_hist.iter() {
+            let norm_fac =  n_phot as Real;
+            assert_approx_eq!((bin * PI / 180.0).cos(), count / n_phot as Real, 0.1);
+        }
 
         // Check that the distribution of angles is correct.
         phi_hist.save_data(std::path::Path::new("lambert_check.dat")).unwrap();
@@ -157,7 +165,8 @@ mod tests {
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
 
         let mut n_killed = 0;
-        for i in 0..10_000 {
+        let nphoton = 10_000;
+        for _ in 0..nphoton {
             match reflect.reflect(&mut rng, &incoming_ray, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.

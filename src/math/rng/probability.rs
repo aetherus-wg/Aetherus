@@ -247,7 +247,7 @@ impl Probability {
                 ref offsets,
                 ref areas,
                 ref cdf,
-                ref xs,
+                xs: _,
             } => {
                 let a = rng.gen_range(0.0..1.0);
                 for (index, c) in cdf.iter().enumerate() {
@@ -309,7 +309,7 @@ impl Probability {
                 ref offsets,
                 ref areas,
                 ref cdf,
-                ref xs,
+                xs: _,
             } => {
                 debug_assert!(ps >= 0.0);
                 debug_assert!(ps <= 1.0);

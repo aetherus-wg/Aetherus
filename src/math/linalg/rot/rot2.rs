@@ -1,5 +1,4 @@
-use crate::{core::Real, math::Vec2};
-use nalgebra::{Rotation2, Unit};
+use nalgebra::{Rotation2};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
