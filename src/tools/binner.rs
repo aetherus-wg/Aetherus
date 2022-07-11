@@ -18,7 +18,7 @@ impl Binner {
     access!(range: Range);
     clone!(bins: usize);
 
-    /// Construct a new Range.
+    /// Construct a new Binner.
     #[inline]
     #[must_use]
     pub fn new(range: Range, bins: usize) -> Self {
@@ -59,3 +59,4 @@ impl Display for Binner {
         write!(fmt, "[{}] ({})", self.range, self.bins)
     }
 }
+

@@ -5,6 +5,7 @@ use crate::{
     err::Error,
     fmt_report,
     fs::Save,
+    data::HistogramIterator,
     tools::{Binner, Range},
 };
 use ndarray::Array1;
@@ -85,6 +86,11 @@ impl Histogram {
         if let Some(index) = self.binner.try_bin(x) {
             self.counts[index] += weight;
         }
+    }
+
+    #[inline]
+    pub fn iter(&self) -> HistogramIterator {
+        HistogramIterator::new(self)
     }
 }
 
