@@ -1,7 +1,7 @@
 use crate::{
     core::Real,
     fmt_report,
-    geom::{Hit, Ray},
+    geom::{Hit, Ray, ray},
     sim::Attribute,
 };
 use rand::Rng;
@@ -20,17 +20,37 @@ pub enum Reflectance {
     Specular { albedo: Real },
     /// Phong Reflectance. (TODO)
     ///
-    /// A Phong reflectance model combines a combination of diffuse and specular reflectance.
-    Phong {
+    /// A composite reflectance model combines a combination of diffuse and specular reflectance.
+    /// The ratio between specular and diffuse reflection is determined by `specular_diffuse_ratio`. 
+    Composite {
         diffuse_albedo: Real,
         specular_albedo: Real,
+        specular_diffuse_ratio: Real,
     },
 }
 
 impl Reflectance {
     /// Produces a new Lambertian reflectance instance.
     pub fn new_lambertian(albedo: Real) -> Self {
+        debug_assert!(albedo <= 1.0 && albedo >= 0.0);
+
         Self::Lambertian { albedo }
+    }
+
+    /// Produces a new Specular reflectance instance. 
+    pub fn new_specular(albedo: Real) -> Self {
+        debug_assert!(albedo <= 1.0 && albedo >= 0.0);
+
+        Self::Specular { albedo }
+    }
+
+    /// Prodduces a new Reflectance instance that is a composite between diffuse and specular reflection.
+    pub fn new_composite(diffuse_albedo: Real, specular_albedo: Real, specular_diffuse_ratio: Real) -> Self {
+        debug_assert!(diffuse_albedo <= 1.0 && diffuse_albedo >= 0.0);
+        debug_assert!(specular_albedo <= 1.0 && specular_albedo >= 0.0);
+        debug_assert!(specular_diffuse_ratio <= 1.0 && specular_diffuse_ratio >= 0.0);
+
+        Self::Composite { diffuse_albedo, specular_albedo, specular_diffuse_ratio }
     }
 
     /// Provided an incident ray, this will reflect the raw according to the
@@ -60,8 +80,28 @@ impl Reflectance {
                 } else {
                     None
                 }
+            },
+            Self:: Specular { ref albedo } => {
+                let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
+
+                if should_reflect {
+                    let p = *incident_ray.dir() + *hit.side().norm();
+                    let reflected_ray = Ray::new(incident_ray.pos().clone(), *hit.side().norm() + p);
+                    Some(reflected_ray)
+                } else {
+                    None
+                }
+            },
+            Self::Composite { ref diffuse_albedo, ref specular_albedo, ref specular_diffuse_ratio } => {
+                let is_specular = rng.gen_range(0.0..1.0) < *specular_diffuse_ratio;
+
+                if is_specular {
+                    Self::new_specular(*specular_albedo).reflect(rng, incident_ray, hit)
+                } else {
+                    Self::new_lambertian(*diffuse_albedo).reflect(rng, incident_ray, hit)
+                }
             }
-            _ => todo!(),
+            _ => unimplemented!(),
         }
     }
 }
@@ -80,13 +120,15 @@ impl Display for Reflectance {
                 fmt_report!(fmt, albedo, "albedo");
                 Ok(())
             }
-            Self::Phong {
+            Self::Composite {
                 ref diffuse_albedo,
                 ref specular_albedo,
+                ref specular_diffuse_ratio,
             } => {
                 writeln!(fmt, "Phong: ")?;
-                fmt_report!(fmt, diffuse_albedo, "disffuse albedo");
+                fmt_report!(fmt, diffuse_albedo, "diffuse albedo");
                 fmt_report!(fmt, specular_albedo, "specular albedo");
+                fmt_report!(fmt, specular_diffuse_ratio, "specular-to-diffuse ratio");
                 Ok(())
             }
         }

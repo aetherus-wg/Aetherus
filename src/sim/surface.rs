@@ -99,7 +99,7 @@ pub fn surface(
             // TODO: Implement the reflection code for a ray hitting a surface. 
 
             match reflectance {
-                Reflectance::Lambertian { albedo: _ } => {
+                Reflectance::Lambertian { albedo: _ } | Reflectance::Specular { albedo: _ } | Reflectance::Composite { diffuse_albedo: _,  specular_albedo: _, specular_diffuse_ratio: _}  => {
                     match reflectance.reflect(rng, phot.ray(), hit) {
                         Some(ray) => *phot.ray_mut() = ray,
                         None => phot.kill(),

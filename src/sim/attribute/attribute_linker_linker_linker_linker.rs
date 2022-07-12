@@ -29,7 +29,7 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     /// The first coefficient is diffuse albedo, the second is specular. 
-    Reflector(f64, f64),
+    Reflector(f64, f64, f64),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
@@ -58,10 +58,10 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
                 Orient::new(Ray::new(center, Dir3::from(forward))),
                 binner,
             ),
-            Self::Reflector(diff_alb, spec_alb) => {
+            Self::Reflector(diff_alb, spec_alb, spec_diff_ratio) => {
                 let ref_model = if diff_alb > 0.0 {
                     if spec_alb > 0.0 {
-                        Reflectance::Phong { diffuse_albedo: diff_alb, specular_albedo: spec_alb }
+                        Reflectance::Composite { diffuse_albedo: diff_alb, specular_albedo: spec_alb, specular_diffuse_ratio: spec_diff_ratio }
                     } else {
                         Reflectance::Lambertian { albedo: diff_alb }
                     }
@@ -113,10 +113,11 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref diff_alb, ref spec_alb) => {
+            Self::Reflector(ref diff_alb, ref spec_alb, ref spec_diff_ratio) => {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(fmt, diff_alb, "diffuse albedo");
                 fmt_report!(fmt, spec_alb, "specular albedo");
+                fmt_report!(fmt, spec_diff_ratio, "specular-to-diffuse ratio");
                 Ok(())
             }
         }
