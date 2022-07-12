@@ -10,16 +10,19 @@ use std::{f64::consts::PI, fmt::Display};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Reflectance {
-    /// Lambertian Reflectance.
+    /// Lambertian Reflectance
     ///
     /// Provides a purely diffuse reflectance, and reflects evenly in the hemisphere
     /// around the normal vector, irrespective of the direction of the incident
     /// light ray.
     Lambertian { albedo: Real },
-    /// Specular Reflectance. (TODO)
+    /// Specular Reflectance
+    /// 
+    /// Provides a purely specular reflectance, where the angle of the reflected
+    /// photon from the normal vector is the same as the incoming ray. 
     Specular { albedo: Real },
-    /// Phong Reflectance. (TODO)
-    ///
+    /// Composition Reflectance Model - Specular + Diffuse
+    /// 
     /// A composite reflectance model combines a combination of diffuse and specular reflectance.
     /// The ratio between specular and diffuse reflection is determined by `specular_diffuse_ratio`. 
     Composite {
@@ -125,7 +128,7 @@ impl Display for Reflectance {
                 ref specular_albedo,
                 ref specular_diffuse_ratio,
             } => {
-                writeln!(fmt, "Phong: ")?;
+                writeln!(fmt, "Composite: ")?;
                 fmt_report!(fmt, diffuse_albedo, "diffuse albedo");
                 fmt_report!(fmt, specular_albedo, "specular albedo");
                 fmt_report!(fmt, specular_diffuse_ratio, "specular-to-diffuse ratio");
