@@ -1,7 +1,8 @@
 use crate::{
     core::Real,
     fmt_report,
-    geom::{Hit, Ray, ray},
+    geom::{Hit, Ray},
+    math::Dir3,
     sim::Attribute,
 };
 use rand::Rng;
@@ -88,8 +89,9 @@ impl Reflectance {
                 let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
 
                 if should_reflect {
-                    let p = *incident_ray.dir() + *hit.side().norm();
-                    let reflected_ray = Ray::new(incident_ray.pos().clone(), *hit.side().norm() + p);
+                    // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
+                    let reflect = *incident_ray.dir() + 2.0 * hit.side().norm().dot(&-*incident_ray.dir()) * hit.side().norm();
+                    let reflected_ray = Ray::new(incident_ray.pos().clone(), reflect.into());
                     Some(reflected_ray)
                 } else {
                     None
@@ -308,19 +310,15 @@ mod tests {
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
 
         // Expected output - analytically determined by working through the equations. 
-        let norm = (2.0 - 2.0 / 2.0_f64.sqrt()).sqrt();
-        let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new((1.0 / 2.0_f64.sqrt()) / norm, 0.0, (1.0 - (1.0 / 2.0_f64.sqrt()) + norm) / norm));
+        let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
 
         match reflect.reflect(&mut rng, &incoming_ray, &hit) {
             Some(ray) => {
                 // Use assert_approx_eq due to numerical noise. 
-                assert_approx_eq!(ray.dir().x(), reflected_ray_test.dir().x());
-                assert_approx_eq!(ray.dir().y(), reflected_ray_test.dir().y());
-                assert_approx_eq!(ray.dir().z(), reflected_ray_test.dir().z());
+                assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
             },
             None => assert!(false), // With a perfect reflector, we should have no killed photons. 
         }
-
     }
 
     #[test]
@@ -336,8 +334,7 @@ mod tests {
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
 
         // Expected output - analytically determined by working through the equations. 
-        let norm = (2.0 - 2.0 / 2.0_f64.sqrt()).sqrt();
-        let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new((1.0 / 2.0_f64.sqrt()) / norm, 0.0, (1.0 - (1.0 / 2.0_f64.sqrt()) + norm) / norm));
+        let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
 
         // Register killed photons. 
         let n_photon: usize = 10_000;
@@ -346,9 +343,7 @@ mod tests {
             match reflect.reflect(&mut rng, &incoming_ray, &hit) {
                 Some(ray) => {
                     // Use assert_approx_eq due to numerical noise. 
-                    assert_approx_eq!(ray.dir().x(), reflected_ray_test.dir().x());
-                    assert_approx_eq!(ray.dir().y(), reflected_ray_test.dir().y());
-                    assert_approx_eq!(ray.dir().z(), reflected_ray_test.dir().z());
+                    assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
                 },
                 None => n_killed_photons += 1, // With a perfect reflector, we should have no killed photons. 
             }
@@ -357,5 +352,67 @@ mod tests {
         // Now check that the kill-rate of photons is consistent with the albedo. 
         println!("{}", n_killed_photons);
         assert_approx_eq!(n_killed_photons as Real, n_photon as Real * 0.5, n_photon as Real * 0.01);
+    }
+
+    #[test]
+    fn test_composite_reflectance() {
+        // Create an incoming ray.
+        let incoming_ray = Ray::new(Point3::new(0., 1., 1.0), Dir3::new(0.0, 1.0, -1.0));
+        let mut rng = rand::thread_rng();
+
+        // Simulate a hit on a surface.
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+        let surf_vec = Dir2::new(1.0, 0.0);
+        let reflect = Reflectance::new_composite(1.0, 1.0, 0.5);
+        let attrib = Attribute::Reflector(reflect.clone());
+        let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+
+        // Prepare bins for capturing statistics. 
+        let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
+        let mut theta_hist = Histogram::new(0.0, PI, 180);
+
+        let n_phot = 100_000;
+        let mut theta_dot_neg: usize = 0;
+        for _ in 0..n_phot {
+            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+                Some(ray) => {
+                    // Check that the outgoing ray is within the same hemisphere as the surface normal.
+                    // In the case of Lambertian scattering, this is a requirement.
+                    // The easy check for this is to check that norm · ray is positive.
+                    assert!(ray.dir().dot(&norm) > 0.0);
+
+                    // Sample the angle created by the ray from the normal.
+                    phi_hist.collect(ray.dir().dot(&norm).acos());
+                    
+                    // Now sample the theta angle. 
+                    let theta_dot = Dir2::new(ray.dir().x(), ray.dir().y()).dot(&surf_vec);
+                    theta_hist.collect(theta_dot.acos());
+                    // Just want to check that we are getting a uniform 360 degree coverage.
+                    // The dog product will only resolve to 0 -> pi radians. 
+                    if theta_dot < 0.0 { theta_dot_neg += 1; }
+                }
+                None => assert!(false),
+            }
+        }
+
+        // Output for distributions. Uncomment to manually test / debug. 
+        phi_hist.save_data(std::path::Path::new("composite_check.dat")).unwrap();
+        theta_hist.save_data(std::path::Path::new("composite_check_theta.dat")).unwrap();
+
+        // Initialise both of our models. 
+        let diffuse_component = |nbin: usize, nphot: usize, ratio: Real, albedo: Real| { (albedo * nphot as Real * ratio) / nbin as Real };
+        let specular_component = |ibin: usize, target_bin: usize, nphot: usize, ratio: Real, albedo: Real| { if ibin == target_bin { nphot as Real * albedo * ratio } else {0.0}};
+
+        for (ibin, (bin, count)) in phi_hist.iter().enumerate() {
+            // The bins are at 1 degree increments. As we are testing relative to the x-axis, the reflection should be at 90 degrees, and hence should be in the 90th bin. 
+            let model_count = diffuse_component(phi_hist.binner().bins(), n_phot, 0.5, 1.0) + specular_component(ibin, 45, n_phot, 0.5, 1.0);
+            assert_approx_eq!(model_count, count, n_phot as Real * 0.01)
+        }
+
+        for (ibin, (bin, count)) in theta_hist.iter().enumerate() {
+            // The bins are at 1 degree increments. As we are testing relative to the x-axis, the reflection should be at 90 degrees, and hence should be in the 90th bin. 
+            let model_count = diffuse_component(theta_hist.binner().bins(), n_phot, 0.5, 1.0) + specular_component(ibin, 90, n_phot, 0.5, 1.0);
+            assert_approx_eq!(model_count, count, n_phot as Real * 0.01)
+        }
     }
 }
