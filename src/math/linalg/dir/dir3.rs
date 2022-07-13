@@ -195,15 +195,29 @@ impl Neg for Dir3 {
 }
 
 impl Add<Dir3> for Dir3 {
-    type Output = Dir3;
+    type Output = Vec3;
 
     #[inline]
     #[must_use]
     fn add(self, rhs: Dir3) -> Self::Output {
-        Dir3::new(
+        Vec3::new(
             self.data.x + rhs.data.x,
             self.data.y + rhs.data.y,
             self.data.z + rhs.data.z,
+        )
+    }
+}
+
+impl Add<Vec3> for Dir3 {
+    type Output = Vec3;
+
+    #[inline]
+    #[must_use]
+    fn add(self, rhs: Vec3) -> Self::Output {
+        Vec3::new(
+            self.data.x + rhs.data().x,
+            self.data.y + rhs.data().y,
+            self.data.z + rhs.data().z,
         )
     }
 }
