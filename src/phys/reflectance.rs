@@ -277,7 +277,7 @@ mod tests {
         for (bin, count) in phi_hist.iter() {
             // Assuming a generous threshold due to the relatively low number of photons and the nature of random draws.
             // I don't want to be triggering off false positives left, right and centre.  
-            assert_approx_eq!(bin.cos(), count / norm_fac as Real, 0.1);
+            assert_approx_eq!(bin.cos(), count / norm_fac as Real, 0.15);
         }
 
         // Now check that the theta distribution is uniform. 
@@ -290,5 +290,72 @@ mod tests {
         // Checkt hat we get roughly 50% of the dot products uniform, indicating
         // theta coverage across both semi-circules. 
         assert_approx_eq!(theta_dot_neg as Real, (n_phot - n_killed) as Real * 0.5, (n_phot - n_killed) as Real * 0.01);
+    }
+
+    /// This is a test of the specular reflection code. This should be a lot easier
+    /// than the diffuse tests. As we know the incoming ray, and normal vector, 
+    /// we can analytically find the reflected ray.
+    #[test]
+    fn test_specular_reflectance_perfect_reflector() {
+        // Create an incoming ray.
+        let incoming_ray = Ray::new(Point3::new(1., 0., 1.0), Dir3::new(1.0, 0.0, -1.0));
+        let mut rng = rand::thread_rng();
+
+        // Simulate a hit on a surface.
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+        let reflect = Reflectance::new_specular(1.0);
+        let attrib = Attribute::Reflector(reflect.clone());
+        let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+
+        // Expected output - analytically determined by working through the equations. 
+        let norm = (2.0 - 2.0 / 2.0_f64.sqrt()).sqrt();
+        let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new((1.0 / 2.0_f64.sqrt()) / norm, 0.0, (1.0 - (1.0 / 2.0_f64.sqrt()) + norm) / norm));
+
+        match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            Some(ray) => {
+                // Use assert_approx_eq due to numerical noise. 
+                assert_approx_eq!(ray.dir().x(), reflected_ray_test.dir().x());
+                assert_approx_eq!(ray.dir().y(), reflected_ray_test.dir().y());
+                assert_approx_eq!(ray.dir().z(), reflected_ray_test.dir().z());
+            },
+            None => assert!(false), // With a perfect reflector, we should have no killed photons. 
+        }
+
+    }
+
+    #[test]
+    fn test_specular_reflectance_semi_reflective() {
+        // Create an incoming ray.
+        let incoming_ray = Ray::new(Point3::new(1., 0., 1.0), Dir3::new(1.0, 0.0, -1.0));
+        let mut rng = rand::thread_rng();
+
+        // Simulate a hit on a surface.
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+        let reflect = Reflectance::new_specular(0.5);
+        let attrib = Attribute::Reflector(reflect.clone());
+        let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+
+        // Expected output - analytically determined by working through the equations. 
+        let norm = (2.0 - 2.0 / 2.0_f64.sqrt()).sqrt();
+        let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new((1.0 / 2.0_f64.sqrt()) / norm, 0.0, (1.0 - (1.0 / 2.0_f64.sqrt()) + norm) / norm));
+
+        // Register killed photons. 
+        let n_photon: usize = 10_000;
+        let mut n_killed_photons: usize = 0;
+        for _ in 0..n_photon {
+            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+                Some(ray) => {
+                    // Use assert_approx_eq due to numerical noise. 
+                    assert_approx_eq!(ray.dir().x(), reflected_ray_test.dir().x());
+                    assert_approx_eq!(ray.dir().y(), reflected_ray_test.dir().y());
+                    assert_approx_eq!(ray.dir().z(), reflected_ray_test.dir().z());
+                },
+                None => n_killed_photons += 1, // With a perfect reflector, we should have no killed photons. 
+            }
+        }
+
+        // Now check that the kill-rate of photons is consistent with the albedo. 
+        println!("{}", n_killed_photons);
+        assert_approx_eq!(n_killed_photons as Real, n_photon as Real * 0.5, n_photon as Real * 0.01);
     }
 }
