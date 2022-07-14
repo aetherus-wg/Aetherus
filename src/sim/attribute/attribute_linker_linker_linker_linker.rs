@@ -58,10 +58,10 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
                 Orient::new(Ray::new(center, Dir3::from(forward))),
                 binner,
             ),
-            Self::Reflector(diff_alb, spec_alb, spec_diff_ratio) => {
+            Self::Reflector(diff_alb, spec_alb, diff_spec_ratio) => {
                 let ref_model = if diff_alb > 0.0 {
                     if spec_alb > 0.0 {
-                        Reflectance::Composite { diffuse_albedo: diff_alb, specular_albedo: spec_alb, specular_diffuse_ratio: spec_diff_ratio }
+                        Reflectance::Composite { diffuse_albedo: diff_alb, specular_albedo: spec_alb, diffuse_specular_ratio: diff_spec_ratio }
                     } else {
                         Reflectance::Lambertian { albedo: diff_alb }
                     }
@@ -113,11 +113,11 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref diff_alb, ref spec_alb, ref spec_diff_ratio) => {
+            Self::Reflector(ref diff_alb, ref spec_alb, ref diff_spec_ratio) => {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(fmt, diff_alb, "diffuse albedo");
                 fmt_report!(fmt, spec_alb, "specular albedo");
-                fmt_report!(fmt, spec_diff_ratio, "specular-to-diffuse ratio");
+                fmt_report!(fmt, diff_spec_ratio, "diffuse-to-specular ratio");
                 Ok(())
             }
         }

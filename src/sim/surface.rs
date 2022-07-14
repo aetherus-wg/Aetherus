@@ -4,7 +4,7 @@ use crate::{
     geom::Hit,
     img::Colour,
     ord::{X, Y},
-    phys::{Crossing, Local, Photon, Reflectance},
+    phys::{Crossing, Local, Photon},
     sim::{Attribute, Output},
 };
 use rand::{rngs::ThreadRng, Rng};
@@ -96,16 +96,9 @@ pub fn surface(
             phot.kill();
         }
         Attribute::Reflector(ref reflectance) => {
-            // TODO: Implement the reflection code for a ray hitting a surface. 
-
-            match reflectance {
-                Reflectance::Lambertian { albedo: _ } | Reflectance::Specular { albedo: _ } | Reflectance::Composite { diffuse_albedo: _,  specular_albedo: _, specular_diffuse_ratio: _}  => {
-                    match reflectance.reflect(rng, phot.ray(), hit) {
-                        Some(ray) => *phot.ray_mut() = ray,
-                        None => phot.kill(),
-                    }
-                },
-                _ => todo!()
+            match reflectance.reflect(rng, phot.ray(), hit) {
+                Some(ray) => *phot.ray_mut() = ray,
+                None => phot.kill(),
             }
         }
     }

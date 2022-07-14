@@ -2,7 +2,6 @@ use crate::{
     core::Real,
     fmt_report,
     geom::{Hit, Ray},
-    math::Dir3,
     sim::Attribute,
 };
 use rand::Rng;
@@ -16,25 +15,37 @@ pub enum Reflectance {
     /// Provides a purely diffuse reflectance, and reflects evenly in the hemisphere
     /// around the normal vector, irrespective of the direction of the incident
     /// light ray.
+    /// The albdeo determines which portion of the incoming photons are reflected or killed.
+    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons. 
     Lambertian { albedo: Real },
     /// Specular Reflectance
     /// 
     /// Provides a purely specular reflectance, where the angle of the reflected
     /// photon from the normal vector is the same as the incoming ray. 
+    /// The albdeo determines which portion of the incoming photons are reflected or killed.
+    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons. 
     Specular { albedo: Real },
     /// Composition Reflectance Model - Specular + Diffuse
     /// 
     /// A composite reflectance model combines a combination of diffuse and specular reflectance.
-    /// The ratio between specular and diffuse reflection is determined by `specular_diffuse_ratio`. 
+    /// The ratio between diffuse and soecular reflection is determined by `specular_diffuse_ratio`, 
+    /// with 1.0 corresponding to pure diffuse and 0.0 corresponding to pure specular. 
+    /// The `diffuse_albedo` and `specular_albedo` are directly fed through to the
+    /// albedos of their respective models and have their usual meanings. 
     Composite {
         diffuse_albedo: Real,
         specular_albedo: Real,
-        specular_diffuse_ratio: Real,
+        diffuse_specular_ratio: Real,
     },
 }
 
 impl Reflectance {
     /// Produces a new Lambertian reflectance instance.
+    /// This returns a purely diffuse reflection.
+    /// In this case photons are randomly distributed in the hemisphere in which
+    /// the normal to the surface lies. 
+    /// The albdeo determines which portion of the incoming photons are reflected or killed.
+    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons. 
     pub fn new_lambertian(albedo: Real) -> Self {
         debug_assert!(albedo <= 1.0 && albedo >= 0.0);
 
@@ -42,6 +53,10 @@ impl Reflectance {
     }
 
     /// Produces a new Specular reflectance instance. 
+    /// This returns a purely specular reflection. In this case the incoming photons
+    /// are reflected like they would be from a mirror; at the same angle to the normal vector of the surface.
+    /// The albdeo determines which portion of the incoming photons are reflected or killed.
+    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons. 
     pub fn new_specular(albedo: Real) -> Self {
         debug_assert!(albedo <= 1.0 && albedo >= 0.0);
 
@@ -49,12 +64,14 @@ impl Reflectance {
     }
 
     /// Prodduces a new Reflectance instance that is a composite between diffuse and specular reflection.
-    pub fn new_composite(diffuse_albedo: Real, specular_albedo: Real, specular_diffuse_ratio: Real) -> Self {
+    /// This is a combination of diffuse (Lambertian) and specular reflection, with the ratio between them
+    /// determined by the `specular_diffuse_ratio`. 1.0 corresponds to pure diffuse and 0.0 corresponds to pure specular. 
+    pub fn new_composite(diffuse_albedo: Real, specular_albedo: Real, diffuse_specular_ratio: Real) -> Self {
         debug_assert!(diffuse_albedo <= 1.0 && diffuse_albedo >= 0.0);
         debug_assert!(specular_albedo <= 1.0 && specular_albedo >= 0.0);
-        debug_assert!(specular_diffuse_ratio <= 1.0 && specular_diffuse_ratio >= 0.0);
+        debug_assert!(diffuse_specular_ratio <= 1.0 && diffuse_specular_ratio >= 0.0);
 
-        Self::Composite { diffuse_albedo, specular_albedo, specular_diffuse_ratio }
+        Self::Composite { diffuse_albedo, specular_albedo, diffuse_specular_ratio }
     }
 
     /// Provided an incident ray, this will reflect the raw according to the
@@ -70,6 +87,7 @@ impl Reflectance {
     ) -> Option<Ray> {
         match *self {
             Self::Lambertian { ref albedo } => {
+                // This random draw determines if the photon should reflect, based on the value of the albedo.
                 let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
 
                 if should_reflect {
@@ -86,6 +104,7 @@ impl Reflectance {
                 }
             },
             Self:: Specular { ref albedo } => {
+                // This random draw determines if the photon should reflect, based on the value of the albedo.
                 let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
 
                 if should_reflect {
@@ -97,16 +116,18 @@ impl Reflectance {
                     None
                 }
             },
-            Self::Composite { ref diffuse_albedo, ref specular_albedo, ref specular_diffuse_ratio } => {
-                let is_specular = rng.gen_range(0.0..1.0) < *specular_diffuse_ratio;
+            Self::Composite { ref diffuse_albedo, ref specular_albedo, ref diffuse_specular_ratio } => {
+                // This random draw determines, based on the ratio, whether the reflection for the
+                // current photon should be diffuse (Lambertian) or specular.
+                let is_specular = rng.gen_range(0.0..1.0) > *diffuse_specular_ratio;
 
+                // Then we just delegate handling of the reflection to the respective model. 
                 if is_specular {
                     Self::new_specular(*specular_albedo).reflect(rng, incident_ray, hit)
                 } else {
                     Self::new_lambertian(*diffuse_albedo).reflect(rng, incident_ray, hit)
                 }
             }
-            _ => unimplemented!(),
         }
     }
 }
@@ -128,12 +149,12 @@ impl Display for Reflectance {
             Self::Composite {
                 ref diffuse_albedo,
                 ref specular_albedo,
-                ref specular_diffuse_ratio,
+                ref diffuse_specular_ratio,
             } => {
                 writeln!(fmt, "Composite: ")?;
                 fmt_report!(fmt, diffuse_albedo, "diffuse albedo");
                 fmt_report!(fmt, specular_albedo, "specular albedo");
-                fmt_report!(fmt, specular_diffuse_ratio, "specular-to-diffuse ratio");
+                fmt_report!(fmt, diffuse_specular_ratio, "diffuse-to-specular ratio");
                 Ok(())
             }
         }
@@ -151,7 +172,7 @@ mod tests {
         geom::{Hit, Ray, Side},
         math::{Dir3, Dir2, Point3},
         data::Histogram,
-        sim::Attribute, fs::Save,
+        sim::Attribute,
     };
     use rand;
 
@@ -337,7 +358,7 @@ mod tests {
         let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
 
         // Register killed photons. 
-        let n_photon: usize = 10_000;
+        let n_photon: usize = 100_000;
         let mut n_killed_photons: usize = 0;
         for _ in 0..n_photon {
             match reflect.reflect(&mut rng, &incoming_ray, &hit) {
@@ -396,23 +417,37 @@ mod tests {
         }
 
         // Output for distributions. Uncomment to manually test / debug. 
-        phi_hist.save_data(std::path::Path::new("composite_check.dat")).unwrap();
-        theta_hist.save_data(std::path::Path::new("composite_check_theta.dat")).unwrap();
+        // phi_hist.save_data(std::path::Path::new("composite_check.dat")).unwrap();
+        // theta_hist.save_data(std::path::Path::new("composite_check_theta.dat")).unwrap();
 
-        // Initialise both of our models. 
-        let diffuse_component = |nbin: usize, nphot: usize, ratio: Real, albedo: Real| { (albedo * nphot as Real * ratio) / nbin as Real };
+        // Initialise our models for comparison.
+        // The specular model is consistent between the theta and phi axes as it 
+        // manifests as a constant n_photon / 2 term that occurs in a single bin. 
         let specular_component = |ibin: usize, target_bin: usize, nphot: usize, ratio: Real, albedo: Real| { if ibin == target_bin { nphot as Real * albedo * ratio } else {0.0}};
+        // The diffuse component is more complicated as in theta it merely dilutes
+        // the the entire n_photon / 2 allocation over all bins in the histogram.
+        // However in the phi component there is a cos(phi) dependence, which we
+        // model by borrowing the method from out lambertian reflectance tests above. 
+        let diff_norm_fac_phi = phi_hist.iter().map(|(_b, c)| c).take(3).mean();
+        let diffuse_component_phi = |bin: Real, norm_fac: Real| { bin.cos() * norm_fac };
+        let diffuse_component_theta = |nbin: usize, nphot: usize, ratio: Real, albedo: Real| { (albedo * nphot as Real * ratio) / nbin as Real };
 
         for (ibin, (bin, count)) in phi_hist.iter().enumerate() {
             // The bins are at 1 degree increments. As we are testing relative to the x-axis, the reflection should be at 90 degrees, and hence should be in the 90th bin. 
-            let model_count = diffuse_component(phi_hist.binner().bins(), n_phot, 0.5, 1.0) + specular_component(ibin, 45, n_phot, 0.5, 1.0);
-            assert_approx_eq!(model_count, count, n_phot as Real * 0.01)
+            let model_count = diffuse_component_phi(bin, diff_norm_fac_phi) + specular_component(ibin, 45, n_phot, 0.5, 1.0);
+            // We are checking that we agree to about the 1% level.
+            assert_approx_eq!(model_count, count, n_phot as Real * 0.01);
         }
 
-        for (ibin, (bin, count)) in theta_hist.iter().enumerate() {
+        for (ibin, (_, count)) in theta_hist.iter().enumerate() {
             // The bins are at 1 degree increments. As we are testing relative to the x-axis, the reflection should be at 90 degrees, and hence should be in the 90th bin. 
-            let model_count = diffuse_component(theta_hist.binner().bins(), n_phot, 0.5, 1.0) + specular_component(ibin, 90, n_phot, 0.5, 1.0);
-            assert_approx_eq!(model_count, count, n_phot as Real * 0.01)
+            let model_count = diffuse_component_theta(theta_hist.binner().bins(), n_phot, 0.5, 1.0) + specular_component(ibin, 90, n_phot, 0.5, 1.0);
+            // We are checking that we agree to about the 1% level.
+            assert_approx_eq!(model_count, count, n_phot as Real * 0.01);
         }
+
+        // Checkt hat we get roughly 25% of the dot products uniform, indicating
+        // theta coverage across both semi-circules. 
+        assert_approx_eq!(theta_dot_neg as Real, n_phot as Real * 0.25, n_phot as Real * 0.01);
     }
 }
