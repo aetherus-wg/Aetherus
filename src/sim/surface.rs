@@ -65,8 +65,8 @@ pub fn surface(
         }
         Attribute::Imager(id, width, ref orient) => {
             let projection = orient.pos() - phot.ray().pos();
-            let x = ((orient.right().dot(&projection.into()) / width) + 1.0) / 2.0;
-            let y = ((orient.up().dot(&projection.into()) / width) + 1.0) / 2.0;
+            let x = ((orient.right().dot_vec(&projection) / width) + 1.0) / 2.0;
+            let y = ((orient.up().dot_vec(&projection) / width) + 1.0) / 2.0;
 
             if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y) {
                 let res = data.imgs[id].pixels().raw_dim();
@@ -79,8 +79,8 @@ pub fn surface(
         }
         Attribute::Ccd(id, width, ref orient, ref binner) => {
             let projection = orient.pos() - phot.ray().pos();
-            let x = ((orient.right().dot(&projection.into()) / width) + 1.0) / 2.0;
-            let y = ((orient.up().dot(&projection.into()) / width) + 1.0) / 2.0;
+            let x = ((orient.right().dot_vec(&projection) / width) + 1.0) / 2.0;
+            let y = ((orient.up().dot_vec(&projection) / width) + 1.0) / 2.0;
 
             if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y) {
                 let res = data.ccds[id].raw_dim();
@@ -95,6 +95,10 @@ pub fn surface(
 
             phot.kill();
         }
+        Attribute::Reflector(ref reflectance) => match reflectance.reflect(rng, phot.ray(), hit) {
+            Some(ray) => *phot.ray_mut() = ray,
+            None => phot.kill(),
+        },
     }
 }
 

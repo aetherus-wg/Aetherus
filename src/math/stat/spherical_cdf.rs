@@ -1,7 +1,6 @@
 use crate::{
     access,
     core::Real,
-    geom::ray,
     math::{linalg::Dir2, rng::Probability},
 };
 use cubic_splines;
@@ -9,7 +8,7 @@ use lidrs::photweb::{PhotometricWeb, PlaneWidth};
 use ndarray::Array1;
 use rand::Rng;
 use statrs::statistics::Statistics;
-use std::{f64::consts::PI, io::Write};
+use std::f64::consts::PI;
 
 /// This is the target number of polar angles that we are aiming for for the spherical CDF.
 /// If more than this, we will not interpolate, however, if less we will interpolate data points
@@ -217,7 +216,7 @@ pub mod tests {
     use crate::data::Average;
     use assert_approx_eq::assert_approx_eq;
     use lidrs::photweb::{PhotometricWeb, Plane};
-    use std::{f64::consts::PI, io::Write};
+    use std::f64::consts::PI;
 
     /// Tests that when we create an isotropic CDF we end up with a consistent outputs distribution
     /// from the sampling.

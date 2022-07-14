@@ -100,7 +100,7 @@ impl Triangle {
         let e1 = verts[BETA] - verts[ALPHA];
         let e2 = verts[GAMMA] - verts[ALPHA];
 
-        let d_cross_e2 = ray.dir().cross(&e2.into());
+        let d_cross_e2 = ray.dir().cross_vec(&e2.into());
         let e1_dot_d_cross_e2 = e1.dot(&d_cross_e2);
 
         if e1_dot_d_cross_e2.abs() <= 0.0 {
@@ -116,7 +116,7 @@ impl Triangle {
         }
 
         let q = rel_pos.cross(&e1);
-        let v = inv_e1_dot_d_cross_e2 * ray.dir().dot(&q.dir());
+        let v = inv_e1_dot_d_cross_e2 * ray.dir().dot_vec(&q);
 
         if (v < 0.0) || ((u + v) > 1.0) {
             return None;
@@ -159,9 +159,9 @@ impl Collide for Triangle {
             let p2 = v2.dot(axis);
 
             let r = e.z().mul_add(
-                u2.dot(&axis.dir()).abs(),
+                u2.dot_vec(axis).abs(),
                 e.x()
-                    .mul_add(u0.dot(&axis.dir()).abs(), e.y() * u1.dot(&axis.dir()).abs()),
+                    .mul_add(u0.dot_vec(axis).abs(), e.y() * u1.dot_vec(axis).abs()),
             );
 
             if (-(p0.max(p1).max(p2))).max(p0.min(p1).min(p2)) > r {
@@ -181,17 +181,17 @@ impl Collide for Triangle {
             return false;
         }
 
-        let axis_u0_f0 = u0.cross(&f0);
-        let axis_u0_f1 = u0.cross(&f1);
-        let axis_u0_f2 = u0.cross(&f2);
+        let axis_u0_f0 = u0.cross_vec(&f0);
+        let axis_u0_f1 = u0.cross_vec(&f1);
+        let axis_u0_f2 = u0.cross_vec(&f2);
 
-        let axis_u1_f0 = u1.cross(&f0);
-        let axis_u1_f1 = u1.cross(&f1);
-        let axis_u1_f2 = u1.cross(&f2);
+        let axis_u1_f0 = u1.cross_vec(&f0);
+        let axis_u1_f1 = u1.cross_vec(&f1);
+        let axis_u1_f2 = u1.cross_vec(&f2);
 
-        let axis_u2_f0 = u2.cross(&f0);
-        let axis_u2_f1 = u2.cross(&f1);
-        let axis_u2_f2 = u2.cross(&f2);
+        let axis_u2_f0 = u2.cross_vec(&f0);
+        let axis_u2_f1 = u2.cross_vec(&f1);
+        let axis_u2_f2 = u2.cross_vec(&f2);
 
         if !axis_test(&axis_u0_f0) {
             return false;

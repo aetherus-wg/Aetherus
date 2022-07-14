@@ -9,7 +9,7 @@ use crate::{
 ///
 /// This is the type at the core of our ray tracing / hit scan implementation.
 /// This is also the type at the core of our photon implementation.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Ray {
     /// Ray origin.
     pos: Point3,
@@ -25,7 +25,7 @@ impl Ray {
     #[inline]
     #[must_use]
     pub fn new(pos: Point3, mut dir: Dir3) -> Self {
-        dir.renormalize();
+        let _ = dir.renormalize();
         Self { pos, dir }
     }
 
@@ -53,12 +53,12 @@ impl Ray {
             Vec3::y_axis()
         };
 
-        let pitch_axis = self.dir.cross(&arbitrary_axis.into());
+        let pitch_axis = self.dir.cross_vec(&arbitrary_axis.into());
         let pitch_rot = Rot3::from_axis_angle(&Vec3::from(pitch_axis), pitch);
         let roll_rot = Rot3::from_axis_angle(&Vec3::from(self.dir), roll);
 
         self.dir = roll_rot * pitch_rot * self.dir;
-        self.dir.renormalize();
+        let _ = self.dir.renormalize();
     }
 }
 

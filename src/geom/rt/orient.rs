@@ -35,11 +35,11 @@ impl Orient {
     pub fn new(ray: Ray) -> Self {
         let (pos, forward) = ray.destruct();
         let right = if forward.z().abs() <= 0.9 {
-            Dir3::from(forward.cross_dir(&Vec3::z_axis())) // Universal up is z-axis.
+            Dir3::from(forward.cross(&Vec3::z_axis())) // Universal up is z-axis.
         } else {
-            Dir3::from(forward.cross_dir(&Vec3::x_axis())) // If facing along z-axis, compute relative up using x-axis.
+            Dir3::from(forward.cross(&Vec3::x_axis())) // If facing along z-axis, compute relative up using x-axis.
         };
-        let up = Dir3::from(right.cross_dir(&forward));
+        let up = Dir3::from(right.cross(&forward));
 
         Self {
             pos,
@@ -54,8 +54,8 @@ impl Orient {
     #[must_use]
     pub fn new_up(ray: Ray, up: &Dir3) -> Self {
         let (pos, forward) = ray.destruct();
-        let right = Dir3::from(forward.cross_dir(up));
-        let up = Dir3::from(right.cross_dir(&forward));
+        let right = Dir3::from(forward.cross(up));
+        let up = Dir3::from(right.cross(&forward));
 
         Self {
             pos,

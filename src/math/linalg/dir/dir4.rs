@@ -6,6 +6,7 @@ use serde_derive::{Deserialize, Serialize};
 
 /// Normalised four dimensional real-number vector.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Dir4 {
     /// Internal data.
     data: Unit<Vector4<Real>>,

@@ -6,6 +6,7 @@ use crate::{
     geom::{Orient, Ray},
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
+    phys::Reflectance,
     sim::attribute::AttributeLinkerLinkerLinker,
     tools::{Binner, Range},
 };
@@ -26,6 +27,9 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     Imager(Name, [usize; 2], f64, Point3, Vec3),
     /// Imager id, resolution, horizontal width (m), center, forward direction, wavelength binner (m).
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
+    /// A purely reflecting material, with a provided reflectance model.
+    /// The first coefficient is diffuse albedo, the second is specular.
+    Reflector(f64, f64, f64),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
@@ -54,6 +58,23 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
                 Orient::new(Ray::new(center, Dir3::from(forward))),
                 binner,
             ),
+            Self::Reflector(diff_alb, spec_alb, diff_spec_ratio) => {
+                let ref_model = if diff_alb > 0.0 {
+                    if spec_alb > 0.0 {
+                        Reflectance::Composite {
+                            diffuse_albedo: diff_alb,
+                            specular_albedo: spec_alb,
+                            diffuse_specular_ratio: diff_spec_ratio,
+                        }
+                    } else {
+                        Reflectance::Lambertian { albedo: diff_alb }
+                    }
+                } else {
+                    Reflectance::Specular { albedo: spec_alb }
+                };
+
+                Self::Inst::Reflector(ref_model)
+            }
         })
     }
 }
@@ -94,6 +115,13 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, center, "center (m)");
                 fmt_report!(fmt, forward, "forward");
                 fmt_report!(fmt, binner, "binner");
+                Ok(())
+            }
+            Self::Reflector(ref diff_alb, ref spec_alb, ref diff_spec_ratio) => {
+                writeln!(fmt, "Reflector: ...")?;
+                fmt_report!(fmt, diff_alb, "diffuse albedo");
+                fmt_report!(fmt, spec_alb, "specular albedo");
+                fmt_report!(fmt, diff_spec_ratio, "diffuse-to-specular ratio");
                 Ok(())
             }
         }

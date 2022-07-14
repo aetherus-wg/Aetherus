@@ -1,6 +1,6 @@
 //! Optical attributes.
 
-use crate::{fmt_report, geom::Orient, phys::Material, tools::Binner};
+use crate::{fmt_report, geom::Orient, phys::Material, phys::Reflectance, tools::Binner};
 use std::fmt::{Display, Error, Formatter};
 
 /// Surface attributes.
@@ -15,6 +15,8 @@ pub enum Attribute<'a> {
     Imager(usize, f64, Orient),
     /// CCD detector id, width, orientation, binner.
     Ccd(usize, f64, Orient, Binner),
+    /// A purely reflecting material, with a provided reflectance model.
+    Reflector(Reflectance),
 }
 
 impl Display for Attribute<'_> {
@@ -43,6 +45,11 @@ impl Display for Attribute<'_> {
                 fmt_report!(fmt, width, "width (m)");
                 fmt_report!(fmt, orient, "orientation");
                 fmt_report!(fmt, binner, "binner (m)");
+                Ok(())
+            }
+            Self::Reflector(ref reflectance) => {
+                writeln!(fmt, "Reflector: ...")?;
+                fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
             }
         }

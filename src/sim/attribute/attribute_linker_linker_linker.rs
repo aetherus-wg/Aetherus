@@ -6,6 +6,7 @@ use crate::{
     geom::{Orient, Ray},
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
+    phys::Reflectance,
     sim::attribute::AttributeLinkerLinker,
     tools::{Binner, Range},
 };
@@ -24,6 +25,8 @@ pub enum AttributeLinkerLinkerLinker {
     Imager(Name, [usize; 2], f64, Point3, Vec3),
     /// CCD detector id, width, orientation, binner.
     Ccd(usize, f64, Orient, Binner),
+    /// A purely reflecting material, with a provided reflectance model.
+    Reflector(Reflectance),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinker {
@@ -49,6 +52,7 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinker {
                 Orient::new(Ray::new(center, Dir3::from(forward))),
             ),
             Self::Ccd(id, width, orient, binner) => Self::Inst::Ccd(id, width, orient, binner),
+            Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance),
         })
     }
 }
@@ -87,6 +91,11 @@ impl Display for AttributeLinkerLinkerLinker {
                 fmt_report!(fmt, width, "width (m)");
                 fmt_report!(fmt, orient, "orientation");
                 fmt_report!(fmt, binner, "binner");
+                Ok(())
+            }
+            Self::Reflector(ref reflectance) => {
+                writeln!(fmt, "Reflector: ...")?;
+                fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
             }
         }
