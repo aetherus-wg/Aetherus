@@ -3,9 +3,7 @@
 use crate::{clone, core::Real};
 use nalgebra::{Unit, Vector2};
 use serde_derive::{Deserialize, Serialize};
-use std::{
-    ops::{Neg, Sub}
-};
+use std::ops::{Neg, Sub};
 
 /// Normalised two dimensional real-number vector.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -59,7 +57,7 @@ impl From<Unit<Vector2<Real>>> for Dir2 {
 impl Neg for Dir2 {
     type Output = Self;
 
-    /// Negation implementation for Dir2. 
+    /// Negation implementation for Dir2.
     #[inline]
     #[must_use]
     fn neg(self) -> Self::Output {
@@ -107,7 +105,7 @@ mod tests {
         assert_approx_eq!(-test_pos.x(), test_neg.x());
         assert_approx_eq!(-test_pos.y(), test_neg.y());
 
-        // Now test the inverse. 
+        // Now test the inverse.
         assert_approx_eq!(-test_neg.x(), test_pos.x());
         assert_approx_eq!(-test_neg.y(), test_pos.y());
     }

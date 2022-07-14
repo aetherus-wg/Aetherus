@@ -95,12 +95,10 @@ pub fn surface(
 
             phot.kill();
         }
-        Attribute::Reflector(ref reflectance) => {
-            match reflectance.reflect(rng, phot.ray(), hit) {
-                Some(ray) => *phot.ray_mut() = ray,
-                None => phot.kill(),
-            }
-        }
+        Attribute::Reflector(ref reflectance) => match reflectance.reflect(rng, phot.ray(), hit) {
+            Some(ray) => *phot.ray_mut() = ray,
+            None => phot.kill(),
+        },
     }
 }
 

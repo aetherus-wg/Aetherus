@@ -186,7 +186,7 @@ impl Mul<&Dir3> for f64 {
 impl Neg for Dir3 {
     type Output = Self;
 
-    /// Negation implementation for Dir3. 
+    /// Negation implementation for Dir3.
     #[inline]
     #[must_use]
     fn neg(self) -> Self::Output {
@@ -260,7 +260,7 @@ mod tests {
         assert_approx_eq!(-test_pos.y(), test_neg.y());
         assert_approx_eq!(-test_pos.z(), test_neg.z());
 
-        // Now test the inverse. 
+        // Now test the inverse.
         assert_approx_eq!(-test_neg.x(), test_pos.x());
         assert_approx_eq!(-test_neg.y(), test_pos.y());
         assert_approx_eq!(-test_neg.z(), test_pos.z());

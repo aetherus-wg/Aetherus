@@ -6,9 +6,9 @@ use crate::{
     geom::Orient,
     ord::{Link, Name, Set},
     phys::Material,
+    phys::Reflectance,
     sim::attribute::Attribute,
     tools::Binner,
-    phys::Reflectance, 
 };
 use std::fmt::{Display, Formatter};
 
@@ -35,7 +35,11 @@ impl<'a> Link<'a, Material> for AttributeLinker {
     fn requires(&self) -> Vec<Name> {
         match *self {
             Self::Interface(ref inside, ref outside) => vec![inside.clone(), outside.clone()],
-            Self::Mirror(..) | Self::Spectrometer(..) | Self::Imager(..) | Self::Ccd(..) | Self::Reflector(..) => {
+            Self::Mirror(..)
+            | Self::Spectrometer(..)
+            | Self::Imager(..)
+            | Self::Ccd(..)
+            | Self::Reflector(..) => {
                 vec![]
             }
         }

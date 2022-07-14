@@ -6,8 +6,8 @@ use crate::{
     geom::{Orient, Ray},
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
-    sim::{attribute::AttributeLinkerLinkerLinker},
     phys::Reflectance,
+    sim::attribute::AttributeLinkerLinkerLinker,
     tools::{Binner, Range},
 };
 use arctk_attr::file;
@@ -28,7 +28,7 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     /// Imager id, resolution, horizontal width (m), center, forward direction, wavelength binner (m).
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
     /// A purely reflecting material, with a provided reflectance model.
-    /// The first coefficient is diffuse albedo, the second is specular. 
+    /// The first coefficient is diffuse albedo, the second is specular.
     Reflector(f64, f64, f64),
 }
 
@@ -61,16 +61,20 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
             Self::Reflector(diff_alb, spec_alb, diff_spec_ratio) => {
                 let ref_model = if diff_alb > 0.0 {
                     if spec_alb > 0.0 {
-                        Reflectance::Composite { diffuse_albedo: diff_alb, specular_albedo: spec_alb, diffuse_specular_ratio: diff_spec_ratio }
+                        Reflectance::Composite {
+                            diffuse_albedo: diff_alb,
+                            specular_albedo: spec_alb,
+                            diffuse_specular_ratio: diff_spec_ratio,
+                        }
                     } else {
                         Reflectance::Lambertian { albedo: diff_alb }
                     }
                 } else {
                     Reflectance::Specular { albedo: spec_alb }
-                }; 
+                };
 
                 Self::Inst::Reflector(ref_model)
-            },
+            }
         })
     }
 }

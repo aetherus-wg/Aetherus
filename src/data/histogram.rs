@@ -2,10 +2,10 @@
 
 use crate::{
     access,
+    data::HistogramIterator,
     err::Error,
     fmt_report,
     fs::Save,
-    data::HistogramIterator,
     tools::{Binner, Range},
 };
 use ndarray::Array1;

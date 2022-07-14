@@ -5,9 +5,9 @@ use crate::{
     fmt_report,
     geom::Orient,
     ord::{Link, Name, Set},
+    phys::Reflectance,
     sim::attribute::AttributeLinker,
     tools::{Binner, Range},
-    phys::Reflectance,
 };
 use std::fmt::{Display, Formatter};
 

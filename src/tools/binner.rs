@@ -59,4 +59,3 @@ impl Display for Binner {
         write!(fmt, "[{}] ({})", self.range, self.bins)
     }
 }
-

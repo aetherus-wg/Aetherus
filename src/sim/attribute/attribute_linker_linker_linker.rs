@@ -6,9 +6,9 @@ use crate::{
     geom::{Orient, Ray},
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
+    phys::Reflectance,
     sim::attribute::AttributeLinkerLinker,
     tools::{Binner, Range},
-    phys::{Reflectance},
 };
 use std::fmt::{Display, Formatter};
 
@@ -52,7 +52,7 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinker {
                 Orient::new(Ray::new(center, Dir3::from(forward))),
             ),
             Self::Ccd(id, width, orient, binner) => Self::Inst::Ccd(id, width, orient, binner),
-            Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance)
+            Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance),
         })
     }
 }

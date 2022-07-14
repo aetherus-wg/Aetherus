@@ -23,10 +23,11 @@ impl<'a> Iterator for HistogramIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let nbin = self.hist.binner().bins();
 
-        if self.curr_bin < nbin{
-            let bin = self.hist.binner().range().min() + (self.curr_bin as Real * self.hist.binner().bin_width());
+        if self.curr_bin < nbin {
+            let bin = self.hist.binner().range().min()
+                + (self.curr_bin as Real * self.hist.binner().bin_width());
             let count = self.hist.counts()[self.curr_bin];
-            
+
             self.curr_bin += 1;
 
             Some((bin, count))

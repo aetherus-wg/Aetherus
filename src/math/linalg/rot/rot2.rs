@@ -1,4 +1,4 @@
-use nalgebra::{Rotation2};
+use nalgebra::Rotation2;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
