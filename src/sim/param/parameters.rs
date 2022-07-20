@@ -24,7 +24,7 @@ pub struct Parameters {
     /// Materials.
     pub mats: Set<Material>,
     /// Main light.
-    pub light: LightLinker,
+    pub lights: Set<LightLinker>,
     /// Engine selection.
     pub engine: Engine,
 }
@@ -41,7 +41,7 @@ impl Parameters {
         surfs: Set<SurfaceLinker>,
         attrs: Set<AttributeLinkerLinkerLinkerLinker>,
         mats: Set<Material>,
-        light: LightLinker,
+        lights: Set<LightLinker>,
         engine: Engine,
     ) -> Self {
         Self {
@@ -51,7 +51,7 @@ impl Parameters {
             surfs,
             attrs,
             mats,
-            light,
+            lights,
             engine,
         }
     }
@@ -67,7 +67,7 @@ impl Display for Parameters {
         fmt_report!(fmt, self.surfs, "surfaces");
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.mats, "materials");
-        fmt_report!(fmt, self.light, "light");
+        fmt_report!(fmt, self.lights, "lights");
         fmt_report!(fmt, self.engine, "engine");
         Ok(())
     }

@@ -10,6 +10,7 @@ use rand::Rng;
 use std::fmt::{Display, Error, Formatter};
 
 /// Photon emission structure.
+#[derive(Clone)]
 pub struct Light<'a> {
     /// Power [J/s].
     power: f64,

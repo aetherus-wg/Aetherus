@@ -9,6 +9,7 @@ use crate::{
 use std::fmt::{Display, Formatter};
 
 /// Regular Cartesian-grid structure.
+#[derive(Clone)]
 pub struct Grid {
     /// Boundary.
     boundary: Cube,

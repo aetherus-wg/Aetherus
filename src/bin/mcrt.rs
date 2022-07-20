@@ -22,7 +22,7 @@ use Aetherus::{
         banner::{section, sub_section, title},
         dir,
         fmt::term,
-    },
+    }
 };
 
 /// Backup print width if the terminal width can not be determined.
@@ -49,14 +49,14 @@ fn main() {
 
     sub_section(term_width, "Registration");
     let (spec_reg, img_reg, ccd_reg) = gen_detector_registers(&params.attrs);
-    let output = gen_base_output(&engine, &grid, &spec_reg, &img_reg, &ccd_reg, &params.attrs);
+    let base_output = gen_base_output(&engine, &grid, &spec_reg, &img_reg, &ccd_reg, &params.attrs);
 
     sub_section(term_width, "Linking");
-    let light = params
-        .light
+    let lights = params
+        .lights
         .link(&mats)
-        .expect("Failed to link materials to light.");
-    report!(light, "light");
+        .expect("Failed to link materials to lights.");
+    report!(lights, "lights");
     let attrs = params
         .attrs
         .link(ccd_reg.set())
@@ -78,11 +78,15 @@ fn main() {
     let tree = Tree::new(&params.tree, &surfs);
     report!(tree, "hit-scan tree");
 
-    section(term_width, "Running");
-    let input = Input::new(&spec_reg, &mats, &attrs, &light, &tree, &grid, &sett);
-    report!(input, "input");
-
-    let data = run::multi_thread(&engine, &input, &output).expect("Failed to run cartographer.");
+    let data = lights.into_iter().fold(base_output, |output, (light_id, light)| {
+        section(term_width, &format!("Running for light {}", light_id));
+        report!(light, light_id);
+        let input = Input::new(&spec_reg, &mats, &attrs, light, &tree, &grid, &sett);
+    
+        let mut data = run::multi_thread(&engine, input, &output).expect("Failed to run MCRT.");
+        data += &output;
+        data
+    });
 
     section(term_width, "Saving");
     report!(data, "data");
