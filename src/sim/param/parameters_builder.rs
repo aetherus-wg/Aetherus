@@ -24,7 +24,7 @@ pub struct ParametersBuilder {
     /// Materials.
     mats: Set<MaterialBuilder>,
     /// Main light.
-    light: LightLinkerBuilder,
+    lights: Set<LightLinkerBuilder>,
     /// Engine selection.
     engine: EngineBuilder,
 }
@@ -41,7 +41,7 @@ impl ParametersBuilder {
         surfs: Set<SurfaceLinker>,
         attrs: Set<AttributeLinkerLinkerLinkerLinker>,
         mats: Set<MaterialBuilder>,
-        light: LightLinkerBuilder,
+        lights: Set<LightLinkerBuilder>,
         engine: EngineBuilder,
     ) -> Self {
         Self {
@@ -51,7 +51,7 @@ impl ParametersBuilder {
             surfs,
             attrs,
             mats,
-            light,
+            lights,
             engine,
         }
     }
@@ -68,7 +68,7 @@ impl Build for ParametersBuilder {
         let surfs = self.surfs;
         let attrs = self.attrs;
         let mats = self.mats.build();
-        let light = self.light.build();
+        let light = self.lights.build();
         let engine = self.engine.build();
 
         Self::Inst::new(sett, tree, grid, surfs, attrs, mats, light, engine)
@@ -85,7 +85,7 @@ impl Display for ParametersBuilder {
         fmt_report!(fmt, self.surfs, "surfaces");
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.mats, "materials");
-        fmt_report!(fmt, self.light, "light");
+        fmt_report!(fmt, self.lights, "lights");
         fmt_report!(fmt, self.engine, "engine");
         Ok(())
     }

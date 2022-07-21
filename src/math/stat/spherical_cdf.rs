@@ -15,7 +15,7 @@ use std::f64::consts::PI;
 /// to ensure that we can sample the sin(theta) area term well enough.
 const TARGET_NANGLES: usize = 360;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SphericalCdfPlane {
     /// The central azimurhal angle of the plane.
     azimuth_angle: Real,
@@ -60,7 +60,7 @@ impl SphericalCdfPlane {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// The spherical CDF object.
 pub struct SphericalCdf {
     planes: Vec<SphericalCdfPlane>,

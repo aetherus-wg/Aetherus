@@ -13,6 +13,7 @@ use std::{
 };
 
 /// Ray emission structure.
+#[derive(Clone)]
 pub enum Emitter {
     /// Single beam.
     Beam(Ray),
