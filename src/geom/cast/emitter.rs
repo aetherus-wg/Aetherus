@@ -2,7 +2,7 @@
 
 use crate::{
     geom::{Emit, Grid, Mesh, Ray},
-    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf},
+    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf, Trans3},
     tools::linear_to_three_dim,
 };
 use ndarray::Array3;
@@ -26,7 +26,7 @@ pub enum Emitter {
     /// Volume map.
     Volume(Array3<f64>, Grid),
     /// Non-isotropic point source.
-    NonIsotropicPoints(Vec<Point3>, SphericalCdf),
+    NonIsotropic(SphericalCdf, Trans3),
 }
 
 impl Emitter {
@@ -84,8 +84,8 @@ impl Emitter {
     /// Construct a new non-isotropic point source instance.
     #[inline]
     #[must_use]
-    pub fn new_non_isotropic_points(points: Vec<Point3>, cdf: SphericalCdf) -> Self {
-        Self::NonIsotropicPoints(points, cdf)
+    pub fn new_non_isotropic(cdf: SphericalCdf, trans: Trans3) -> Self {
+        Self::NonIsotropic(cdf, trans)
     }
 
     /// Emit a new ray.
@@ -121,7 +121,7 @@ impl Emitter {
                 }
                 panic!("Failed to emit ray from volume.")
             }
-            Self::NonIsotropicPoints(ref points, ref cdf) => {
+            Self::NonIsotropic(ref cdf, ref trans) => {
                 // Using the logic from the isotropic emission case.
                 let (az, pol) = cdf.sample(rng);
 
@@ -131,7 +131,9 @@ impl Emitter {
                 let y = az.sin() * (PI - pol).sin();
                 let z = (PI - pol).cos();
 
-                Ray::new(points[rng.gen_range(0..points.len())], Dir3::new(x, y, z))
+                let dir = trans.transform_vector(&Dir3::new(x, y, z).data());
+
+                Ray::new(trans.transform_point(&Point3::new(0.0, 0.0, 0.0).data()).into(), dir.into())
             }
         }
     }
@@ -146,7 +148,7 @@ impl Display for Emitter {
             Self::WeightedPoints { .. } => "WeightedPoints",
             Self::Surface { .. } => "Surface",
             Self::Volume { .. } => "Volume",
-            Self::NonIsotropicPoints { .. } => "Non-isotropic Points",
+            Self::NonIsotropic { .. } => "Non-isotropic",
         };
         write!(fmt, "{}", kind)
     }
