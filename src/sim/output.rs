@@ -18,6 +18,8 @@ use std::{
     path::Path,
 };
 
+use super::PhotonCollector;
+
 /// MCRT output data.
 #[derive(Clone)]
 pub struct Output<'a> {
@@ -34,6 +36,8 @@ pub struct Output<'a> {
     pub absorptions: Array3<f64>,
     /// Wavelength shifts.
     pub shifts: Array3<f64>,
+    /// Flux - the energy density travelling through each voxel.
+    pub flux: Array3<f64>,
 
     /// Spectrometer name register.
     spec_reg: &'a Register,
@@ -41,6 +45,8 @@ pub struct Output<'a> {
     img_reg: &'a Register,
     /// CCD name register.
     ccd_reg: &'a Register,
+    /// Photon collectors.
+    phot_col_reg: &'a Register,
     /// Spectrometer data.
     pub specs: Vec<Histogram>,
     /// Image data.
@@ -50,6 +56,8 @@ pub struct Output<'a> {
 
     /// Photo data.
     pub photos: Vec<Image>,
+    /// Photon collectors. 
+    pub phot_cols: Vec<PhotonCollector>,
 }
 
 impl<'a> Output<'a> {
@@ -69,10 +77,12 @@ impl<'a> Output<'a> {
         spec_reg: &'a Register,
         img_reg: &'a Register,
         ccd_reg: &'a Register,
+        phot_col_reg: &'a Register,
         specs: Vec<Histogram>,
         imgs: Vec<Image>,
         ccds: Vec<Array3<f64>>,
         photos: Vec<Image>,
+        phot_cols: Vec<PhotonCollector>,
     ) -> Self {
         debug_assert!(res[X] > 0);
         debug_assert!(res[Y] > 0);
@@ -87,13 +97,16 @@ impl<'a> Output<'a> {
             energy: Array3::zeros(res),
             absorptions: Array3::zeros(res),
             shifts: Array3::zeros(res),
+            flux: Array3::zeros(res),
             spec_reg,
             img_reg,
             ccd_reg,
+            phot_col_reg: phot_col_reg,
             specs,
             imgs,
             ccds,
             photos,
+            phot_cols,
         }
     }
 }
@@ -119,6 +132,10 @@ impl AddAssign<&Self> for Output<'_> {
         }
 
         for (a, b) in self.photos.iter_mut().zip(&rhs.photos) {
+            *a += b;
+        }
+
+        for (a, b) in self.phot_cols.iter_mut().zip(&rhs.phot_cols) {
             *a += b;
         }
     }
@@ -155,6 +172,10 @@ impl Save for Output<'_> {
             photo.save(&out_dir.join(&format!("photo_{:03}.png", n)))?;
         }
 
+        for (name, index) in self.phot_col_reg.set().map().iter() {
+            self.phot_cols[*index].save(&out_dir.join(&format!("photon_collector_{}.csv", name)))?;
+        }
+
         Ok(())
     }
 }
@@ -184,6 +205,7 @@ impl Display for Output<'_> {
         fmt_report!(fmt, self.ccds.len(), "ccds");
 
         fmt_report!(fmt, self.photos.len(), "photos");
+        fmt_report!(fmt, self.phot_cols.len(), "photon collectors");
         Ok(())
     }
 }

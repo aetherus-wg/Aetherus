@@ -5,7 +5,7 @@ use crate::{
     geom::{Grid, SurfaceLinker, TreeSettings},
     ord::Set,
     phys::{LightLinker, Material},
-    sim::{AttributeLinkerLinkerLinkerLinker, Engine, Settings},
+    sim::{AttributeLinkerLinkerLinkerLinkerLinker, Engine, Settings},
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -20,7 +20,7 @@ pub struct Parameters {
     /// Surfaces.
     pub surfs: Set<SurfaceLinker>,
     /// Attributes.
-    pub attrs: Set<AttributeLinkerLinkerLinkerLinker>,
+    pub attrs: Set<AttributeLinkerLinkerLinkerLinkerLinker>,
     /// Materials.
     pub mats: Set<Material>,
     /// Main light.
@@ -39,7 +39,7 @@ impl Parameters {
         tree: TreeSettings,
         grid: Grid,
         surfs: Set<SurfaceLinker>,
-        attrs: Set<AttributeLinkerLinkerLinkerLinker>,
+        attrs: Set<AttributeLinkerLinkerLinkerLinkerLinker>,
         mats: Set<Material>,
         lights: Set<LightLinker>,
         engine: Engine,
