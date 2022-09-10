@@ -1,5 +1,5 @@
 use crate::{fs::Save, phys::Photon, err::Error, data::Table, fmt_report};
-use std::{path::Path, fmt::Display, ops::AddAssign};
+use std::{path::Path, fmt::Display, ops::AddAssign, fs::File, io::Write};
 
 #[derive(Default, Clone)]
 pub struct PhotonCollector {
@@ -26,9 +26,19 @@ impl PhotonCollector {
 impl Save for PhotonCollector {
     /// Loads the fields of the photon into a vec of vecs and outputs using a table to CSV. 
     fn save_data(&self, path: &Path) -> Result<(), Error> {  
-        let mut rows = Vec::with_capacity(self.photons.iter().count());      
+        let mut file = File::create(path)?;
+        
+        // To reduce the time to run, I am manually do my won CSV write, directly from this vec. 
+        let headings = vec!["pos_x", "pos_y", "pos_z", "dir_x", "dir_y", "dir_z", "wavelength", "weight"];
+        write!(file, "{}", headings[0])?;
+        for heading in headings.iter().skip(1) {
+            write!(file, ",{}", heading)?;
+        }
+        writeln!(file)?;
+
+        // Write the properties of each of the photons to the output table. 
         for phot in self.photons.iter() {
-            rows.push(vec![
+            writeln!(file, "{},{},{},{},{},{},{},{}",
                 phot.ray().pos().x(),
                 phot.ray().pos().y(),
                 phot.ray().pos().z(),
@@ -36,14 +46,9 @@ impl Save for PhotonCollector {
                 phot.ray().dir().y(),
                 phot.ray().dir().z(),
                 phot.wavelength(),
-            ]);
+                phot.weight(),
+            )?;
         }
-
-        let tab = Table::<f64>::new(
-            vec!["pos_x".to_string(), "pos_y".to_string(), "pos_z".to_string(), "dir_x".to_string(), "dir_y".to_string(), "dir_z".to_string(), "lambda".to_string()],
-            rows
-        );
-        tab.save_data(path)?;
 
         Ok(())
     }
