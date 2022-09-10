@@ -1,5 +1,5 @@
-use crate::{fs::Save, phys::Photon, err::Error, data::Table, fmt_report};
-use std::{path::Path, fmt::Display, ops::AddAssign, fs::File, io::Write};
+use crate::{fs::Save, phys::Photon, err::Error, tools::ProgressBar, fmt_report};
+use std::{path::Path, fmt::Display, ops::AddAssign, fs::File, io::Write, sync::{Arc, Mutex}};
 
 #[derive(Default, Clone)]
 pub struct PhotonCollector {
@@ -36,6 +36,9 @@ impl Save for PhotonCollector {
         }
         writeln!(file)?;
 
+        // This can potentually
+        let mut pb = ProgressBar::new("Saving Photons", self.photons.iter().count());
+
         // Write the properties of each of the photons to the output table. 
         for phot in self.photons.iter() {
             writeln!(file, "{},{},{},{},{},{},{},{}",
@@ -48,6 +51,7 @@ impl Save for PhotonCollector {
                 phot.wavelength(),
                 phot.weight(),
             )?;
+            pb.tick();
         }
 
         Ok(())
