@@ -15,8 +15,8 @@ use Aetherus::{
     ord::{Build, Link, Register, Set, X, Y},
     report,
     sim::{
-        run, AttributeLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
-        ParametersBuilderLoader,
+        run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
+        ParametersBuilderLoader, PhotonCollector,
     },
     util::{
         banner::{section, sub_section, title},
@@ -48,8 +48,8 @@ fn main() {
     report!(mats, "materials");
 
     sub_section(term_width, "Registration");
-    let (spec_reg, img_reg, ccd_reg) = gen_detector_registers(&params.attrs);
-    let base_output = gen_base_output(&engine, &grid, &spec_reg, &img_reg, &ccd_reg, &params.attrs);
+    let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
+    let base_output = gen_base_output(&engine, &grid, &spec_reg, &img_reg, &ccd_reg, &phot_col_reg ,&params.attrs);
 
     sub_section(term_width, "Linking");
     let lights = params
@@ -59,6 +59,8 @@ fn main() {
     report!(lights, "lights");
     let attrs = params
         .attrs
+        .link(phot_col_reg.set())
+        .expect("Failed to link photon collectors to attributes.")
         .link(ccd_reg.set())
         .expect("Failed to link ccds to attributes.")
         .link(img_reg.set())
@@ -151,16 +153,18 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
 }
 
 /// Generate the detector registers.
-fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register) {
+fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register, Register) {
     let mut spec_names = Vec::new();
     let mut img_names = Vec::new();
     let mut ccd_names = Vec::new();
+    let mut phot_col_names = Vec::new();
 
     for attr in attrs.map().values() {
         match *attr {
             Attr::Spectrometer(ref name, ..) => spec_names.push(name.clone()),
             Attr::Imager(ref name, ..) => img_names.push(name.clone()),
             Attr::Ccd(ref name, ..) => ccd_names.push(name.clone()),
+            Attr::PhotonCollector(ref name, ..) => phot_col_names.push(name.clone()),
             _ => {}
         }
     }
@@ -174,7 +178,10 @@ fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register) {
     let ccd_reg = Register::new(ccd_names);
     report!(ccd_reg, "ccd register");
 
-    (spec_reg, img_reg, ccd_reg)
+    let phot_col_reg = Register::new(phot_col_names);
+    report!(phot_col_reg, "photon collector register");
+
+    (spec_reg, img_reg, ccd_reg, phot_col_reg)
 }
 
 /// Generate the base output instance.
@@ -184,6 +191,7 @@ fn gen_base_output<'a>(
     spec_reg: &'a Register,
     img_reg: &'a Register,
     ccd_reg: &'a Register,
+    phot_col_reg: &'a Register,
     attrs: &Set<Attr>,
 ) -> Output<'a> {
     let res = *grid.res();
@@ -233,15 +241,31 @@ fn gen_base_output<'a>(
         }
     }
 
+    let mut phot_cols:Vec<PhotonCollector> = Vec::new();
+    for name in phot_col_reg.set().map().keys() {
+        for attr in attrs.values() {
+            if let Attr::PhotonCollector(phot_col_id, kill_phot) = attr {
+                if name == phot_col_id {
+                    let mut photcol = PhotonCollector::new();
+                    photcol.kill_photon = *kill_phot;
+                    phot_cols.push(photcol);
+                    continue; 
+                }
+            }
+        }
+    }
+
     Output::new(
         grid.boundary().clone(),
         res,
         spec_reg,
         img_reg,
         ccd_reg,
+        phot_col_reg,
         specs,
         imgs,
         ccds,
         photos,
+        phot_cols,
     )
 }

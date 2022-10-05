@@ -7,7 +7,7 @@ use crate::{
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
     phys::Reflectance,
-    sim::{attribute::AttributeLinkerLinkerLinker},
+    sim::{attribute::AttributeLinkerLinkerLinkerLinker},
     tools::{Binner, Range},
 };
 use arctk_attr::file;
@@ -15,7 +15,8 @@ use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
 /// Handles detector linking.
-pub enum AttributeLinkerLinkerLinkerLinker {
+#[file]
+pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     /// Material interface, inside material name, outside material name.
     Interface(Name, Name),
     /// Partially reflective mirror, reflection fraction.
@@ -28,14 +29,14 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     /// The first coefficient is diffuse albedo, the second is specular.
-    Reflector(Reflectance),
+    Reflector(f64, f64, f64),
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating. 
-    PhotonCollector(usize)
+    PhotonCollector(Name, bool)
 }
 
-impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
-    type Inst = AttributeLinkerLinkerLinker;
+impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
+    type Inst = AttributeLinkerLinkerLinkerLinker;
 
     #[inline]
     fn requires(&self) -> Vec<Name> {
@@ -53,20 +54,32 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
             Self::Imager(id, resolution, width, center, forward) => {
                 Self::Inst::Imager(id, resolution, width, center, forward)
             }
-            Self::Ccd(id, _resolution, width, center, forward, binner) => Self::Inst::Ccd(
-                *reg.get(&id)
-                    .unwrap_or_else(|| panic!("Failed to link attribute-ccd key: {}", id)),
-                width,
-                Orient::new(Ray::new(center, Dir3::from(forward))),
-                binner,
-            ),
-            Self::Reflector(reflect) => Self::Inst::Reflector(reflect),
-            Self::PhotonCollector(id) => Self::Inst::PhotonCollector(id),
+            Self::Ccd(id, _resolution, width, center, forward, binner) => Self::Inst::Ccd(id, _resolution, width, center, forward, binner),
+            Self::Reflector(diff_alb, spec_alb, diff_spec_ratio) => {
+                let ref_model = if diff_alb > 0.0 {
+                    if spec_alb > 0.0 {
+                        Reflectance::Composite {
+                            diffuse_albedo: diff_alb,
+                            specular_albedo: spec_alb,
+                            diffuse_specular_ratio: diff_spec_ratio,
+                        }
+                    } else {
+                        Reflectance::Lambertian { albedo: diff_alb }
+                    }
+                } else {
+                    Reflectance::Specular { albedo: spec_alb }
+                };
+
+                Self::Inst::Reflector(ref_model)
+            },
+            Self::PhotonCollector(ref id, _kill_photons) => {
+                Self::Inst::PhotonCollector(*reg.get(&id).unwrap_or_else(|| panic!("Failed to link attribute-photon collector key : {}", id)))
+            }
         })
     }
 }
 
-impl Display for AttributeLinkerLinkerLinkerLinker {
+impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         match *self {
@@ -104,14 +117,16 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref reflectance) => {
+            Self::Reflector(ref diff_alb, ref spec_alb, ref diff_spec_ratio) => {
                 writeln!(fmt, "Reflector: ...")?;
-                fmt_report!(fmt, reflectance, "reflectance");
+                fmt_report!(fmt, diff_alb, "diffuse albedo");
+                fmt_report!(fmt, spec_alb, "specular albedo");
+                fmt_report!(fmt, diff_spec_ratio, "diffuse-to-specular ratio");
                 Ok(())
             },
-            Self::PhotonCollector(ref id) => {
+            Self::PhotonCollector(ref id, ref kill_phot) => {
                 writeln!(fmt, "Photon Collector: ...")?;
-                fmt_report!(fmt, id, "id");
+                fmt_report!(fmt, id, "name");
                 Ok(())
             },
         }

@@ -6,7 +6,7 @@ use crate::{
     geom::Orient,
     ord::{Link, Name, Set},
     phys::Reflectance,
-    sim::attribute::AttributeLinker,
+    sim::{attribute::AttributeLinker, PhotonCollector},
     tools::{Binner, Range},
 };
 use std::fmt::{Display, Formatter};
@@ -26,6 +26,9 @@ pub enum AttributeLinkerLinker {
     Ccd(usize, f64, Orient, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     Reflector(Reflectance),
+    /// A photon collector, which collects the photon that interact with the linked entities.
+    /// These photons can be optionally killed, or left to keep propogating. 
+    PhotonCollector(usize),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinker {
@@ -48,6 +51,7 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinker {
             Self::Imager(id, width, orient) => Self::Inst::Imager(id, width, orient),
             Self::Ccd(id, width, orient, binner) => Self::Inst::Ccd(id, width, orient, binner),
             Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance),
+            Self::PhotonCollector(id) => Self::Inst::PhotonCollector(id),
         })
     }
 }
@@ -90,7 +94,12 @@ impl Display for AttributeLinkerLinker {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
-            }
+            },
+            Self::PhotonCollector(ref id) => {
+                writeln!(fmt, "Photon Collector: ...")?;
+                fmt_report!(fmt, id, "name");
+                Ok(())
+            },
         }
     }
 }

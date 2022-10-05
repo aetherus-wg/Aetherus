@@ -99,6 +99,9 @@ pub fn surface(
             Some(ray) => *phot.ray_mut() = ray,
             None => phot.kill(),
         },
+        Attribute::PhotonCollector(id) => {
+            data.phot_cols[id].collect_photon(phot);
+        },
     }
 }
 
