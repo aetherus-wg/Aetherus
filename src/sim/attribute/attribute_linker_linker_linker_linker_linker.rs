@@ -6,7 +6,7 @@ use crate::{
     geom::{Orient, Ray},
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
-    phys::Reflectance,
+    phys::{Reflectance, Spectrum, SpectrumBuilder},
     sim::{attribute::AttributeLinkerLinkerLinkerLinker},
     tools::{Binner, Range},
 };
@@ -29,7 +29,7 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     /// The first coefficient is diffuse albedo, the second is specular.
-    Reflector(f64, f64, f64),
+    Reflector(Option<SpectrumBuilder>, Option<SpectrumBuilder>, f64),
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating. 
     PhotonCollector(Name, bool)
@@ -55,19 +55,19 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
                 Self::Inst::Imager(id, resolution, width, center, forward)
             }
             Self::Ccd(id, _resolution, width, center, forward, binner) => Self::Inst::Ccd(id, _resolution, width, center, forward, binner),
-            Self::Reflector(diff_alb, spec_alb, diff_spec_ratio) => {
-                let ref_model = if diff_alb > 0.0 {
-                    if spec_alb > 0.0 {
+            Self::Reflector(diff_ref, spec_ref, diff_spec_ratio) => {
+                let ref_model = if diff_ref.is_some() {
+                    if spec_ref.is_some() {
                         Reflectance::Composite {
-                            diffuse_albedo: diff_alb,
-                            specular_albedo: spec_alb,
+                            diffuse_refspec: diff_ref.unwrap().build()?,
+                            specular_refspec: spec_ref.unwrap().build()?,
                             diffuse_specular_ratio: diff_spec_ratio,
                         }
                     } else {
-                        Reflectance::Lambertian { albedo: diff_alb }
+                        Reflectance::Lambertian { refspec: diff_ref.unwrap().build()? }
                     }
                 } else {
-                    Reflectance::Specular { albedo: spec_alb }
+                    Reflectance::Specular { refspec: spec_ref.unwrap().build()? }
                 };
 
                 Self::Inst::Reflector(ref_model)
@@ -117,10 +117,10 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref diff_alb, ref spec_alb, ref diff_spec_ratio) => {
+            Self::Reflector(ref diff_ref, ref spec_ref, ref diff_spec_ratio) => {
                 writeln!(fmt, "Reflector: ...")?;
-                fmt_report!(fmt, diff_alb, "diffuse albedo");
-                fmt_report!(fmt, spec_alb, "specular albedo");
+                fmt_report!(fmt, if diff_ref.is_some() { format!("{}", diff_ref.as_ref().unwrap()) } else { String::from("none") }, "diffuse reflectance");
+                fmt_report!(fmt, if diff_ref.is_some() { format!("{}", spec_ref.as_ref().unwrap()) } else { String::from("none") }, "specular reflectance");
                 fmt_report!(fmt, diff_spec_ratio, "diffuse-to-specular ratio");
                 Ok(())
             },

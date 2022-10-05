@@ -3,12 +3,15 @@ use crate::{
     fmt_report,
     geom::{Hit, Ray},
     sim::Attribute,
+    phys::Spectrum,
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::{f64::consts::PI, fmt::Display};
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+use super::Photon;
+
+#[derive(Clone, Debug)]
 pub enum Reflectance {
     /// Lambertian Reflectance
     ///
@@ -17,14 +20,14 @@ pub enum Reflectance {
     /// light ray.
     /// The albdeo determines which portion of the incoming photons are reflected or killed.
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    Lambertian { albedo: Real },
+    Lambertian { refspec: Spectrum },
     /// Specular Reflectance
     ///
     /// Provides a purely specular reflectance, where the angle of the reflected
     /// photon from the normal vector is the same as the incoming ray.
     /// The albdeo determines which portion of the incoming photons are reflected or killed.
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    Specular { albedo: Real },
+    Specular { refspec: Spectrum },
     /// Composition Reflectance Model - Specular + Diffuse
     ///
     /// A composite reflectance model combines a combination of diffuse and specular reflectance.
@@ -33,8 +36,8 @@ pub enum Reflectance {
     /// The `diffuse_albedo` and `specular_albedo` are directly fed through to the
     /// albedos of their respective models and have their usual meanings.
     Composite {
-        diffuse_albedo: Real,
-        specular_albedo: Real,
+        diffuse_refspec: Spectrum,
+        specular_refspec: Spectrum,
         diffuse_specular_ratio: Real,
     },
 }
@@ -46,10 +49,8 @@ impl Reflectance {
     /// the normal to the surface lies.
     /// The albdeo determines which portion of the incoming photons are reflected or killed.
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    pub fn new_lambertian(albedo: Real) -> Self {
-        debug_assert!(albedo <= 1.0 && albedo >= 0.0);
-
-        Self::Lambertian { albedo }
+    pub fn new_lambertian(refspec: Spectrum) -> Self {
+        Self::Lambertian { refspec }
     }
 
     /// Produces a new Specular reflectance instance.
@@ -57,27 +58,21 @@ impl Reflectance {
     /// are reflected like they would be from a mirror; at the same angle to the normal vector of the surface.
     /// The albdeo determines which portion of the incoming photons are reflected or killed.
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    pub fn new_specular(albedo: Real) -> Self {
-        debug_assert!(albedo <= 1.0 && albedo >= 0.0);
-
-        Self::Specular { albedo }
+    pub fn new_specular(refspec: Spectrum) -> Self {
+        Self::Specular { refspec }
     }
 
     /// Prodduces a new Reflectance instance that is a composite between diffuse and specular reflection.
     /// This is a combination of diffuse (Lambertian) and specular reflection, with the ratio between them
     /// determined by the `specular_diffuse_ratio`. 1.0 corresponds to pure diffuse and 0.0 corresponds to pure specular.
     pub fn new_composite(
-        diffuse_albedo: Real,
-        specular_albedo: Real,
+        diffuse_refspec: Spectrum,
+        specular_refspec: Spectrum,
         diffuse_specular_ratio: Real,
     ) -> Self {
-        debug_assert!(diffuse_albedo <= 1.0 && diffuse_albedo >= 0.0);
-        debug_assert!(specular_albedo <= 1.0 && specular_albedo >= 0.0);
-        debug_assert!(diffuse_specular_ratio <= 1.0 && diffuse_specular_ratio >= 0.0);
-
         Self::Composite {
-            diffuse_albedo,
-            specular_albedo,
+            diffuse_refspec,
+            specular_refspec,
             diffuse_specular_ratio,
         }
     }
@@ -90,44 +85,54 @@ impl Reflectance {
     pub fn reflect<R: Rng>(
         &self,
         rng: &mut R,
-        incident_ray: &Ray,
+        incident_photon: &Photon,
         hit: &Hit<Attribute>,
     ) -> Option<Ray> {
         match *self {
-            Self::Lambertian { ref albedo } => {
+            Self::Lambertian { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
-                let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
+                match refspec.interp(incident_photon.wavelength()) {
+                    None => None, 
+                    Some(ref_prob) => {
+                        let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
 
-                if should_reflect {
-                    let theta = rng.gen_range(0.0..2.0 * PI);
-                    // We sample the phi angle using PDF = sin(theta)
-                    let phi = (rng.gen_range(0.0..1.0) as Real).asin();
+                        if should_reflect {
+                            let theta = rng.gen_range(0.0..2.0 * PI);
+                            // We sample the phi angle using PDF = sin(theta)
+                            let phi = (rng.gen_range(0.0..1.0) as Real).asin();
 
-                    let mut reflected_ray =
-                        Ray::new(incident_ray.pos().clone(), hit.side().norm().clone());
-                    reflected_ray.rotate(phi, theta);
-                    Some(reflected_ray)
-                } else {
-                    None
+                            let mut reflected_ray =
+                                Ray::new(incident_photon.ray().pos().clone(), hit.side().norm().clone());
+                            reflected_ray.rotate(phi, theta);
+                            Some(reflected_ray)
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
-            Self::Specular { ref albedo } => {
+            Self::Specular { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
-                let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
+                match refspec.interp(incident_photon.wavelength()) {
+                    None => None,
+                    Some(ref_prob) => {
+                        let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
 
-                if should_reflect {
-                    // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
-                    let reflect = *incident_ray.dir()
-                        + 2.0 * hit.side().norm().dot(&-*incident_ray.dir()) * hit.side().norm();
-                    let reflected_ray = Ray::new(incident_ray.pos().clone(), reflect.into());
-                    Some(reflected_ray)
-                } else {
-                    None
+                        if should_reflect {
+                            // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
+                            let reflect = *incident_photon.ray().dir()
+                                + 2.0 * hit.side().norm().dot(&-*incident_photon.ray().dir()) * hit.side().norm();
+                            let reflected_ray = Ray::new(incident_photon.ray().pos().clone(), reflect.into());
+                            Some(reflected_ray)
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
             Self::Composite {
-                ref diffuse_albedo,
-                ref specular_albedo,
+                ref diffuse_refspec,
+                ref specular_refspec,
                 ref diffuse_specular_ratio,
             } => {
                 // This random draw determines, based on the ratio, whether the reflection for the
@@ -136,9 +141,9 @@ impl Reflectance {
 
                 // Then we just delegate handling of the reflection to the respective model.
                 if is_specular {
-                    Self::new_specular(*specular_albedo).reflect(rng, incident_ray, hit)
+                    Self::new_specular(specular_refspec.clone()).reflect(rng, incident_photon, hit)
                 } else {
-                    Self::new_lambertian(*diffuse_albedo).reflect(rng, incident_ray, hit)
+                    Self::new_lambertian(diffuse_refspec.clone()).reflect(rng, incident_photon, hit)
                 }
             }
         }
@@ -149,24 +154,24 @@ impl Display for Reflectance {
     #[inline]
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            Self::Lambertian { ref albedo } => {
+            Self::Lambertian { ref refspec } => {
                 writeln!(fmt, "Lambertian: ")?;
-                fmt_report!(fmt, albedo, "albedo");
+                fmt_report!(fmt, refspec, "reflectance spectrum");
                 Ok(())
             }
-            Self::Specular { ref albedo } => {
+            Self::Specular { ref refspec } => {
                 writeln!(fmt, "Specular: ")?;
-                fmt_report!(fmt, albedo, "albedo");
+                fmt_report!(fmt, refspec, "reflectance spectrum");
                 Ok(())
             }
             Self::Composite {
-                ref diffuse_albedo,
-                ref specular_albedo,
+                ref diffuse_refspec,
+                ref specular_refspec,
                 ref diffuse_specular_ratio,
             } => {
                 writeln!(fmt, "Composite: ")?;
-                fmt_report!(fmt, diffuse_albedo, "diffuse albedo");
-                fmt_report!(fmt, specular_albedo, "specular albedo");
+                fmt_report!(fmt, diffuse_refspec, "diffuse reflectance spectrum");
+                fmt_report!(fmt, specular_refspec, "specular reflectance spectrum");
                 fmt_report!(fmt, diffuse_specular_ratio, "diffuse-to-specular ratio");
                 Ok(())
             }
@@ -180,6 +185,7 @@ mod tests {
     use crate::{
         core::Real,
         data::Histogram,
+        phys::{Photon, Spectrum},
         geom::{Hit, Ray, Side},
         math::{Dir2, Dir3, Point3},
         sim::Attribute,
@@ -198,9 +204,10 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 1.0);
-        let reflect = Reflectance::new_lambertian(1.0);
+        let reflect = Reflectance::new_lambertian(Spectrum::new_uniform(300.0, 900.0, 1.0));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
         // We only initialise between 0
@@ -210,7 +217,7 @@ mod tests {
         let n_phot: usize = 100_000;
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
@@ -273,9 +280,10 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 1.0);
-        let reflect = Reflectance::new_lambertian(0.5);
+        let reflect = Reflectance::new_lambertian(Spectrum::new_uniform(300.0, 900.0, 0.5));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Prepare bins for capturing statistics.
         let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
@@ -285,7 +293,7 @@ mod tests {
         let n_phot = 100_000;
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
@@ -354,14 +362,15 @@ mod tests {
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
-        let reflect = Reflectance::new_specular(1.0);
+        let reflect = Reflectance::new_specular(Spectrum::new_uniform(300.0, 900.0, 1.0));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Expected output - analytically determined by working through the equations.
         let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
 
-        match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+        match reflect.reflect(&mut rng, &incoming_photon, &hit) {
             Some(ray) => {
                 // Use assert_approx_eq due to numerical noise.
                 assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
@@ -378,9 +387,10 @@ mod tests {
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
-        let reflect = Reflectance::new_specular(0.5);
+        let reflect = Reflectance::new_specular(Spectrum::new_uniform(300.0, 900.0, 0.5));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Expected output - analytically determined by working through the equations.
         let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
@@ -389,7 +399,7 @@ mod tests {
         let n_photon: usize = 100_000;
         let mut n_killed_photons: usize = 0;
         for _ in 0..n_photon {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Use assert_approx_eq due to numerical noise.
                     assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
@@ -416,9 +426,10 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 0.0);
-        let reflect = Reflectance::new_composite(1.0, 1.0, 0.5);
+        let reflect = Reflectance::new_composite(Spectrum::new_uniform(300.0, 900.0, 1.0), Spectrum::new_uniform(300.0, 900.0, 1.0), 0.5);
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Prepare bins for capturing statistics.
         let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
@@ -427,7 +438,7 @@ mod tests {
         let n_phot = 100_000;
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
