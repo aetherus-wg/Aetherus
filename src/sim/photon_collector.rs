@@ -1,5 +1,43 @@
 use crate::{fs::Save, phys::Photon, err::Error, tools::ProgressBar, fmt_report};
-use std::{path::Path, fmt::Display, ops::AddAssign, fs::File, io::Write, sync::{Arc, Mutex}};
+use std::{path::Path, fmt::Display, ops::AddAssign, fs::File, io::Write};
+
+/*
+pub fn photon_collector_write_thread(path_str: String, rx: Receiver<Option<Photon>>) {
+    let file_path = Path::new(&path_str);
+    let mut file = File::create(file_path).expect("Unable to open file for writing. ");
+
+    // To reduce the time to run, I am manually do my won CSV write, directly from this vec. 
+    let headings = vec!["pos_x", "pos_y", "pos_z", "dir_x", "dir_y", "dir_z", "wavelength", "weight"];
+    write!(file, "{}", headings[0]).expect("Unable to write header to file. ");;
+    for heading in headings.iter().skip(1) {
+        write!(file, ",{}", heading).expect("Unable to write header to file. ");
+    }
+    writeln!(file).expect("Unable to write header to file. ");
+
+    loop {
+        while let optphot = rx.recv().unwrap() {
+            match optphot {
+                Some(phot) => {
+                    writeln!(file, "{},{},{},{},{},{},{},{}",
+                        phot.ray().pos().x(),
+                        phot.ray().pos().y(),
+                        phot.ray().pos().z(),
+                        phot.ray().dir().x(),
+                        phot.ray().dir().y(),
+                        phot.ray().dir().z(),
+                        phot.wavelength(),
+                        phot.weight(),
+                    ).expect("Unable to write photon to file. ");
+                }
+                None => break,
+            }
+        }
+
+        // Wait for new photons. 
+        thread::sleep(Duration::from_millis(1000));
+    }
+}
+*/
 
 #[derive(Default, Clone)]
 pub struct PhotonCollector {
@@ -21,37 +59,44 @@ impl PhotonCollector {
             phot.kill();
         }
     }
+
+    pub fn nphoton(&self) -> usize {
+        self.photons.iter().count()
+    }
 }
 
 impl Save for PhotonCollector {
     /// Loads the fields of the photon into a vec of vecs and outputs using a table to CSV. 
     fn save_data(&self, path: &Path) -> Result<(), Error> {  
-        let mut file = File::create(path)?;
+
+        if self.photons.iter().count() > 0 {
+            let mut file = File::create(path)?;
         
-        // To reduce the time to run, I am manually do my won CSV write, directly from this vec. 
-        let headings = vec!["pos_x", "pos_y", "pos_z", "dir_x", "dir_y", "dir_z", "wavelength", "weight"];
-        write!(file, "{}", headings[0])?;
-        for heading in headings.iter().skip(1) {
-            write!(file, ",{}", heading)?;
-        }
-        writeln!(file)?;
+            // To reduce the time to run, I am manually do my won CSV write, directly from this vec. 
+            let headings = vec!["pos_x", "pos_y", "pos_z", "dir_x", "dir_y", "dir_z", "wavelength", "weight"];
+            write!(file, "{}", headings[0])?;
+            for heading in headings.iter().skip(1) {
+                write!(file, ",{}", heading)?;
+            }
+            writeln!(file)?;
 
-        // This can potentually
-        let mut pb = ProgressBar::new("Saving Photons", self.photons.iter().count());
+            // This can potentually
+            let mut pb = ProgressBar::new("Saving Photons", self.photons.iter().count());
 
-        // Write the properties of each of the photons to the output table. 
-        for phot in self.photons.iter() {
-            writeln!(file, "{},{},{},{},{},{},{},{}",
-                phot.ray().pos().x(),
-                phot.ray().pos().y(),
-                phot.ray().pos().z(),
-                phot.ray().dir().x(),
-                phot.ray().dir().y(),
-                phot.ray().dir().z(),
-                phot.wavelength(),
-                phot.weight(),
-            )?;
-            pb.tick();
+            // Write the properties of each of the photons to the output table. 
+            for phot in self.photons.iter() {
+                writeln!(file, "{},{},{},{},{},{},{},{}",
+                    phot.ray().pos().x(),
+                    phot.ray().pos().y(),
+                    phot.ray().pos().z(),
+                    phot.ray().dir().x(),
+                    phot.ray().dir().y(),
+                    phot.ray().dir().z(),
+                    phot.wavelength(),
+                    phot.weight(),
+                )?;
+                pb.tick();
+            }
         }
 
         Ok(())
@@ -71,5 +116,33 @@ impl Display for PhotonCollector {
         writeln!(fmt, "PhotonCollector: ")?;
         fmt_report!(fmt, self.kill_photon, "kill on collect");
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PhotonCollector;
+    use crate::{
+        phys::Photon,
+        geom::Ray,
+        math::{Point3, Dir3},
+    };
+
+
+    #[test]
+    fn test_photon_collect() {
+        let mut col = PhotonCollector::new();
+        let pos = Point3::new(0.0, 0.0, 0.0);
+        let dir = Dir3::new(1.0, 0.0, 0.0);
+        let mut test_phot = Photon::new(Ray::new(pos.clone(), dir.clone()), 5.0E-7, 1.0);
+
+        // Now collect the photon and check that it a) was collected and b) all of the quantities were conserved. 
+        col.collect_photon(&mut test_phot);
+        
+        assert_eq!(col.nphoton(), 1);
+        assert_eq!(*col.photons[0].ray().pos(), pos);
+        assert_eq!(*col.photons[0].ray().dir(), dir);
+        assert_eq!(col.photons[0].wavelength(), 5.0E-7);
+        assert_eq!(col.photons[0].power(), 1.0);
     }
 }
