@@ -191,7 +191,7 @@ mod tests {
         sim::Attribute,
     };
     use assert_approx_eq::assert_approx_eq;
-    use rand;
+    use rand::Rng;
     use statrs::statistics::Statistics;
     use std::f64::consts::PI;
 
@@ -509,5 +509,32 @@ mod tests {
             n_phot as Real * 0.25,
             n_phot as Real * 0.01
         );
+    }
+
+    /// This test is simply to check that our reflectance spectrum actually gets correctly applied to the incident photons.
+    /// In this test, we have a tophat where we let all photons between the lower and upper wavelengths through.
+    /// If any that make it through are not, this test instantly fails. 
+    #[test]
+    fn test_reflectance_spectrum() {
+        // Create an incoming ray.
+        let incoming_ray = Ray::new(Point3::new(1., 0., 1.0), Dir3::new(1.0, 0.0, -1.0));
+        let mut rng = rand::thread_rng();
+        let lower = 500.0;
+        let upper = 550.0;
+
+        // Simulate a hit on a surface.
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+        let reflect = Reflectance::new_specular(Spectrum::new_uniform(lower, upper, 1.0));
+        let attrib = Attribute::Reflector(reflect.clone());
+        let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+
+        for _ in 0..100_000 {
+            let incoming_photon = Photon::new(incoming_ray.clone(), rng.gen_range(300.0..900.0), 1.0);
+            println!("{}", incoming_photon.wavelength());
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
+                Some(_) => assert!(lower <= incoming_photon.wavelength() && incoming_photon.wavelength() <= upper ),
+                None => assert!(incoming_photon.wavelength() <= lower || upper <= incoming_photon.wavelength() ), // With a perfect reflector, we should have no killed photons.
+            }
+        }
     }
 }

@@ -59,6 +59,12 @@ impl Spectrum {
     /// Performs a linear interpolation of the loaded data to return a value. 
     pub fn interp(&self, lam: f64) -> Option<f64> {
 
+        // First check that the wavelength falls within the region of wavelength spectrum that we cover.
+        // If not, we are done. Just return a None. 
+        if self.lam.iter().count() > 0 && (lam < *self.lam.iter().next().unwrap() || lam > *self.lam.iter().last().unwrap() ) {
+            return None
+        }
+
         // First determine the index that is below
         match self.lam.iter().position(|t| lam >= *t) {
             // Wavelength not within the array, so return None. 
