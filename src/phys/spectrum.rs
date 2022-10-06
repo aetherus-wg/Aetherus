@@ -109,30 +109,58 @@ mod tests {
     use super::Spectrum;
     use tempfile::NamedTempFile;
 
+    /// Test that the uniform spectrum produces the correct results.
+    /// Also implicitly tests that the linear interpolation is working as expected.
     #[test]
     fn test_uniform_interp() {
         let spec = Spectrum::new_uniform(0.0, 1.0, 1.0);
+        assert_eq!(spec.interp(0.25), Some(1.0));
         assert_eq!(spec.interp(0.5), Some(1.0));
+        assert_eq!(spec.interp(0.75), Some(1.0));
     }
 
+    /// Test that the the linear function specturm produces the correct results. 
+    /// Also implicitly tests that the linear interpolation is working as expected.
     #[test]
     fn test_linear_func_interp() {
         let spec = Spectrum::new_linear(0.0, 1.0, 0.0, 1.0);
+        assert_eq!(spec.interp(0.25), Some(0.25));
         assert_eq!(spec.interp(0.5), Some(0.5));
+        assert_eq!(spec.interp(0.75), Some(0.75));
     }
 
+    /// Tests that the loading of a simpple (linear) spectrum from a file works as expected. 
     #[test]
     fn test_linear_func_interp_from_file() {
+        // Create a temporary file with the simple (2 point) linear spectrum in it. 
         let infile = NamedTempFile::new().expect("Expected Temporary file to write test spectrum");
         let mut file = infile.reopen().expect("Unable to open temp file to write test spectrum. ");
         file.write_all("lam, val\n0.0, 0.0\n1.0, 1.0\n".as_bytes()).expect("Unable to write test spectrum. ");
 
+        // Now attempt to load in the spectrum we created, failing if the process fails. 
         let path = infile.path();
         let spec_res = Spectrum::from_file(&path);
         assert!(spec_res.is_ok());
 
+        // Now sample from the loaded spectrum. 
         let spec = spec_res.unwrap();
-        println!("{:?}", spec.val);
+        assert_eq!(spec.interp(0.25), Some(0.25));
         assert_eq!(spec.interp(0.5), Some(0.5));
+        assert_eq!(spec.interp(0.75), Some(0.75));
+    }
+
+    /// In this test I will ensure that the behaviour is as expected for samples that lie
+    /// on and outside of the boundaries.
+    #[test]
+    fn test_spectrum_boundaries() {
+        let spec = Spectrum::new_linear(0.0, 1.0, 0.0, 1.0);
+
+        // First, let's ensure that if we sample outside the boundaries, we get a none. 
+        assert!( spec.interp(-0.1).is_none() );
+        assert!( spec.interp(1.1).is_none() );
+
+        // Check that we retrieve the sample points on the first and last data points. 
+        assert_eq!( spec.interp(0.0), Some(0.0) );
+        assert_eq!( spec.interp(1.0), Some(1.0) );
     }
 }
