@@ -133,7 +133,12 @@ impl Emitter {
 
                 let dir = trans.transform_vector(&Dir3::new(x, y, z).data());
 
-                Ray::new(trans.transform_point(&Point3::new(0.0, 0.0, 0.0).data()).into(), dir.into())
+                Ray::new(
+                    trans
+                        .transform_point(&Point3::new(0.0, 0.0, 0.0).data())
+                        .into(),
+                    dir.into(),
+                )
             }
         }
     }

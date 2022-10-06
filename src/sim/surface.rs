@@ -101,7 +101,7 @@ pub fn surface(
         },
         Attribute::PhotonCollector(id) => {
             data.phot_cols[id].collect_photon(phot);
-        },
+        }
     }
 }
 

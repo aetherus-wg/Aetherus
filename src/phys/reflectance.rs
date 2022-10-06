@@ -2,8 +2,8 @@ use crate::{
     core::Real,
     fmt_report,
     geom::{Hit, Ray},
-    sim::Attribute,
     phys::Spectrum,
+    sim::Attribute,
 };
 use rand::Rng;
 use std::{f64::consts::PI, fmt::Display};
@@ -11,18 +11,17 @@ use std::{f64::consts::PI, fmt::Display};
 use super::Photon;
 
 /// A small utility function that checks that the provided spectrum is valid as a
-/// reflectance spectrum. This means that it should have values that are between 0.0 
-/// and 1.0. 
+/// reflectance spectrum. This means that it should have values that are between 0.0
+/// and 1.0.
 pub fn reflectance_spectrum_valid(spec: &Spectrum) -> bool {
     match *spec {
-        Spectrum::Constant(ref val) | 
-        Spectrum::Tophat(_, _, ref val) => {
+        Spectrum::Constant(ref val) | Spectrum::Tophat(_, _, ref val) => {
             if *val >= 0.0 && *val <= 1.0 {
                 true
             } else {
                 false
             }
-        },
+        }
         Spectrum::Data(_, _) => {
             let max = spec.max_val();
             let min = spec.min_val();
@@ -107,7 +106,7 @@ impl Reflectance {
         specular_refspec: Spectrum,
         diffuse_specular_ratio: Real,
     ) -> Self {
-        // Check that we have sensible reflectances --- they range from 0.0 - 1.0. 
+        // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
         assert!(reflectance_spectrum_valid(&diffuse_refspec));
         assert!(reflectance_spectrum_valid(&specular_refspec));
 
@@ -133,7 +132,7 @@ impl Reflectance {
             Self::Lambertian { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
                 match refspec.value_at(incident_photon.wavelength()) {
-                    None => None, 
+                    None => None,
                     Some(ref_prob) => {
                         let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
 
@@ -142,8 +141,10 @@ impl Reflectance {
                             // We sample the phi angle using PDF = sin(theta)
                             let phi = (rng.gen_range(0.0..1.0) as Real).asin();
 
-                            let mut reflected_ray =
-                                Ray::new(incident_photon.ray().pos().clone(), hit.side().norm().clone());
+                            let mut reflected_ray = Ray::new(
+                                incident_photon.ray().pos().clone(),
+                                hit.side().norm().clone(),
+                            );
                             reflected_ray.rotate(phi, theta);
                             Some(reflected_ray)
                         } else {
@@ -162,8 +163,11 @@ impl Reflectance {
                         if should_reflect {
                             // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
                             let reflect = *incident_photon.ray().dir()
-                                + 2.0 * hit.side().norm().dot(&-*incident_photon.ray().dir()) * hit.side().norm();
-                            let reflected_ray = Ray::new(incident_photon.ray().pos().clone(), reflect.into());
+                                + 2.0
+                                    * hit.side().norm().dot(&-*incident_photon.ray().dir())
+                                    * hit.side().norm();
+                            let reflected_ray =
+                                Ray::new(incident_photon.ray().pos().clone(), reflect.into());
                             Some(reflected_ray)
                         } else {
                             None
@@ -226,9 +230,9 @@ mod tests {
     use crate::{
         core::Real,
         data::Histogram,
-        phys::{Photon, Spectrum},
         geom::{Hit, Ray, Side},
         math::{Dir2, Dir3, Point3},
+        phys::{Photon, Spectrum},
         sim::Attribute,
     };
     use assert_approx_eq::assert_approx_eq;
@@ -467,7 +471,11 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 0.0);
-        let reflect = Reflectance::new_composite(Spectrum::new_tophat(300.0, 900.0, 1.0), Spectrum::new_tophat(300.0, 900.0, 1.0), 0.5);
+        let reflect = Reflectance::new_composite(
+            Spectrum::new_tophat(300.0, 900.0, 1.0),
+            Spectrum::new_tophat(300.0, 900.0, 1.0),
+            0.5,
+        );
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
         let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
@@ -554,7 +562,7 @@ mod tests {
 
     /// This test is simply to check that our reflectance spectrum actually gets correctly applied to the incident photons.
     /// In this test, we have a tophat where we let all photons between the lower and upper wavelengths through.
-    /// If any that make it through are not, this test instantly fails. 
+    /// If any that make it through are not, this test instantly fails.
     #[test]
     fn test_reflectance_spectrum() {
         // Create an incoming ray.
@@ -570,11 +578,16 @@ mod tests {
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
 
         for _ in 0..100_000 {
-            let incoming_photon = Photon::new(incoming_ray.clone(), rng.gen_range(300.0..900.0), 1.0);
+            let incoming_photon =
+                Photon::new(incoming_ray.clone(), rng.gen_range(300.0..900.0), 1.0);
             println!("{}", incoming_photon.wavelength());
             match reflect.reflect(&mut rng, &incoming_photon, &hit) {
-                Some(_) => assert!(lower <= incoming_photon.wavelength() && incoming_photon.wavelength() <= upper ),
-                None => assert!(incoming_photon.wavelength() <= lower || upper <= incoming_photon.wavelength() ), // With a perfect reflector, we should have no killed photons.
+                Some(_) => assert!(
+                    lower <= incoming_photon.wavelength() && incoming_photon.wavelength() <= upper
+                ),
+                None => assert!(
+                    incoming_photon.wavelength() <= lower || upper <= incoming_photon.wavelength()
+                ), // With a perfect reflector, we should have no killed photons.
             }
         }
     }

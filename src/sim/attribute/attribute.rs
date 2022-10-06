@@ -18,8 +18,8 @@ pub enum Attribute<'a> {
     /// A purely reflecting material, with a provided reflectance model.
     Reflector(Reflectance),
     /// A photon collector, which collects the photon that interact with the linked entities.
-    /// These photons can be optionally killed, or left to keep propogating. 
-    PhotonCollector(usize)
+    /// These photons can be optionally killed, or left to keep propogating.
+    PhotonCollector(usize),
 }
 
 impl Display for Attribute<'_> {
@@ -54,12 +54,12 @@ impl Display for Attribute<'_> {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
-            },
+            }
             Self::PhotonCollector(ref id) => {
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "name");
                 Ok(())
-            },
+            }
         }
     }
 }
