@@ -66,7 +66,7 @@ impl Spectrum {
                 }
 
                 // First determine the index that is below
-                match lams.iter().position(|t| lam >= *t) {
+                match lams.iter().position(|t| lam <= *t) {
                     // Wavelength not within the array, so return None. 
                     None => None,
                     Some(idx) => {
@@ -75,13 +75,14 @@ impl Spectrum {
                             Some(vals[idx])
                         } else {
                             // We need to interpolate. 
-                            if idx == lams.iter().count() - 1 {
-                                // This is the last item, so we can't interpolate.
+                            if idx == 0 {
+                                // This is the first item, so we can't interpolate.
                                 None
                             } else {
-                                let dval = vals[idx + 1 ] - vals[idx];
-                                let sigma = (lam - lams[idx]) / (lams[idx + 1 ] - lams[idx]);
+                                let dval = vals[idx] - vals[idx - 1];
+                                let sigma = (lam - lams[idx]) / (lams[idx] - lams[idx - 1]);
                                 let terp = vals[idx] + dval * sigma;
+                                //println!("{} -> [{}]{}", lam, idx, lams[idx]);
                                 Some(terp)
                             }
                         }
