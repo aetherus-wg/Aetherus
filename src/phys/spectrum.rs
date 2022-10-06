@@ -183,6 +183,17 @@ mod tests {
         assert_eq!(spec.value_at(0.75), Some(0.75));
     }
 
+    /// A proper test of the linear interpolation using just 11 points from 0.0 - 1.0.
+    /// This is just checking that the interpolation works with a larger number of points. 
+    #[test]
+    fn test_linear_func_interp_11pts() {
+        let pts = vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+        let spec = Spectrum::Data(pts.clone(), pts);
+        assert_eq!(spec.value_at(0.25), Some(0.25));
+        assert_eq!(spec.value_at(0.5), Some(0.5));
+        assert_eq!(spec.value_at(0.75), Some(0.75));
+    }
+
     /// Tests that the loading of a simpple (linear) spectrum from a file works as expected. 
     #[test]
     fn test_linear_func_interp_from_file() {
@@ -190,6 +201,27 @@ mod tests {
         let infile = NamedTempFile::new().expect("Expected Temporary file to write test spectrum");
         let mut file = infile.reopen().expect("Unable to open temp file to write test spectrum. ");
         file.write_all("lam, val\n0.0, 0.0\n1.0, 1.0\n".as_bytes()).expect("Unable to write test spectrum. ");
+
+        // Now attempt to load in the spectrum we created, failing if the process fails. 
+        let path = infile.path();
+        let spec_res = Spectrum::data_from_file(&path);
+        assert!(spec_res.is_ok());
+
+        // Now sample from the loaded spectrum. 
+        let spec = spec_res.unwrap();
+        assert_eq!(spec.value_at(0.25), Some(0.25));
+        assert_eq!(spec.value_at(0.5), Some(0.5));
+        assert_eq!(spec.value_at(0.75), Some(0.75));
+    }
+
+    /// The same as the linear funcion interpolation from file, but with 11 points rather than just the start and end.
+    /// This does a rigorous check of the entire workflow or loading a spectrum from a file and sampling. 
+    #[test]
+    fn test_linear_func_interp_from_file_11pts() {
+        // Create a temporary file with the simple (2 point) linear spectrum in it. 
+        let infile = NamedTempFile::new().expect("Expected Temporary file to write test spectrum");
+        let mut file = infile.reopen().expect("Unable to open temp file to write test spectrum. ");
+        file.write_all("lam, val\n0.0, 0.0\n0.1, 0.1\n0.2, 0.2\n0.3, 0.3\n0.4, 0.4\n0.5, 0.5\n0.6, 0.6\n0.7, 0.7\n0.8, 0.8\n0.9, 0.9\n1.0, 1.0\n".as_bytes()).expect("Unable to write test spectrum. ");
 
         // Now attempt to load in the spectrum we created, failing if the process fails. 
         let path = infile.path();
