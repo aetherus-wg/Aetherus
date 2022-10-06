@@ -12,15 +12,15 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum SpectrumBuilder {
     Spectrum(String),
-    Uniform(f64, f64, f64),
+    Tophat(f64, f64, f64),
     Linear(f64, f64, f64, f64),
 }
 
 impl SpectrumBuilder {
     pub fn build(&self) -> Result<Spectrum, Error> {
         match *self {
-            Self::Spectrum(ref input_file) => Spectrum::from_file(&Path::new(&input_file)),
-            Self::Uniform(lower, upper, val) => Ok(Spectrum::new_uniform(lower, upper, val)),
+            Self::Spectrum(ref input_file) => Spectrum::data_from_file(&Path::new(&input_file)),
+            Self::Tophat(lower, upper, val) => Ok(Spectrum::new_tophat(lower, upper, val)),
             Self::Linear(lower, upper, lower_value, upper_value) => Ok(Spectrum::new_linear(lower, upper, lower_value, upper_value)),
         }
     }
@@ -35,7 +35,7 @@ impl Display for SpectrumBuilder {
                 fmt_report!(fmt, input_file, "input file");
                 Ok(())
             },
-            Self::Uniform(lower, upper, val) => {
+            Self::Tophat(lower, upper, val) => {
                 writeln!(fmt, "Uniform: ")?;
                 fmt_report!(fmt, format!("{}..{}", lower, upper), "wavelength range");
                 fmt_report!(fmt, val, "value");

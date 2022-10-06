@@ -6,10 +6,43 @@ use crate::{
     phys::Spectrum,
 };
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 use std::{f64::consts::PI, fmt::Display};
 
 use super::Photon;
+
+/// A small utility function that checks that the provided spectrum is valid as a
+/// reflectance spectrum. This means that it should have values that are between 0.0 
+/// and 1.0. 
+pub fn reflectance_spectrum_valid(spec: &Spectrum) -> bool {
+    match *spec {
+        Spectrum::Constant(ref val) | 
+        Spectrum::Tophat(_, _, ref val) => {
+            if *val >= 0.0 && *val <= 1.0 {
+                true
+            } else {
+                false
+            }
+        },
+        Spectrum::Data(_, _) => {
+            let max = spec.max_val();
+            let min = spec.min_val();
+
+            if min.is_some() && max.is_some() {
+                if *max.unwrap() <= 1.0 && *max.unwrap() >= 0.0 {
+                    if *max.unwrap() <= 1.0 && *max.unwrap() >= 0.0 {
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum Reflectance {
@@ -51,8 +84,7 @@ impl Reflectance {
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
     pub fn new_lambertian(refspec: Spectrum) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
-        assert!(*refspec.max_val().unwrap() <= 1.0);
-        assert!(*refspec.min_val().unwrap() >= 0.0);
+        assert!(reflectance_spectrum_valid(&refspec));
         Self::Lambertian { refspec }
     }
 
@@ -63,8 +95,7 @@ impl Reflectance {
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
     pub fn new_specular(refspec: Spectrum) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
-        assert!(*refspec.max_val().unwrap() <= 1.0);
-        assert!(*refspec.min_val().unwrap() >= 0.0);
+        assert!(reflectance_spectrum_valid(&refspec));
         Self::Specular { refspec }
     }
 
@@ -77,10 +108,8 @@ impl Reflectance {
         diffuse_specular_ratio: Real,
     ) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0. 
-        assert!(*diffuse_refspec.max_val().unwrap() <= 1.0);
-        assert!(*diffuse_refspec.min_val().unwrap() >= 0.0);
-        assert!(*specular_refspec.max_val().unwrap() <= 1.0);
-        assert!(*specular_refspec.min_val().unwrap() >= 0.0);
+        assert!(reflectance_spectrum_valid(&diffuse_refspec));
+        assert!(reflectance_spectrum_valid(&specular_refspec));
 
         Self::Composite {
             diffuse_refspec,
@@ -103,7 +132,7 @@ impl Reflectance {
         match *self {
             Self::Lambertian { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
-                match refspec.interp(incident_photon.wavelength()) {
+                match refspec.value_at(incident_photon.wavelength()) {
                     None => None, 
                     Some(ref_prob) => {
                         let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
@@ -125,7 +154,7 @@ impl Reflectance {
             }
             Self::Specular { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
-                match refspec.interp(incident_photon.wavelength()) {
+                match refspec.value_at(incident_photon.wavelength()) {
                     None => None,
                     Some(ref_prob) => {
                         let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
@@ -216,7 +245,7 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 1.0);
-        let reflect = Reflectance::new_lambertian(Spectrum::new_uniform(300.0, 900.0, 1.0));
+        let reflect = Reflectance::new_lambertian(Spectrum::new_tophat(300.0, 900.0, 1.0));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
         let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
@@ -292,7 +321,7 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 1.0);
-        let reflect = Reflectance::new_lambertian(Spectrum::new_uniform(300.0, 900.0, 0.5));
+        let reflect = Reflectance::new_lambertian(Spectrum::new_tophat(300.0, 900.0, 0.5));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
         let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
@@ -374,7 +403,7 @@ mod tests {
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
-        let reflect = Reflectance::new_specular(Spectrum::new_uniform(300.0, 900.0, 1.0));
+        let reflect = Reflectance::new_specular(Spectrum::new_tophat(300.0, 900.0, 1.0));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
         let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
@@ -399,7 +428,7 @@ mod tests {
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
-        let reflect = Reflectance::new_specular(Spectrum::new_uniform(300.0, 900.0, 0.5));
+        let reflect = Reflectance::new_specular(Spectrum::new_tophat(300.0, 900.0, 0.5));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
         let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
@@ -438,7 +467,7 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 0.0);
-        let reflect = Reflectance::new_composite(Spectrum::new_uniform(300.0, 900.0, 1.0), Spectrum::new_uniform(300.0, 900.0, 1.0), 0.5);
+        let reflect = Reflectance::new_composite(Spectrum::new_tophat(300.0, 900.0, 1.0), Spectrum::new_tophat(300.0, 900.0, 1.0), 0.5);
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
         let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
@@ -536,7 +565,7 @@ mod tests {
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
-        let reflect = Reflectance::new_specular(Spectrum::new_uniform(lower, upper, 1.0));
+        let reflect = Reflectance::new_specular(Spectrum::new_tophat(lower, upper, 1.0));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
 
