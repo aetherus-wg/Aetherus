@@ -6,7 +6,7 @@ use crate::{
     geom::Orient,
     ord::{Link, Name, Set},
     phys::Reflectance,
-    sim::{attribute::AttributeLinker, PhotonCollector},
+    sim::{attribute::AttributeLinker},
     tools::{Binner, Range},
 };
 use std::fmt::{Display, Formatter};

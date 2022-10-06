@@ -8,7 +8,6 @@ use crate::{
     phys::Material,
     phys::Reflectance,
     sim::attribute::Attribute,
-    sim::PhotonCollector,
     tools::Binner,
 };
 use std::fmt::{Display, Formatter};

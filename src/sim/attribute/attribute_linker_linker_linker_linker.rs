@@ -10,7 +10,6 @@ use crate::{
     sim::{attribute::AttributeLinkerLinkerLinker},
     tools::{Binner, Range},
 };
-use arctk_attr::file;
 use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.

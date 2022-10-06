@@ -7,7 +7,7 @@ use crate::{
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
     phys::Reflectance,
-    sim::{attribute::AttributeLinkerLinker, PhotonCollector},
+    sim::{attribute::AttributeLinkerLinker},
     tools::{Binner, Range},
 };
 use std::fmt::{Display, Formatter};
