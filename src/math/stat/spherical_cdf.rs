@@ -284,7 +284,7 @@ pub mod tests {
         let planes = (0..360)
             .step_by(90)
             .enumerate()
-            .map(|(ipl, ang)| {
+            .map(|(_, ang)| {
                 let mut plane = Plane::new();
 
                 let mut intens = vec![];

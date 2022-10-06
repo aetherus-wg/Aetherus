@@ -50,23 +50,27 @@ pub enum Reflectance {
     /// Provides a purely diffuse reflectance, and reflects evenly in the hemisphere
     /// around the normal vector, irrespective of the direction of the incident
     /// light ray.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
     Lambertian { refspec: Spectrum },
     /// Specular Reflectance
     ///
     /// Provides a purely specular reflectance, where the angle of the reflected
     /// photon from the normal vector is the same as the incoming ray.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
     Specular { refspec: Spectrum },
     /// Composition Reflectance Model - Specular + Diffuse
     ///
     /// A composite reflectance model combines a combination of diffuse and specular reflectance.
     /// The ratio between diffuse and soecular reflection is determined by `specular_diffuse_ratio`,
     /// with 1.0 corresponding to pure diffuse and 0.0 corresponding to pure specular.
-    /// The `diffuse_albedo` and `specular_albedo` are directly fed through to the
-    /// albedos of their respective models and have their usual meanings.
+    /// The `diffuse_refspec` and `specular_refspec` are directly fed through to the
+    /// spectral reflectances of their respective models.
     Composite {
         diffuse_refspec: Spectrum,
         specular_refspec: Spectrum,
@@ -79,8 +83,10 @@ impl Reflectance {
     /// This returns a purely diffuse reflection.
     /// In this case photons are randomly distributed in the hemisphere in which
     /// the normal to the surface lies.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
     pub fn new_lambertian(refspec: Spectrum) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
         assert!(reflectance_spectrum_valid(&refspec));
@@ -90,8 +96,10 @@ impl Reflectance {
     /// Produces a new Specular reflectance instance.
     /// This returns a purely specular reflection. In this case the incoming photons
     /// are reflected like they would be from a mirror; at the same angle to the normal vector of the surface.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
     pub fn new_specular(refspec: Spectrum) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
         assert!(reflectance_spectrum_valid(&refspec));
@@ -117,10 +125,10 @@ impl Reflectance {
         }
     }
 
-    /// Provided an incident ray, this will reflect the raw according to the
+    /// Provided an incident photon, this will reflect the its ray according to the
     /// reflectance model that is used. Note that the returned ray can be an
     /// option. In the case that `None` is returned, this is indicative that the
-    /// ray should not be reflected, and should be destroyed.
+    /// photon should not be reflected, and should be destroyed.
     #[inline]
     pub fn reflect<R: Rng>(
         &self,
