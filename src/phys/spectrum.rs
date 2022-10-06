@@ -88,6 +88,22 @@ impl Spectrum {
             }
         }
     }
+    
+    pub fn min_lam(&self) -> Option<&f64> {
+        self.lam.iter().min_by(|a, b| a.total_cmp(b))
+    }
+
+    pub fn max_lam(&self) -> Option<&f64> {
+        self.lam.iter().max_by(|a, b| a.total_cmp(b))
+    }
+
+    pub fn min_val(&self) -> Option<&f64> {
+        self.val.iter().min_by(|a, b| a.total_cmp(b))
+    }
+
+    pub fn max_val(&self) -> Option<&f64> {
+        self.val.iter().max_by(|a, b| a.total_cmp(b))
+    }
 }
 
 impl Display for Spectrum {

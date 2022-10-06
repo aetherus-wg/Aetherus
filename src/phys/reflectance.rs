@@ -50,6 +50,9 @@ impl Reflectance {
     /// The albdeo determines which portion of the incoming photons are reflected or killed.
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
     pub fn new_lambertian(refspec: Spectrum) -> Self {
+        // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
+        assert!(*refspec.max_val().unwrap() <= 1.0);
+        assert!(*refspec.min_val().unwrap() >= 0.0);
         Self::Lambertian { refspec }
     }
 
@@ -59,6 +62,9 @@ impl Reflectance {
     /// The albdeo determines which portion of the incoming photons are reflected or killed.
     /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
     pub fn new_specular(refspec: Spectrum) -> Self {
+        // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
+        assert!(*refspec.max_val().unwrap() <= 1.0);
+        assert!(*refspec.min_val().unwrap() >= 0.0);
         Self::Specular { refspec }
     }
 
@@ -70,6 +76,12 @@ impl Reflectance {
         specular_refspec: Spectrum,
         diffuse_specular_ratio: Real,
     ) -> Self {
+        // Check that we have sensible reflectances --- they range from 0.0 - 1.0. 
+        assert!(*diffuse_refspec.max_val().unwrap() <= 1.0);
+        assert!(*diffuse_refspec.min_val().unwrap() >= 0.0);
+        assert!(*specular_refspec.max_val().unwrap() <= 1.0);
+        assert!(*specular_refspec.min_val().unwrap() >= 0.0);
+
         Self::Composite {
             diffuse_refspec,
             specular_refspec,
