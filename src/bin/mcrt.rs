@@ -88,10 +88,12 @@ fn main() {
     let tree = Tree::new(&params.tree, &surfs);
     report!(tree, "hit-scan tree");
 
+    let nlights = lights.len();
     let data = lights
         .into_iter()
-        .fold(base_output.clone(), |mut output, (light_id, light)| {
-            section(term_width, &format!("Running for light {}", light_id));
+        .enumerate()
+        .fold(base_output.clone(), |mut output, (light_idx, (light_id, light))| {
+            section(term_width, &format!("Running for light {} ({} / {})", light_id, light_idx + 1, nlights));
             report!(light, light_id);
             let input = Input::new(&spec_reg, &mats, &attrs, light, &tree, &grid, &sett);
 
