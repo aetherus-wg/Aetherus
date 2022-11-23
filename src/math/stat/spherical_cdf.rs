@@ -508,4 +508,36 @@ pub mod tests {
             })
             .collect();
     }
+
+    /// In this test case, the number of angles is above TARGET_NANGLES, so the
+    /// code path where we don't perform an interpolation is tested. 
+    #[test]
+    fn spherical_cdf_well_sampled_case() {
+        // For this test case, we only have a single, axially symmetric plane.
+        let mut plane = Plane::new();
+
+        // Iterate through the surfaces in the current plane to get the spline points for the CDF.
+        let mut intens = vec![];
+        let mut angles = vec![];
+
+        let mut ang = 0.0;
+        const DELTA_ANG: f64 = 0.1;
+        const END_ANG: f64 = 90.0;
+        while ang < END_ANG {
+            intens.push((ang * (PI / 180_f64)).cos());
+            angles.push(ang);
+            ang += DELTA_ANG;
+        }
+
+        plane.set_angles_degrees(&angles);
+        plane.set_intensities(intens);
+        plane.set_angle_degrees(0.0);
+        plane.set_units(lidrs::photweb::IntensityUnits::Candela);
+        plane.set_orientation(lidrs::photweb::PlaneOrientation::Vertical);
+
+        let mut photweb = PhotometricWeb::new();
+        photweb.set_planes(vec![plane]);
+
+        assert_eq!(END_ANG / DELTA_ANG + 1.0, photweb.planes()[0].angles().len() as f64);
+    }
 }

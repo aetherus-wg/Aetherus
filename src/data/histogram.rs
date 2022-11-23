@@ -128,3 +128,130 @@ impl Display for Histogram {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::Read;
+
+    use super::Histogram;
+    use crate::{tools::Range, fs::Save};
+    use tempfile::NamedTempFile;
+
+    #[test]
+    fn test_new_range() {
+        let range = Range::new(0.0, 1.0);
+        let mut hist = Histogram::new_range(range, 10);
+        // Try collecting something in the range.
+        hist.try_collect(0.55);
+        // Now try collecting something outputs of the range. 
+        hist.try_collect(2.0);
+        hist.try_collect(-1.0);
+
+        // Check that we only have one sample in the bin. 
+        assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 1.0);
+
+        // Check that it is binned correctly. 
+        hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 1.0 } else {0.0}));
+    }
+
+    #[test]
+    fn test_clone() {
+        let mut hist = Histogram::new(0.0, 1.0, 10);
+        // Try collecting something in the range.
+        hist.collect(0.25);
+        hist.collect(0.55);
+        hist.collect(0.75);
+        let hist_clone = hist.clone();
+
+        // Check that we only have one sample in the bin. 
+        assert_eq!(hist_clone.iter().map(|(_, count)| count).sum::<f64>(), 3.0);
+
+        // Check that it is binned correctly - we do the weird comparison here to avoid rounding problems with larger bins. 
+        hist_clone.iter().for_each(|(bin, count)| assert_eq!(count, if (bin - 0.2).abs() < 1E-8 || (bin - 0.5).abs() < 1E-8 || (bin - 0.7).abs() < 1E-8 { 1.0 } else {0.0}));
+    }
+
+    #[test]
+    fn test_try_collect() {
+        let mut hist = Histogram::new(0.0, 1.0, 10);
+        // Try collecting something in the range.
+        hist.try_collect(0.55);
+        // Now try collecting something outputs of the range. 
+        hist.try_collect(2.0);
+        hist.try_collect(-1.0);
+
+        // Check that we only have one sample in the bin. 
+        assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 1.0);
+
+        // Check that it is binned correctly. 
+        hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 1.0 } else {0.0}));
+    }
+
+    #[test]
+    fn test_collect_weight() {
+        let mut hist = Histogram::new(0.0, 1.0, 10);
+        // Try collecting something in the range.
+        hist.collect_weight(0.55, 0.5);
+
+        // Check that we only have one sample, weighted by the correct weight. 
+        assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 0.5);
+
+        // Check that it is binned correctly. 
+        hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 0.5 } else {0.0}));
+    }
+
+    #[test]
+    fn test_try_collect_weight() {
+        let mut hist = Histogram::new(0.0, 1.0, 10);
+        // Try collecting something in the range.
+        hist.try_collect_weight(0.55, 0.5);
+        // Now try collecting something outputs of the range. 
+        hist.try_collect_weight(2.0, 0.5);
+        hist.try_collect_weight(-1.0, 0.5);
+
+        // Check that we only have one sample, weighted by the correct weight. 
+        assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 0.5);
+
+        // Check that it is binned correctly. 
+        hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 0.5 } else {0.0}));
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut hist1 = Histogram::new(0.0, 1.0, 10);
+        let mut hist2 = Histogram::new(0.0, 1.0, 10);
+        // Try collecting something in the range.
+        hist1.collect(0.25);
+        hist1.collect(0.55);
+        hist1.collect(0.75);
+        // Populate the second histogram within the valid range. 
+        hist2.collect(0.15);
+        hist2.collect(0.55);
+        hist2.collect(0.75);
+
+        hist1 += &hist2;
+
+        // Check that we only have one sample in the bin. 
+        assert_eq!(hist1.iter().map(|(_, count)| count).sum::<f64>(), 6.0);
+
+        // Check that it is binned correctly - we do the weird comparison here to avoid rounding problems with larger bins. 
+        hist1.iter().for_each(|(bin, count)| assert_eq!(count, if (bin - 0.1).abs() < 1E-8 || (bin - 0.2).abs() < 1E-8 { 1.0 } else if (bin - 0.5).abs() < 1E-8 || (bin - 0.7).abs() < 1E-8 {2.0 } else {0.0}));
+    }
+
+    #[test]
+    fn test_save() {
+        let mut hist = Histogram::new(0.0, 1.0, 10);
+        // Try collecting something in the range.
+        hist.collect(0.25);
+        hist.collect(0.55);
+        hist.collect(0.75);
+
+        let file = NamedTempFile::new().unwrap();
+        let res = hist.save_data(file.path());
+        assert!(res.is_ok());
+
+        let mut fileop = file.reopen().unwrap();
+        let mut buf = String::new();
+        assert!(fileop.read_to_string(&mut buf).is_ok());
+        assert_eq!(buf.lines().count(), 10);
+    }
+}

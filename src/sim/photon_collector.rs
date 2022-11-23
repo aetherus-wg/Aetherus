@@ -156,4 +156,47 @@ mod tests {
         assert_eq!(col.photons[0].wavelength(), 5.0E-7);
         assert_eq!(col.photons[0].power(), 1.0);
     }
+
+    #[test]
+    fn test_clone_photon_collector() {
+        let mut col = PhotonCollector::new();
+        // This time we will get it to kill the photon when we collect it. 
+        col.kill_photon = true;
+        let pos = Point3::new(0.0, 0.0, 0.0);
+        let dir = Dir3::new(1.0, 0.0, 0.0);
+        let mut test_phot = Photon::new(Ray::new(pos.clone(), dir.clone()), 5.0E-7, 1.0);
+
+        // Now collect the photon and check that it a) was collected and b) all of the quantities were conserved.
+        col.collect_photon(&mut test_phot);
+        let cloned = col.clone();
+
+        assert_eq!(cloned.nphoton(), 1);
+        assert_eq!(*cloned.photons[0].ray().pos(), pos);
+        assert_eq!(*cloned.photons[0].ray().dir(), dir);
+        assert_eq!(cloned.photons[0].wavelength(), 5.0E-7);
+        assert_eq!(cloned.photons[0].power(), 1.0);
+
+        // Check that the photon was indeed killed. 
+        assert_eq!(test_phot.weight(), 0.0);
+    }
+
+    #[test]
+    fn test_add_assign_photon_collector() {
+        let mut col1 = PhotonCollector::new();
+        let mut col2 = PhotonCollector::new();
+        let pos = Point3::new(0.0, 0.0, 0.0);
+        let dir = Dir3::new(1.0, 0.0, 0.0);
+        let mut test_phot = Photon::new(Ray::new(pos.clone(), dir.clone()), 5.0E-7, 1.0);
+
+        // Now collect the photon and check that everything was conserved during the clone. 
+        col1.collect_photon(&mut test_phot);
+        col2.collect_photon(&mut test_phot);
+        col1 += &col2;
+
+        assert_eq!(col1.nphoton(), 2);
+        assert_eq!(*col1.photons[1].ray().pos(), *col2.photons[0].ray().pos());
+        assert_eq!(*col1.photons[1].ray().dir(), *col2.photons[0].ray().dir());
+        assert_eq!(col1.photons[0].wavelength(), col2.photons[0].wavelength());
+        assert_eq!(col1.photons[0].power(), col2.photons[0].power());
+    }
 }
