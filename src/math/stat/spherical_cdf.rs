@@ -87,16 +87,28 @@ impl SphericalCdf {
     /// Samples the CDF and returns a tuple containing the azimuthal and polar angles in radians.
     /// These angles are randomly chosen based on the underlying CDF.
     pub fn sample<R: Rng>(&self, rng: &mut R) -> (Real, Real) {
-        // First, draw the azimuthal angle from the azimuthal CDF and apply the offset to map back into an appropriate system.
-        let azim_draw = self.azimuth_cdf.sample(rng);
+        let mut azim_draw = 0.0;
+        let mut polar_draw= 0.0;
 
-        // Now find the plane for which this azimuthal angle corresponds, so that we can sampe polar angle.
-        let iplane = self
-            .planes
-            .iter()
-            .position(|pl| pl.azimuthal_angle_in_plane(azim_draw))
-            .unwrap();
-        let polar_draw = self.planes[iplane].sample(rng);
+        loop {
+            // First, draw the azimuthal angle from the azimuthal CDF and apply the offset to map back into an appropriate system.
+            azim_draw = self.azimuth_cdf.sample(rng);
+
+            // Now find the plane for which this azimuthal angle corresponds, so that we can sampe polar angle.
+            let iplane = self
+                .planes
+                .iter()
+                .position(|pl| pl.azimuthal_angle_in_plane(azim_draw));
+            // Some searches come back with a `None`. To avoid this crashing the code, let's instead perform an iteration
+            if iplane.is_none() { 
+                println!("Unable to find plane for azimuthal angle: {} rad. Trying again. ", azim_draw);
+                continue; 
+            }
+
+            // Now that we know we have a plane, let's draw the polare coordinate from it. 
+            polar_draw = self.planes[iplane.unwrap()].sample(rng);
+            break;
+        }
 
         (azim_draw, polar_draw)
     }
