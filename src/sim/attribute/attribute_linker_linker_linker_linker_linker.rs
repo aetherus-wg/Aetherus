@@ -60,15 +60,15 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
             Self::Ccd(id, _resolution, width, center, forward, binner) => {
                 Self::Inst::Ccd(id, _resolution, width, center, forward, binner)
             }
-            Self::Reflector(diff_ref, spec_ref, diff_spec_ratio) => {
+            Self::Reflector(diff_ref, spec_ref, specularity) => {
                 let ref_model = if diff_ref.is_some() {
                     if spec_ref.is_some() {
-                        // Check that the diffuse-specular ratio has been defined.
-                        assert!(diff_spec_ratio.is_some());
+                        // Check that the specularity of the reflector is defined.
+                        assert!(specularity.is_some());
                         Reflectance::Composite {
                             diffuse_refspec: diff_ref.unwrap().build()?,
                             specular_refspec: spec_ref.unwrap().build()?,
-                            diffuse_specular_ratio: diff_spec_ratio.unwrap(),
+                            specularity: specularity.unwrap(),
                         }
                     } else {
                         Reflectance::Lambertian {

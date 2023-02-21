@@ -74,7 +74,7 @@ pub enum Reflectance {
     Composite {
         diffuse_refspec: Spectrum,
         specular_refspec: Spectrum,
-        diffuse_specular_ratio: Real,
+        specularity: Real,
     },
 }
 
@@ -112,7 +112,7 @@ impl Reflectance {
     pub fn new_composite(
         diffuse_refspec: Spectrum,
         specular_refspec: Spectrum,
-        diffuse_specular_ratio: Real,
+        specularity: Real,
     ) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
         assert!(reflectance_spectrum_valid(&diffuse_refspec));
@@ -121,7 +121,7 @@ impl Reflectance {
         Self::Composite {
             diffuse_refspec,
             specular_refspec,
-            diffuse_specular_ratio,
+            specularity,
         }
     }
 
@@ -186,11 +186,11 @@ impl Reflectance {
             Self::Composite {
                 ref diffuse_refspec,
                 ref specular_refspec,
-                ref diffuse_specular_ratio,
+                ref specularity,
             } => {
-                // This random draw determines, based on the ratio, whether the reflection for the
+                // This random draw determines, based on the specularity, whether the reflection for the
                 // current photon should be diffuse (Lambertian) or specular.
-                let is_specular = rng.gen_range(0.0..1.0) > *diffuse_specular_ratio;
+                let is_specular = rng.gen_range(0.0..1.0) <= *specularity;
 
                 // Then we just delegate handling of the reflection to the respective model.
                 if is_specular {
@@ -220,12 +220,12 @@ impl Display for Reflectance {
             Self::Composite {
                 ref diffuse_refspec,
                 ref specular_refspec,
-                ref diffuse_specular_ratio,
+                ref specularity,
             } => {
                 writeln!(fmt, "Composite: ")?;
                 fmt_report!(fmt, diffuse_refspec, "diffuse reflectance spectrum");
                 fmt_report!(fmt, specular_refspec, "specular reflectance spectrum");
-                fmt_report!(fmt, diffuse_specular_ratio, "diffuse-to-specular ratio");
+                fmt_report!(fmt, specularity, "specularity");
                 Ok(())
             }
         }
