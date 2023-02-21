@@ -130,7 +130,7 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref diff_ref, ref spec_ref, ref diff_spec_ratio) => {
+            Self::Reflector(ref diff_ref, ref spec_ref, ref specularity) => {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(
                     fmt,
@@ -152,12 +152,12 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 );
                 fmt_report!(
                     fmt,
-                    if diff_spec_ratio.is_some() {
-                        format!("{}", diff_spec_ratio.as_ref().unwrap())
+                    if specularity.is_some() {
+                        format!("{}", specularity.as_ref().unwrap())
                     } else {
                         String::from("none")
                     },
-                    "diffuse-to-specular ratio"
+                    "specularity"
                 );
                 Ok(())
             }
