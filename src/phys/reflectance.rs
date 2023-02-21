@@ -67,8 +67,8 @@ pub enum Reflectance {
     /// Composition Reflectance Model - Specular + Diffuse
     ///
     /// A composite reflectance model combines a combination of diffuse and specular reflectance.
-    /// The ratio between diffuse and soecular reflection is determined by `specular_diffuse_ratio`,
-    /// with 1.0 corresponding to pure diffuse and 0.0 corresponding to pure specular.
+    /// The ratio between diffuse and soecular reflection is determined by `specularity`,
+    /// with 0.0 corresponding to pure diffuse and 1.0 corresponding to pure specular.
     /// The `diffuse_refspec` and `specular_refspec` are directly fed through to the
     /// spectral reflectances of their respective models.
     Composite {
@@ -106,9 +106,9 @@ impl Reflectance {
         Self::Specular { refspec }
     }
 
-    /// Prodduces a new Reflectance instance that is a composite between diffuse and specular reflection.
+    /// Produces a new Reflectance instance that is a composite between diffuse and specular reflection.
     /// This is a combination of diffuse (Lambertian) and specular reflection, with the ratio between them
-    /// determined by the `specular_diffuse_ratio`. 1.0 corresponds to pure diffuse and 0.0 corresponds to pure specular.
+    /// determined by the `specularity`. 0.0 corresponds to pure diffuse and 1.0 corresponds to pure specular.
     pub fn new_composite(
         diffuse_refspec: Spectrum,
         specular_refspec: Spectrum,
