@@ -6,16 +6,16 @@ use crate::{
     ord::{X, Y, Z},
 };
 use ndarray::{Array2, Array3, ArrayView2, ArrayView3};
-use netcdf::Numeric;
+use netcdf::NcPutGet;
 use std::path::Path;
 
 #[allow(clippy::use_self)]
-impl<T: Numeric> File for Array2<T> {
+impl<T: NcPutGet> File for Array2<T> {
     #[inline]
     fn load(path: &Path) -> Result<Array2<T>, Error> {
         let file = netcdf::open(path)?;
         let data = &file.variable("data").ok_or("Missing variable 'data'.")?;
-        let arr = data.values::<T>(None, None)?;
+        let arr = data.values_arr::<T, _>(..).unwrap();
 
         let xi = arr.shape()[X];
         let yi = arr.shape()[Y];
@@ -26,12 +26,12 @@ impl<T: Numeric> File for Array2<T> {
 }
 
 #[allow(clippy::use_self)]
-impl<T: Numeric> File for Array3<T> {
+impl<T: NcPutGet> File for Array3<T> {
     #[inline]
     fn load(path: &Path) -> Result<Array3<T>, Error> {
         let file = netcdf::open(path)?;
         let data = &file.variable("data").ok_or("Missing variable 'data'.")?;
-        let arr = data.values::<T>(None, None)?;
+        let arr = data.values_arr::<T, _>(..).unwrap();
 
         let xi = arr.shape()[X];
         let yi = arr.shape()[Y];
@@ -42,7 +42,7 @@ impl<T: Numeric> File for Array3<T> {
     }
 }
 
-impl<T: Numeric> Save for Array2<T> {
+impl<T: NcPutGet> Save for Array2<T> {
     #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
@@ -55,13 +55,14 @@ impl<T: Numeric> Save for Array2<T> {
         file.add_dimension(dim2_name, shape[Y])?;
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
-        var.put_values(self.as_slice().ok_or("Missing slice data.")?, None, None)?;
+        let arr = self.as_slice().ok_or("Missing slice data.")?;
+        var.put_values::<T, _>(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
-impl<T: Numeric> Save for ArrayView2<'_, T> {
+impl<T: NcPutGet> Save for ArrayView2<'_, T> {
     #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
@@ -74,13 +75,14 @@ impl<T: Numeric> Save for ArrayView2<'_, T> {
         file.add_dimension(dim2_name, shape[Y])?;
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
-        var.put_values(self.as_slice().ok_or("Missing slice data.")?, None, None)?;
+        let arr = self.as_slice().ok_or("Missing slice data.")?;
+        var.put_values::<T, _>(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
-impl<T: Numeric> Save for Array3<T> {
+impl<T: NcPutGet> Save for Array3<T> {
     #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
@@ -95,13 +97,14 @@ impl<T: Numeric> Save for Array3<T> {
         file.add_dimension(dim3_name, shape[Z])?;
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
-        var.put_values(self.as_slice().ok_or("Missing slice data.")?, None, None)?;
+        let arr = self.as_slice().ok_or("Missing slice data.")?;
+        var.put_values::<T, _>(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
-impl<T: Numeric> Save for ArrayView3<'_, T> {
+impl<T: NcPutGet> Save for ArrayView3<'_, T> {
     #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
@@ -116,7 +119,8 @@ impl<T: Numeric> Save for ArrayView3<'_, T> {
         file.add_dimension(dim3_name, shape[Z])?;
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
-        var.put_values(self.as_slice().ok_or("Missing slice data.")?, None, None)?;
+        let arr = self.as_slice().ok_or("Missing slice data.")?;
+        var.put_values::<T, _>(&arr, ..).unwrap();
 
         Ok(())
     }
