@@ -164,6 +164,7 @@ impl Display for Point2 {
 mod tests {
     use super::*;
     use assert_approx_eq::assert_approx_eq;
+    use serde_json::{from_str, to_string};
 
     #[test]
     fn test_new() {
@@ -296,9 +297,42 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_index_mut_out_of_bounds() {
+    fn test_index_out_of_bounds() {
         let point = Point2::new(1.0, -4.0);
+        let _should_panic = point[2];
+    }
 
-        let _ = point[2];
+    #[test]
+    #[should_panic]
+    fn test_index_mut_out_of_bounds() {
+        let mut point = Point2::new(1.0, -4.0);
+        point[2] = 1.0;
+    }
+
+    #[test]
+    fn test_deserialise() {
+        let in_str = "[4.5, 3.1415]";
+        let point: Point2 = from_str(in_str).unwrap();
+
+        let comp = Point2::new(4.5, 3.1415);
+        assert_eq!(point.x(), comp.x());
+        assert_eq!(point.y(), comp.y());
+    }
+
+    #[test]
+    fn test_serialise() {
+        let comp = Point2::new(4.5, 3.1415);
+        let expected_str = "[4.5,3.1415]";
+        let test_str = to_string(&comp).unwrap();
+
+        assert_eq!(expected_str.to_string(), test_str);
+    }
+
+    #[test]
+    fn test_clone() {
+        let comp = Point2::new(4.5, 3.1415);
+        let cloned_comp = comp.clone();
+        assert_eq!(cloned_comp.x(), comp.x());
+        assert_eq!(cloned_comp.y(), comp.y());
     }
 }

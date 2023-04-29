@@ -133,7 +133,12 @@ impl Emitter {
 
                 let dir = trans.transform_vector(&Dir3::new(x, y, z).data());
 
-                Ray::new(trans.transform_point(&Point3::new(0.0, 0.0, 0.0).data()).into(), dir.into())
+                Ray::new(
+                    trans
+                        .transform_point(&Point3::new(0.0, 0.0, 0.0).data())
+                        .into(),
+                    dir.into(),
+                )
             }
         }
     }
@@ -151,5 +156,88 @@ impl Display for Emitter {
             Self::NonIsotropic { .. } => "Non-isotropic",
         };
         write!(fmt, "{}", kind)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Emitter;
+    use rand;
+    use assert_approx_eq::assert_approx_eq;
+    use crate::{
+        geom::Ray, 
+        data::Average,
+        math::{Point3, Dir3},
+    };
+
+    #[test]
+    fn test_beam_emitter() {
+        let mut rng = rand::thread_rng();
+        let emit_ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
+        let emitter = Emitter::new_beam(emit_ray.clone());
+
+        let emitted_ray = emitter.emit(&mut rng);
+        assert_eq!(emitted_ray.dir(), emit_ray.dir());
+        assert_eq!(emitted_ray.pos(), emit_ray.pos());
+    }
+
+    #[test]
+    fn test_points_emitter() {
+        let points = vec![Point3::new(1.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 0.0, 1.0)];
+        let emitter = Emitter::new_points(points.clone());
+
+        let mut ave_x = Average::new();
+        let mut ave_y = Average::new();
+        let mut ave_z = Average::new();
+        let mut rng = rand::thread_rng();
+        for _ in 0..100_000 {
+            let emitted_ray = emitter.emit(&mut rng);
+            assert!(points.contains(emitted_ray.pos()));
+            ave_x += emitted_ray.dir().x();
+            ave_y += emitted_ray.dir().y();
+            ave_z += emitted_ray.dir().z();
+        }
+
+        // In the case that the emission is isotropic, this should even out to be about zero.
+        // I'm testing this to within 1% here. 
+        assert_approx_eq!(ave_x.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_y.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_z.ave(), 0.0, 0.01);
+    }
+
+    #[test]
+    fn test_weighted_points_emitter() {
+        let points = vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)];
+        let weights = vec![1.0, 2.0];
+        let emitter = Emitter::new_weighted_points(points.clone(), &weights);
+
+        let mut ave_x = Average::new();
+        let mut ave_y = Average::new();
+        let mut ave_z = Average::new();
+        let mut ave_dir_x = Average::new();
+        let mut ave_dir_y = Average::new();
+        let mut ave_dir_z = Average::new();
+        let mut rng = rand::thread_rng();
+        for _ in 0..100_000 {
+            let emitted_ray = emitter.emit(&mut rng);
+            
+            ave_x += emitted_ray.pos().x();
+            ave_y += emitted_ray.pos().y();
+            ave_z += emitted_ray.pos().z();
+
+            ave_dir_x += emitted_ray.dir().x();
+            ave_dir_y += emitted_ray.dir().y();
+            ave_dir_z += emitted_ray.dir().z();
+        }
+
+        assert_approx_eq!(ave_x.ave(), 0.666, 0.001);
+        assert_eq!(ave_y.ave(), 0.0);
+        assert_eq!(ave_z.ave(), 0.0);
+
+        // In the case that the emission is isotropic, this should even out to be about zero.
+        // I'm testing this to within 1% here. 
+        assert_approx_eq!(ave_dir_x.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_dir_y.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_dir_z.ave(), 0.0, 0.01);
     }
 }

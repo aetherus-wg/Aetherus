@@ -8,7 +8,6 @@ use crate::{
     phys::Material,
     phys::Reflectance,
     sim::attribute::Attribute,
-    sim::PhotonCollector,
     tools::Binner,
 };
 use std::fmt::{Display, Formatter};
@@ -28,8 +27,8 @@ pub enum AttributeLinker {
     /// A purely reflecting material, with a provided reflectance model.
     Reflector(Reflectance),
     /// A photon collector, which collects the photon that interact with the linked entities.
-    /// These photons can be optionally killed, or left to keep propogating. 
-    PhotonCollector(usize)
+    /// These photons can be optionally killed, or left to keep propogating.
+    PhotonCollector(usize),
 }
 
 impl<'a> Link<'a, Material> for AttributeLinker {
@@ -43,7 +42,7 @@ impl<'a> Link<'a, Material> for AttributeLinker {
             | Self::Spectrometer(..)
             | Self::Imager(..)
             | Self::Ccd(..)
-            | Self::Reflector(..) 
+            | Self::Reflector(..)
             | Self::PhotonCollector(..) => {
                 vec![]
             }
@@ -103,12 +102,12 @@ impl Display for AttributeLinker {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
-            },
+            }
             Self::PhotonCollector(ref id) => {
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "name");
                 Ok(())
-            },
+            }
         }
     }
 }

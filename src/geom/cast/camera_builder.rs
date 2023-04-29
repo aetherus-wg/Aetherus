@@ -102,3 +102,45 @@ impl Display for CameraBuilder {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+    use super::{Camera, CameraBuilder};
+    use crate::{
+        fs::File,
+        ord::Build,
+        math::linalg::{Point3, Vec3},
+    };
+
+    #[test]
+    fn test_camera_builder_load() {
+        let file = NamedTempFile::new().unwrap();
+        let mut file2 = file.reopen().unwrap();
+        file2.write_all("{ pos: [0.0, 0.0, 0.0], tar: [1.0, 0.0, 0.0], fov: 90.0, res: [640, 480] }".as_bytes()).unwrap();
+        drop(file2);
+
+        let cam: Camera = CameraBuilder::load(file.path()).unwrap().build();
+        assert_eq!(*cam.pos(), Point3::new(0.0, 0.0, 0.0));
+        assert_eq!(*cam.res(), [640, 480]);
+        assert_eq!(cam.num_pixels(), 640 * 480);
+    }
+
+    #[test]
+    fn test_camera_builder_clone() {
+        // Setup the camera builder and clone it. 
+        let pos = Point3::new(0., 0., 0.);
+        let tar = Point3::new(-1.0, 0.0, 0.0);
+        let mut build = CameraBuilder::new(pos, tar, 90.0, [640, 480], Some(2));
+        build.travel(Vec3::new(1.0, 0.0, 0.0));
+        let build_clone = build.clone();
+        
+        // Now we check to see that the properties have persisted. 
+        let cam = build_clone.build();
+        assert_eq!(*cam.pos(), Point3::new(1.0, 0.0, 0.0));
+        assert_eq!(*cam.res(), [640, 480]);
+        assert_eq!(cam.num_pixels(), 640 * 480);
+        assert_eq!(cam.num_samples(), cam.num_pixels() * 4);
+    }
+}

@@ -112,3 +112,46 @@ impl Display for Camera {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        geom::{CameraBuilder}, 
+        math::{Point3, Vec3, Dir3},
+        ord::Build,
+    };
+    use rand::random;
+
+    #[test]
+    fn test_build_camera() {
+        let pos = Point3::new(0., 0., 0.);
+        let tar = Point3::new(-1.0, 0.0, 0.0);
+        let mut build = CameraBuilder::new(pos, tar, 90.0, [640, 480], Some(2));
+        build.travel(Vec3::new(1.0, 0.0, 0.0));
+        let cam = build.build();
+
+        assert_eq!(*cam.pos(), Point3::new(1.0, 0.0, 0.0));
+        assert_eq!(*cam.res(), [640, 480]);
+        assert_eq!(cam.num_pixels(), 640 * 480);
+        assert_eq!(cam.num_samples(), cam.num_pixels() * 4);
+    }
+
+    #[test]
+    fn test_camera_emit() {
+        let res = [640, 480];
+        let pos = Point3::new(0., 0., 0.);
+        let tar = Point3::new(-1.0, 0.0, 0.0);
+        let mut build = CameraBuilder::new(pos, tar, 90.0, res, None);
+        build.travel(Vec3::new(1.0, 0.0, 0.0));
+        let cam = build.build();
+
+        let test_dir = Dir3::new(-1.0, 0.0, 0.0);
+        for _ in 0..10_000 {
+            let xpix: usize = (random::<f64>() * (res[0] - 1) as f64).round() as usize;
+            let ypix: usize = (random::<f64>() * (res[1] - 1) as f64).round() as usize;
+            let ray = cam.emit([xpix, ypix], [0, 0]);
+            assert!(ray.dir().dot(&test_dir) >= 0.5);
+        }
+
+    }
+}

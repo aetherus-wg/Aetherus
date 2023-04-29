@@ -56,7 +56,7 @@ pub struct Output<'a> {
 
     /// Photo data.
     pub photos: Vec<Image>,
-    /// Photon collectors. 
+    /// Photon collectors.
     pub phot_cols: Vec<PhotonCollector>,
 }
 
@@ -173,7 +173,8 @@ impl Save for Output<'_> {
         }
 
         for (name, index) in self.phot_col_reg.set().map().iter() {
-            self.phot_cols[*index].save(&out_dir.join(&format!("photon_collector_{}.csv", name)))?;
+            self.phot_cols[*index]
+                .save(&out_dir.join(&format!("photon_collector_{}.csv", name)))?;
         }
 
         Ok(())

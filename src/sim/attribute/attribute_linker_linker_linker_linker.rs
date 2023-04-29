@@ -7,10 +7,9 @@ use crate::{
     math::{Dir3, Point3, Vec3},
     ord::{Link, Name, Set, X, Y},
     phys::Reflectance,
-    sim::{attribute::AttributeLinkerLinkerLinker},
+    sim::attribute::AttributeLinkerLinkerLinker,
     tools::{Binner, Range},
 };
-use arctk_attr::file;
 use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
@@ -30,8 +29,8 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     /// The first coefficient is diffuse albedo, the second is specular.
     Reflector(Reflectance),
     /// A photon collector, which collects the photon that interact with the linked entities.
-    /// These photons can be optionally killed, or left to keep propogating. 
-    PhotonCollector(usize)
+    /// These photons can be optionally killed, or left to keep propogating.
+    PhotonCollector(usize),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
@@ -108,12 +107,12 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(fmt, reflectance, "reflectance");
                 Ok(())
-            },
+            }
             Self::PhotonCollector(ref id) => {
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "id");
                 Ok(())
-            },
+            }
         }
     }
 }
