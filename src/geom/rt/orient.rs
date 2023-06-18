@@ -11,7 +11,7 @@ use std::fmt::{Display, Error, Formatter};
 ///
 /// Contains orientation information about an object.
 /// The struct contains the forward, right and up directions.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Orient {
     /// Position.
     pos: Point3,
@@ -220,5 +220,63 @@ mod tests {
         assert_approx_eq!(orient.up().x(), -1.0 / 6.0f64.sqrt(), f64::EPSILON);
         assert_approx_eq!(orient.up().y(), -1.0 / 6.0f64.sqrt(), f64::EPSILON);
         assert_approx_eq!(orient.up().z(), 1.0 / 1.50f64.sqrt(), f64::EPSILON);
+    }
+
+    #[test]
+    fn directions_test() {
+        let ray = Ray::new(Point3::new(0., 0., 0.), Dir3::new(1., 0., 0.));
+        let orient = Orient::new(ray);
+
+        // Check that it is in the correct position.
+        assert_eq!(orient.pos(), &Point3::new(0.0, 0.0, 0.0));
+
+        // Make sure that each of the orientations are pointing in the correct direction.
+        assert_eq!(orient.forward(), &Dir3::new(1.0, 0.0, 0.0));
+        assert_eq!(orient.right(), &Dir3::new(0.0, -1.0, 0.0));
+        assert_eq!(orient.up(), &Dir3::new(0.0, 0.0, 1.0));
+
+        // Now check that inverse directions return the inverse of their calculated counterparts. 
+        assert_eq!(orient.back(), Dir3::new(-1.0, 0.0, 0.0));
+        assert_eq!(orient.left(), Dir3::new(0.0, 1.0, 0.0));
+        assert_eq!(orient.down(), Dir3::new(0.0, 0.0, -1.0));
+    }
+
+    /// Check that this orient struct can correctly create rays in different directions.
+    #[test]
+    fn ray_test() {
+        let ray = Ray::new(Point3::new(0., 0., 0.), Dir3::new(1., 0., 0.));
+        let orient = Orient::new(ray);
+
+        // Check that it is in the correct position.
+        assert_eq!(orient.pos(), &Point3::new(0.0, 0.0, 0.0));
+
+        // Make sure that each of the orientations are pointing in the correct direction.
+        assert_eq!(orient.forward(), &Dir3::new(1.0, 0.0, 0.0));
+        assert_eq!(orient.right(), &Dir3::new(0.0, -1.0, 0.0));
+        assert_eq!(orient.up(), &Dir3::new(0.0, 0.0, 1.0));
+
+        // Check that the rays are pointing in the correct direction.
+        assert_eq!(orient.forward_ray(), Ray::new(Point3::new(0., 0., 0.), Dir3::new(1., 0., 0.)));
+        assert_eq!(orient.backward_ray(), Ray::new(Point3::new(0., 0., 0.), Dir3::new(-1., 0., 0.)));
+        assert_eq!(orient.right_ray(), Ray::new(Point3::new(0., 0., 0.), Dir3::new(0., -1., 0.)));
+        assert_eq!(orient.left_ray(), Ray::new(Point3::new(0., 0., 0.), Dir3::new(0., 1., 0.)));
+        assert_eq!(orient.up_ray(), Ray::new(Point3::new(0., 0., 0.), Dir3::new(0., 0., 1.)));
+        assert_eq!(orient.down_ray(), Ray::new(Point3::new(0., 0., 0.), Dir3::new(0., 0., -1.)));
+    }
+
+    /// Check that we can correctly handle the contructor case where the ray is facing along the z-axis. 
+    /// In this case, we should take the up direction as being the x-axis. 
+    #[test]
+    fn ray_along_z_test() {
+        let ray = Ray::new(Point3::new(0., 0., 0.), Dir3::new(0., 0., 1.));
+        let orient = Orient::new(ray);
+
+        // Check that it is in the correct position.
+        assert_eq!(orient.pos(), &Point3::new(0.0, 0.0, 0.0));
+
+        // Make sure that each of the orientations are pointing in the correct direction.
+        assert_eq!(orient.forward(), &Dir3::new(0.0, 0.0, 1.0));
+        assert_eq!(orient.right(), &Dir3::new(0.0, 1.0, 0.0));
+        assert_eq!(orient.up(), &Dir3::new(1.0, 0.0, 0.0));
     }
 }

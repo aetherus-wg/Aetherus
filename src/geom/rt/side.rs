@@ -49,3 +49,42 @@ impl Side {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::Dir3;
+
+    /// Checks that the position of the 
+    #[test]
+    fn test_new_inside() {
+        // Importantly, we are testing the side of the surface hit.
+        // Hence, the normal vector and direction of the ray eigenvectors
+        let dir = Dir3::new(-1.0, 0.0, 0.0);
+        let norm = Dir3::new(-1.0, 0.0, 0.0);
+        let side = Side::new(&dir, norm);
+        assert_eq!(side, Side::Inside(-norm));
+
+        // Check that the test for being inside works as well.
+        assert!(side.is_inside());
+    }
+
+    #[test]
+    fn test_new_outside() {
+        let dir = Dir3::new(1.0, 0.0, 0.0);
+        let norm = Dir3::new(-1.0, 0.0, 0.0);
+        let side = Side::new(&dir, norm);
+        assert_eq!(side, Side::Outside(norm));
+
+        // Check that the test for being inside has a false result when outside.
+        assert!(!side.is_inside());
+    }
+
+    #[test]
+    fn test_norm() {
+        let dir = Dir3::new(1.0, 0.0, 0.0);
+        let norm = Dir3::new(-1.0, 0.0, 0.0);
+        let side = Side::new(&dir, norm);
+        assert_eq!(side.norm(), &norm);
+    }
+}
