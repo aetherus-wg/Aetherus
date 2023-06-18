@@ -11,7 +11,7 @@ use std::fmt::{Display, Error, Formatter};
 ///
 /// Contains orientation information about an object.
 /// The struct contains the forward, right and up directions.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Orient {
     /// Position.
     pos: Point3,

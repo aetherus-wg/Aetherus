@@ -1,7 +1,7 @@
 use crate::{data::Table, err::Error, fmt_report, fs::File};
 use std::{fmt::Display, path::Path};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Spectrum {
     Constant(f64),
     Tophat(f64, f64, f64),

@@ -9,7 +9,7 @@ use crate::math::Dir3;
 /// the outside of a surface, with normal vector $\uvec{n}$, will be coming from
 /// outside of the surface if $\uvec{d} \dot \uvec{n} > 0.0$. Likewise, it assumes
 /// that a ray with $\uvec{d} \dot \uvec{n} < 0.0$ is coming from inside of the sufrace.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Side {
     /// Inside of surface hit. d.dot(n) > 0.0
     Inside(Dir3),

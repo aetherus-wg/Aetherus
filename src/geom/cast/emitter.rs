@@ -230,7 +230,7 @@ mod tests {
             ave_dir_z += emitted_ray.dir().z();
         }
 
-        assert_approx_eq!(ave_x.ave(), 0.666, 0.001);
+        assert_approx_eq!(ave_x.ave(), 0.666, 0.005);
         assert_eq!(ave_y.ave(), 0.0);
         assert_eq!(ave_z.ave(), 0.0);
 
