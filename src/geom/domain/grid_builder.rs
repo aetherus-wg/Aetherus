@@ -63,3 +63,90 @@ impl Display for GridBuilder {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{math::{Point3, Vec3}, fs::File};
+    use std::path::Path;
+
+    #[test]
+    fn new() {
+        let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let res = [10, 10, 10];
+
+        let grid = GridBuilder::new(boundary.clone(), res).build();
+
+        assert_eq!(grid.boundary(), &boundary);
+        assert_eq!(grid.res(), &res);
+        assert_eq!(*grid.voxel_size(), Vec3::new(0.1, 0.1, 0.1));
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_fail_x() {
+        let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let res = [0, 10, 10];
+
+        let _ = GridBuilder::new(boundary, res);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_fail_y() {
+        let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let res = [10, 0, 10];
+
+        let _ = GridBuilder::new(boundary, res);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_fail_z() {
+        let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let res = [10, 10, 0];
+
+        let _ = GridBuilder::new(boundary, res);
+    }
+
+    #[test]
+    fn num_cells() {
+        let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let res = [10, 10, 10];
+
+        let grid = GridBuilder::new(boundary, res);
+        assert_eq!(grid.num_cells(), 1000);
+    }
+
+    #[test]
+    fn test_clone() {
+        let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let res = [10, 10, 10];
+
+        let gb = GridBuilder::new(boundary, res);
+        let cloned = gb.clone();
+
+        assert_eq!(gb.boundary(), cloned.boundary());
+        assert_eq!(gb.res(), cloned.res());
+    }
+
+    #[test]
+    fn deserialise_from_file_and_build() {
+        // Write the example JSON to a file. 
+        let grid_str = "{ boundary: { mins: [0.0, 0.0, 0.0], maxs: [1.0, 1.0, 1.0] }, res: [10, 10, 10] }";
+        let path = Path::new("test_grid_builder.json");
+        std::fs::write(path, grid_str).unwrap();
+
+        // Read the file.
+        let grid_builder = GridBuilder::load(&path).unwrap();
+        let grid = grid_builder.build();
+
+        // Check the results.
+        assert_eq!(grid.boundary(), &Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0)));
+        assert_eq!(grid.res(), &[10, 10, 10]);
+        assert_eq!(*grid.voxel_size(), Vec3::new(0.1, 0.1, 0.1));
+
+        // Delete the test input file.
+        std::fs::remove_file(path).unwrap();
+    }
+}

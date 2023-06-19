@@ -37,7 +37,7 @@ mod tests {
     use crate::{math::Dir3, sim::Attribute};
     use super::*;
 
-    /// A quikc test that the constructor works as expected.
+    /// A quick test that the constructor works as expected.
     #[test]
     fn test_new_hit() {
         let tag = Attribute::Mirror(0.5);

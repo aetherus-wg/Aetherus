@@ -59,6 +59,7 @@ mod tests {
     };
     use super::*;
 
+    /// In this scenario, the surface hit is the closest event. 
     #[test]
     fn test_new_surface_hit() {
         let surf_hit = Some(Hit::new(&Attribute::Mirror(0.5), 1.0, Side::Outside(Dir3::new(1.0, 0.0, 0.0))));
