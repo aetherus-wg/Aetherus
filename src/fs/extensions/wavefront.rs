@@ -3,7 +3,7 @@
 use crate::{
     err::Error,
     fs::File,
-    geom::{Mesh, SmoothTriangle},
+    geom::SmoothTriangle,
     math::{Dir3, Point3},
 };
 use std::{
@@ -11,18 +11,7 @@ use std::{
     path::Path,
 };
 
-impl File for Mesh {
-    #[inline]
-    fn load(path: &Path) -> Result<Self, Error> {
-        let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
-            panic!("Unable to read mesh from wavefront file: {}", path.display())
-    });
-
-        Ok(Self::new(mesh_tris))
-    }
-}
-
-fn mesh_from_obj(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
+pub fn mesh_from_obj(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
     let vertex_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
         .lines()
         .map(Result::unwrap)

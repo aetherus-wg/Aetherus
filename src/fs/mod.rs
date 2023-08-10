@@ -15,3 +15,4 @@ pub use redirect::Redirect;
 /// Extensions for the implementation of different file types.
 pub mod extensions;
 pub use self::extensions::json::*;
+pub use self::extensions::wavefront::*;
