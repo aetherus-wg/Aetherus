@@ -14,84 +14,93 @@ use std::{
 impl File for Mesh {
     #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
-        let vertex_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
-            .lines()
-            .map(Result::unwrap)
-            .filter(|line| line.starts_with("v "))
-            .collect();
+        let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
+            panic!("Unable to read mesh from wavefront file: {}", path.display())
+    });
 
-        let mut verts = Vec::with_capacity(vertex_lines.len());
-        for line in vertex_lines {
-            let mut words = line.split_whitespace();
-            words.next();
-
-            let px = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
-            let py = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
-            let pz = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
-
-            verts.push(Point3::new(px, py, pz));
-        }
-
-        let normal_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
-            .lines()
-            .map(Result::unwrap)
-            .filter(|line| line.starts_with("vn "))
-            .collect();
-
-        let mut norms = Vec::with_capacity(normal_lines.len());
-        for line in normal_lines {
-            let mut words = line.split_whitespace();
-            words.next();
-
-            let nx = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
-            let ny = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
-            let nz = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
-
-            norms.push(Dir3::new(nx, ny, nz));
-        }
-
-        let face_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
-            .lines()
-            .map(Result::unwrap)
-            .filter(|line| line.starts_with("f "))
-            .collect();
-
-        let mut faces = Vec::with_capacity(face_lines.len());
-        for line in face_lines {
-            let line = line.replace("//", " ");
-            let mut words = line.split_whitespace();
-            words.next();
-
-            let fx = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
-            let nx = words
-                .next()
-                .ok_or("Missing normal word.")?
-                .parse::<usize>()?
-                - 1;
-            let fy = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
-            let ny = words
-                .next()
-                .ok_or("Missing normal word.")?
-                .parse::<usize>()?
-                - 1;
-            let fz = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
-            let nz = words
-                .next()
-                .ok_or("Missing normal word.")?
-                .parse::<usize>()?
-                - 1;
-
-            faces.push(((fx, fy, fz), (nx, ny, nz)));
-        }
-
-        let mut tris = Vec::with_capacity(faces.len());
-        for face in faces {
-            tris.push(SmoothTriangle::new_from_verts(
-                [verts[(face.0).0], verts[(face.0).1], verts[(face.0).2]],
-                [norms[(face.1).0], norms[(face.1).1], norms[(face.1).2]],
-            ));
-        }
-
-        Ok(Self::new(tris))
+        Ok(Self::new(mesh_tris))
     }
+}
+
+fn mesh_from_obj(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
+    let vertex_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
+        .lines()
+        .map(Result::unwrap)
+        .filter(|line| line.starts_with("v "))
+        .collect();
+
+    let mut verts = Vec::with_capacity(vertex_lines.len());
+    for line in vertex_lines {
+        let mut words = line.split_whitespace();
+        words.next();
+
+        let px = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
+        let py = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
+        let pz = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
+
+        verts.push(Point3::new(px, py, pz));
+    }
+
+    let normal_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
+        .lines()
+        .map(Result::unwrap)
+        .filter(|line| line.starts_with("vn "))
+        .collect();
+
+    let mut norms = Vec::with_capacity(normal_lines.len());
+    for line in normal_lines {
+        let mut words = line.split_whitespace();
+        words.next();
+
+        let nx = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
+        let ny = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
+        let nz = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
+
+        norms.push(Dir3::new(nx, ny, nz));
+    }
+
+    let face_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
+        .lines()
+        .map(Result::unwrap)
+        .filter(|line| line.starts_with("f "))
+        .collect();
+
+    let mut faces = Vec::with_capacity(face_lines.len());
+    for line in face_lines {
+        let line = line.replace("//", " ");
+        let mut words = line.split_whitespace();
+        words.next();
+
+        let fx = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
+        let nx = words
+            .next()
+            .ok_or("Missing normal word.")?
+            .parse::<usize>()?
+            - 1;
+        let fy = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
+        let ny = words
+            .next()
+            .ok_or("Missing normal word.")?
+            .parse::<usize>()?
+            - 1;
+        let fz = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
+        let nz = words
+            .next()
+            .ok_or("Missing normal word.")?
+            .parse::<usize>()?
+            - 1;
+
+        faces.push(((fx, fy, fz), (nx, ny, nz)));
+    }
+
+    let mut tris = Vec::with_capacity(faces.len());
+    for face in faces {
+        tris.push(SmoothTriangle::new_from_verts(
+            [verts[(face.0).0], verts[(face.0).1], verts[(face.0).2]],
+            [norms[(face.1).0], norms[(face.1).1], norms[(face.1).2]],
+        ));
+
+    }
+
+    Ok(tris)
 }
