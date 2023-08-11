@@ -93,3 +93,34 @@ pub fn mesh_from_obj(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
 
     Ok(tris)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::mesh_from_obj;
+    use crate::{
+        geom::SmoothTriangle,
+        math::{Dir3, Point3}};
+    use std::{
+        fs::read_dir,
+        path::Path};
+
+    #[test]
+    fn test_mesh_from_obj() {
+
+        // Create correct comparison data
+        let mut tris_kgo = [SmoothTriangle::new_from_verts(
+                                [Point3::new(1.0, -1.0, 0.0), Point3::new(-1.0, 1.0, 0.0), Point3::new(-1.0, -1.0, 0.0)],
+                                [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+                                ),
+                            SmoothTriangle::new_from_verts(
+                                [Point3::new(1.0, -1.0, 0.0), Point3::new(1.0, 1.0, 0.0), Point3::new(-1.0, 1.0, 0.0)],
+                                [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+                                )];
+
+        let test_data_path = Path::new("./tests/data/square.obj");
+        let mesh_tris = mesh_from_obj(test_data_path).unwrap();
+
+        assert!(mesh_tris==tris_kgo);
+
+    }
+}
