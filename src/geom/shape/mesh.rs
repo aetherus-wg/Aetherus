@@ -180,10 +180,16 @@ impl Display for Mesh {
 impl File for Mesh {
     #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
-        let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
-            panic!("Unable to read mesh from wavefront file: {}", path.display())
-    });
+        if path.extension().unwrap() == "obj" {
+            let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
+                panic!("Unable to read mesh from wavefront file: {}", path.display())
+            });
 
-        Ok(Self::new(mesh_tris))
+            Ok(Self::new(mesh_tris))
+
+        } else {
+            panic!("Mesh file {} has unsupported file type", path.display());
+        }
+
     }
 }
