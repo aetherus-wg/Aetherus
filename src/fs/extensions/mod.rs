@@ -13,6 +13,7 @@ pub mod json;
 pub mod lid;
 pub mod netcdf;
 pub mod png;
+pub mod ugrid;
 pub mod wavefront;
 
-pub use self::{csv::*, json::*, lid::*, netcdf::*, png::*, wavefront::*};
+pub use self::{csv::*, json::*, lid::*, netcdf::*, png::*, ugrid::*, wavefront::*};

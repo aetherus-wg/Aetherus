@@ -16,3 +16,4 @@ pub use redirect::Redirect;
 pub mod extensions;
 pub use self::extensions::json::*;
 pub use self::extensions::wavefront::*;
+pub use self::extensions::ugrid::*;

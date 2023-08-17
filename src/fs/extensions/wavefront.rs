@@ -2,7 +2,6 @@
 
 use crate::{
     err::Error,
-    fs::File,
     geom::SmoothTriangle,
     math::{Dir3, Point3},
 };
@@ -108,14 +107,14 @@ mod tests {
     fn test_mesh_from_obj() {
 
         // Create correct comparison data
-        let mut tris_kgo = [SmoothTriangle::new_from_verts(
-                                [Point3::new(1.0, -1.0, 0.0), Point3::new(-1.0, 1.0, 0.0), Point3::new(-1.0, -1.0, 0.0)],
-                                [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
-                                ),
-                            SmoothTriangle::new_from_verts(
-                                [Point3::new(1.0, -1.0, 0.0), Point3::new(1.0, 1.0, 0.0), Point3::new(-1.0, 1.0, 0.0)],
-                                [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
-                                )];
+        let tris_kgo = [SmoothTriangle::new_from_verts(
+                            [Point3::new(1.0, -1.0, 0.0), Point3::new(-1.0, 1.0, 0.0), Point3::new(-1.0, -1.0, 0.0)],
+                            [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+                            ),
+                        SmoothTriangle::new_from_verts(
+                            [Point3::new(1.0, -1.0, 0.0), Point3::new(1.0, 1.0, 0.0), Point3::new(-1.0, 1.0, 0.0)],
+                            [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+                            )];
 
         let test_data_path = Path::new("./tests/data/square.obj");
         let mesh_tris = mesh_from_obj(test_data_path).unwrap();

@@ -4,7 +4,7 @@ use crate::{
     access, clone, fmt_report,
     err::Error,
     geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Trace, Transformable},
-    fs::{File, mesh_from_obj},
+    fs::{File, mesh_from_obj, mesh_from_ugrid},
     math::Trans3,
     ord::{ALPHA, X},
 };
@@ -183,6 +183,13 @@ impl File for Mesh {
         if path.extension().unwrap() == "obj" {
             let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
                 panic!("Unable to read mesh from wavefront file: {}", path.display())
+            });
+
+            Ok(Self::new(mesh_tris))
+
+        } else if path.extension().unwrap() == "nc" {
+            let mesh_tris = mesh_from_ugrid(path).unwrap_or_else(|_| {
+                panic!("Unable to read mesh from ugrid file: {}", path.display())
             });
 
             Ok(Self::new(mesh_tris))
