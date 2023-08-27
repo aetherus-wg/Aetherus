@@ -17,3 +17,15 @@ pub fn name() -> Result<String, Error> {
         .ok_or("Missing string.")?
         .to_owned())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_name() {
+        assert!(name().is_ok());
+        assert_eq!(name().unwrap(), env::current_exe().unwrap().file_name().unwrap().to_str().unwrap());
+    }
+}

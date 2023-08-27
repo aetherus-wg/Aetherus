@@ -24,3 +24,32 @@ pub fn linear_to_three_dim(n: usize, res: &[usize; 3]) -> [usize; 3] {
 
     [xi, yi, zi]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_two_dim_to_linear() {
+        let res = [2, 2];
+        
+        assert_eq!(two_dim_to_linear([0, 0], &res), 0);
+        assert_eq!(two_dim_to_linear([1, 0], &res), 1);
+        assert_eq!(two_dim_to_linear([0, 1], &res), 2);
+        assert_eq!(two_dim_to_linear([1, 1], &res), 3);
+    }
+
+    #[test]
+    fn test_linear_to_three_dim() {
+        let res = [2, 2, 2];
+
+        assert_eq!(linear_to_three_dim(0, &res), [0, 0, 0]);
+        assert_eq!(linear_to_three_dim(1, &res), [0, 0, 1]);
+        assert_eq!(linear_to_three_dim(2, &res), [0, 1, 0]);
+        assert_eq!(linear_to_three_dim(3, &res), [0, 1, 1]);
+        assert_eq!(linear_to_three_dim(4, &res), [1, 0, 0]);
+        assert_eq!(linear_to_three_dim(5, &res), [1, 0, 1]);
+        assert_eq!(linear_to_three_dim(6, &res), [1, 1, 0]);
+        assert_eq!(linear_to_three_dim(7, &res), [1, 1, 1]);
+    }
+}
