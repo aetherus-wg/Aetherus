@@ -294,9 +294,10 @@ impl Emit for Triangle {
 mod tests {
     // We implement the transformable for the triangle primitive, so we shall use this for tests.
     use super::{Trans3, Transformable};
-    use crate::{geom::Triangle, math::Point3};
+    use crate::{geom::{Triangle, Trace}, math::Point3};
     use nalgebra::Vector3;
     use std::f64;
+    use assert_approx_eq::assert_approx_eq;
 
     fn unit_triangle() -> Triangle {
         Triangle::new([
@@ -389,5 +390,66 @@ mod tests {
         // Check that the components have correctly transformed into the correct axis.
         assert_eq!(tri.verts()[1][2], -1.0);
         assert_eq!(tri.verts()[2][2], -1.0);
+    }
+
+    #[test]
+    fn perimeter_test() {
+        let tri = unit_triangle();
+        // Two sides of length 1 and the hypotenuse of length sqrt(2).
+        assert_eq!(tri.perimeter(), 2.0 + f64::sqrt(2.0));
+    }
+
+    #[test]
+    fn centre_test() {
+        let tri = unit_triangle();
+        assert_eq!(tri.centre(), Point3::new(2. / 3., 1. / 3., 0.));
+    }
+
+    #[test]
+    fn area_test() {
+        let tri = unit_triangle();
+        assert_approx_eq!(tri.area(), 0.5);
+    }
+
+    #[test]
+    #[ignore = "This case is currently not handled correctly."]
+    // TODO: this function does not work as expected. Check that the intersection coors are correct.
+    fn test_intersection_coords() {
+        let tri = unit_triangle();
+        let ray = crate::geom::Ray::new(
+            Point3::new(0.25, 0.25, 1.0),
+            crate::math::Dir3::new(0.0, 0.0, -1.0),
+        );
+        let (dist, coors) = tri.intersection_coors(&ray).unwrap();
+        assert_eq!(dist, 1.0);
+        assert_eq!(coors, [0.25, 0.25, 0.0]);
+    }
+
+    #[test]
+    fn test_intersection_coords_miss() {
+        let tri = unit_triangle();
+        let ray = crate::geom::Ray::new(
+            Point3::new(0.25, 0.25, 1.0),
+            crate::math::Dir3::new(0.0, 0.0, 1.0),
+        );
+        assert!(tri.intersection_coors(&ray).is_none());
+    }
+
+    #[test]
+    fn hit_miss_test() {
+        let tri = unit_triangle();
+        // Ray is parallel to the triangle. Will not hit.
+        let ray = crate::geom::Ray::new(
+            Point3::new(0.25, 0.25, 1.0),
+            crate::math::Dir3::new(0.0, 0.0, 1.0),
+        );
+        assert!(!tri.hit(&ray));
+
+        // Ray is facing into the triangle. It will hit. 
+        let ray = crate::geom::Ray::new(
+            Point3::new(0.25, 0.25, 1.0),
+            crate::math::Dir3::new(0.0, 0.0, -1.0),
+        );
+        assert!(tri.hit(&ray));
     }
 }

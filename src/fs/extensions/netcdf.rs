@@ -125,3 +125,90 @@ impl<T: NcPutGet> Save for ArrayView3<'_, T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use ndarray::s;
+
+    #[test]
+    fn test_load_array2() {
+        let arr = Array2::from_shape_vec((2, 3), vec![1, 2, 3, 4, 5, 6]).unwrap();
+        let path = Path::new("test_load_array2.nc");
+        arr.save_data(&path).unwrap();
+
+        let loaded_arr = Array2::<i32>::load(&path).unwrap();
+        assert_eq!(arr, loaded_arr);
+
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_load_array3() {
+        let arr = Array3::from_shape_vec((2, 3, 4), (0..2*3*4).into_iter().map(|val| val).collect::<Vec<i32>>()).unwrap();
+        let path = Path::new("test_load_array3.nc");
+        arr.save_data(&path).unwrap();
+
+        let loaded_arr = Array3::<i32>::load(&path).unwrap();
+        assert_eq!(arr, loaded_arr);
+
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_save_array2() {
+        let arr = Array2::from_shape_vec((2, 3), vec![1, 2, 3, 4, 5, 6]).unwrap();
+        let path = Path::new("test_save_array2.nc");
+        arr.save_data(&path).unwrap();
+
+        let file = netcdf::open(&path).unwrap();
+        let data = &file.variable("data").unwrap();
+        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        assert_eq!(arr, loaded_arr);
+
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_save_array3() {
+        let arr = Array3::from_shape_vec((2, 3, 4), (0..2*3*4).into_iter().map(|val| val).collect::<Vec<i32>>()).unwrap();
+        let path = Path::new("test_save_array3.nc");
+        arr.save_data(&path).unwrap();
+
+        let file = netcdf::open(&path).unwrap();
+        let data = &file.variable("data").unwrap();
+        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        assert_eq!(arr, loaded_arr);
+
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_save_array2_view() {
+        let arr = Array2::from_shape_vec((2, 3), vec![1, 2, 3, 4, 5, 6]).unwrap();
+        let path = Path::new("test_save_array2_view.nc");
+        arr.slice(s![.., ..]).save_data(&path).unwrap();
+
+        let file = netcdf::open(&path).unwrap();
+        let data = &file.variable("data").unwrap();
+        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        assert_eq!(arr, loaded_arr);
+
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_save_array3_view() {
+        let arr = Array3::from_shape_vec((2, 3, 4), (0..2*3*4).into_iter().map(|val| val).collect::<Vec<i32>>()).unwrap();
+        let path = Path::new("test_save_array3_view.nc");
+        arr.slice(s![.., .., ..]).save_data(&path).unwrap();
+
+        let file = netcdf::open(&path).unwrap();
+        let data = &file.variable("data").unwrap();
+        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        assert_eq!(arr, loaded_arr);
+
+        fs::remove_file(&path).unwrap();
+    }
+}

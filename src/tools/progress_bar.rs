@@ -77,3 +77,130 @@ impl ProgressBar {
         self.pb.finish_with_message(msg);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_progress_bar() {
+        let msg = "test";
+        let total = 10;
+        let _ = ProgressBar::new(msg, total);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_new_progress_bar_fail() {
+        let msg = "test";
+        let total = 0;
+        let _ = ProgressBar::new(msg, total);
+    }
+
+    #[test]
+    fn test_tick() {
+        let msg = "test";
+        let total = 10;
+        let mut pb = ProgressBar::new(msg, total);
+
+        for i in 0..total {
+            pb.tick();
+            assert_eq!(pb.count, i + 1);
+        }
+    }
+
+    #[test]
+    fn test_block() {
+        let msg = "test";
+        let total = 10;
+        let mut pb = ProgressBar::new(msg, total);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 0);
+        assert_eq!(end, size);
+    }
+
+    #[test]
+    fn test_block_remaining() {
+        let msg = "test";
+        let total = 10;
+        let mut pb = ProgressBar::new(msg, total);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 0);
+        assert_eq!(end, size);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 3);
+        assert_eq!(end, 6);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 6);
+        assert_eq!(end, 9);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 9);
+        assert_eq!(end, 10);
+    }
+
+    #[test]
+    fn test_block_none() {
+        let msg = "test";
+        let total = 10;
+        let mut pb = ProgressBar::new(msg, total);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 0);
+        assert_eq!(end, size);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 3);
+        assert_eq!(end, 6);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 6);
+        assert_eq!(end, 9);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 9);
+        assert_eq!(end, 10);
+
+        let size = 3;
+        let block = pb.block(size);
+
+        assert!(block.is_none());
+    }
+
+    #[test]
+    fn test_is_done() {
+        let msg = "test";
+        let total = 10;
+        let mut pb = ProgressBar::new(msg, total);
+
+        assert!(!pb.is_done());
+
+        for _ in 0..total {
+            pb.tick();
+        }
+
+        assert!(pb.is_done());
+    }
+}

@@ -90,3 +90,106 @@ impl Display for Range {
         write!(fmt, "{} -> {}", self.min, self.max)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_new_range() {
+        use super::Range;
+
+        let min = 0.0;
+        let max = 1.0;
+
+        let range = Range::new(min, max);
+
+        assert_eq!(range.min(), min);
+        assert_eq!(range.max(), max);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_new_range_fail() {
+        use super::Range;
+
+        let min = 1.0;
+        let max = 0.0;
+
+        Range::new(min, max);
+    }
+
+    #[test]
+    fn test_new_infinite_range() {
+        use super::Range;
+
+        let range = Range::new_infinite();
+
+        assert_eq!(range.min(), f64::NEG_INFINITY);
+        assert_eq!(range.max(), f64::INFINITY);
+    }
+
+    #[test]
+    fn test_width() {
+        use super::Range;
+
+        let min = 0.0;
+        let max = 1.0;
+
+        let range = Range::new(min, max);
+
+        assert_eq!(range.width(), max - min);
+    }
+
+    #[test]
+    fn test_contains() {
+        use super::Range;
+
+        let min = 0.0;
+        let max = 1.0;
+
+        let range = Range::new(min, max);
+
+        assert!(range.contains(0.0));
+        assert!(range.contains(0.5));
+        assert!(range.contains(1.0));
+        assert!(!range.contains(-0.5));
+        assert!(!range.contains(1.5));
+    }
+
+    #[test]
+    fn test_intersect() {
+        use super::Range;
+
+        let min = 0.0;
+        let max = 1.0;
+
+        let range = Range::new(min, max);
+
+        assert!(range.intersect(&Range::new(0.0, 1.0)));
+        assert!(range.intersect(&Range::new(0.5, 1.5)));
+        assert!(range.intersect(&Range::new(-0.5, 0.5)));
+        assert!(!range.intersect(&Range::new(-1.0, -0.5)));
+        assert!(!range.intersect(&Range::new(1.5, 2.0)));
+    }
+
+    #[test]
+    fn test_overlap() {
+        use super::Range;
+
+        let min = 0.0;
+        let max = 1.0;
+
+        let range = Range::new(min, max);
+
+        assert_eq!(range.overlap(&Range::new(0.0, 1.0)), Some(range.clone()));
+        assert_eq!(
+            range.overlap(&Range::new(0.5, 1.5)),
+            Some(Range::new(0.5, 1.0))
+        );
+        assert_eq!(
+            range.overlap(&Range::new(-0.5, 0.5)),
+            Some(Range::new(0.0, 0.5))
+        );
+        assert_eq!(range.overlap(&Range::new(-1.0, -0.5)), None);
+        assert_eq!(range.overlap(&Range::new(1.5, 2.0)), None);
+    }
+}

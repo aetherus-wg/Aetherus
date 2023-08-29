@@ -8,6 +8,13 @@ use std::fmt::{Display, Error, Formatter};
 pub struct Name(String);
 
 impl Name {
+    /// Construct a new instance.
+    #[inline]
+    #[must_use]
+    pub fn new(name: &str) -> Self {
+        Self(name.to_string())
+    }
+
     /// Get the name as a string.
     #[inline]
     #[must_use]

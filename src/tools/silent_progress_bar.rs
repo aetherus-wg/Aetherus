@@ -48,3 +48,136 @@ impl SilentProgressBar {
         self.count >= self.total
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_new_silent_progress_bar() {
+        use super::SilentProgressBar;
+
+        let total = 10;
+        let _ = SilentProgressBar::new(total);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_new_silent_progress_bar_fail() {
+        use super::SilentProgressBar;
+
+        let total = 0;
+        let _ = SilentProgressBar::new(total);
+    }
+
+    #[test]
+    fn test_block() {
+        use super::SilentProgressBar;
+
+        let total = 10;
+        let mut pb = SilentProgressBar::new(total);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 0);
+        assert_eq!(end, size);
+    }
+
+    #[test]
+    fn test_block_remaining() {
+        use super::SilentProgressBar;
+
+        let total = 10;
+        let mut pb = SilentProgressBar::new(total);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 0);
+        assert_eq!(end, size);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 3);
+        assert_eq!(end, 6);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 6);
+        assert_eq!(end, 9);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 9);
+        assert_eq!(end, 10);
+    }
+
+    #[test]
+    fn test_block_none() {
+        use super::SilentProgressBar;
+
+        let total = 10;
+        let mut pb = SilentProgressBar::new(total);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 0);
+        assert_eq!(end, size);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 3);
+        assert_eq!(end, 6);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 6);
+        assert_eq!(end, 9);
+
+        let size = 3;
+        let (start, end) = pb.block(size).expect("Failed to get block.");
+
+        assert_eq!(start, 9);
+        assert_eq!(end, 10);
+
+        let size = 3;
+        let block = pb.block(size);
+
+        assert!(block.is_none());
+    }
+
+    #[test]
+    fn test_is_done() {
+        use super::SilentProgressBar;
+
+        let total = 10;
+        let mut pb = SilentProgressBar::new(total);
+
+        assert!(!pb.is_done());
+
+        let size = 3;
+        let _ = pb.block(size).expect("Failed to get block.");
+
+        assert!(!pb.is_done());
+
+        let size = 3;
+        let _ = pb.block(size).expect("Failed to get block.");
+
+        assert!(!pb.is_done());
+
+        let size = 3;
+        let _ = pb.block(size).expect("Failed to get block.");
+
+        assert!(!pb.is_done());
+
+        let size = 3;
+        let _ = pb.block(size).expect("Failed to get block.");
+
+        assert!(pb.is_done());
+    }
+}

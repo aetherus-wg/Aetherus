@@ -116,3 +116,73 @@ impl<T: Display> Display for Table<T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fmt::format;
+    use std::fs::File;
+    use ndarray::Array1;
+
+    use super::*;
+
+    #[test]
+    fn new() {
+        let headings = vec!["a".to_string(), "b".to_string()];
+        let rows = vec![vec![1, 2], vec![3, 4]];
+        let table = Table::new(headings, rows);
+        assert_eq!(table.headings, vec!["a".to_string(), "b".to_string()]);
+        // Check that we can get the rows back out, test the into_inner method in the process. 
+        assert_eq!(table.into_inner(), vec![vec![1, 2], vec![3, 4]]);
+    }
+
+    /// Test the new_from_array method.
+    #[test]
+    fn new_from_array() {
+        let headings = vec!["a".to_string(), "b".to_string()];
+        let values = Array1::from_vec(vec![1, 2, 3, 4]).into_shape((2, 2)).unwrap();
+        let table = Table::new_from_array(headings, &values);
+        assert_eq!(table.headings, vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(table.rows, vec![vec![1, 2], vec![3, 4]]);
+    }
+
+    #[test]
+    fn test_display() {
+        let table = Table::new(vec!["A".to_string(), "B".to_string(), "C".to_string()], vec![vec![1, 2, 3], vec![4, 5, 6]]);
+        let table_string = format!("{}", table);
+        let row_vec = table_string.strip_suffix("\n").expect("Table invalid in display test").split("\n").collect::<Vec<&str>>();
+
+        // Check that we have three rows (1 heading + 2 data).
+        assert_eq!(row_vec.len(), 3);
+
+        // Check that the heading is correct.
+        assert_eq!(row_vec[0], "A,B,C");
+
+        // Check the formatting of the data too.
+        assert_eq!(row_vec[1], "                               1,                                2,                                3");
+        assert_eq!(row_vec[2], "                               4,                                5,                                6");
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut table1 = Table::new(vec!["A".to_string(), "B".to_string(), "C".to_string()], vec![vec![1, 2, 3], vec![4, 5, 6]]);
+        let table2 = Table::new(vec!["A".to_string(), "B".to_string(), "C".to_string()], vec![vec![7, 8, 9], vec![10, 11, 12]]);
+        table1 += &table2;
+        assert_eq!(table1.rows(), &[&[8, 10, 12], &[14, 16, 18]]);
+    }
+
+    #[test]
+    fn test_save_data() {
+        let headings = vec!["A".to_string(), "B".to_string(), "C".to_string()];
+        let rows = vec![vec![1, 2, 3], vec![4, 5, 6]];
+        let table = Table::new(headings.clone(), rows.clone());
+
+        let path = Path::new("test.csv");
+        let result = table.save_data(&path);
+        assert!(result.is_ok());
+
+        let contents = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(contents, format!("A,B,C\n{:>32}, {:>32}, {:>32}\n{:>32}, {:>32}, {:>32}\n", 1, 2, 3, 4, 5, 6));
+
+        std::fs::remove_file(&path).unwrap();
+    }
+}

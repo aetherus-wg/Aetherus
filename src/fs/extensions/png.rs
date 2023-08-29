@@ -32,3 +32,22 @@ impl Save for Image {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::img::{Image, Colour};
+    use ndarray::arr2;
+
+    #[test]
+    fn test_save() {
+        let pixel = Colour::new(0.0, 0.0, 0.0, 1.0); 
+        let img = Image::new(arr2(&[[pixel, pixel], [pixel, pixel]]));
+        let path = Path::new("test.png");
+        let res = img.save(&path);
+        assert!(res.is_ok());
+
+        // Clean-up the written image. 
+        std::fs::remove_file(path).unwrap();
+    }
+}

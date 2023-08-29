@@ -32,3 +32,31 @@ impl<T: Display> Display for Surface<'_, T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        geom::{Mesh, Surface, SmoothTriangle, Triangle},
+        math::{Dir3, Point3}, 
+        sim::Attribute,
+    };
+    use assert_approx_eq::assert_approx_eq;
+
+    #[test]
+    fn test_new() {
+        // Make a single upward facing triangle for the surface. 
+        let triangles = vec![ SmoothTriangle::new(
+            Triangle::new([
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(1.0, 0.0, 0.0),
+                Point3::new(0.0, 1.0, 0.0),
+        ]),
+            [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+        )];
+
+        let mesh = Mesh::new(triangles);
+        let surf = Surface::new(mesh, &Attribute::Mirror(0.5));
+        
+        assert_approx_eq!(surf.mesh().area(), 0.5);
+    }
+}

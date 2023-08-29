@@ -8,7 +8,7 @@ use std::ops::{
     Sub, SubAssign,
 };
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(transparent)]
 /// Three-dimensional real-number vector.
 pub struct Vec3 {
