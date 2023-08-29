@@ -1,6 +1,6 @@
 [package]
 name = "Aetherus"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Freddy Wordingham <f.wordingham@exeter.ac.uk>", "Sam Morrell <s.a.f.morrell@exeter.ac.uk>"]
 edition = "2018"
 description = "Physics simulation library and binaries"
