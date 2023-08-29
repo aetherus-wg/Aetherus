@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 #[inline]
 pub fn multi_thread<'a>(
     engine: &Engine,
-    input: &'a Input,
+    input: Input<'a>,
     output: &Output<'a>,
 ) -> Result<Output<'a>, Error> {
     let pb = ProgressBar::new("MCRT", input.sett.num_phot());
@@ -30,7 +30,7 @@ pub fn multi_thread<'a>(
     let threads: Vec<_> = (0..num_threads).collect();
     let mut out: Vec<_> = threads
         .par_iter()
-        .map(|_id| thread(engine, input, output.clone(), &Arc::clone(&pb)))
+        .map(|_id| thread(engine, input.clone(), output.clone(), &Arc::clone(&pb)))
         .collect();
     pb.lock()?.finish_with_message("Simulation complete.");
 
@@ -48,7 +48,7 @@ pub fn multi_thread<'a>(
 #[must_use]
 fn thread<'a>(
     engine: &Engine,
-    input: &'a Input,
+    input: Input<'a>,
     mut output: Output<'a>,
     pb: &Arc<Mutex<ProgressBar>>,
 ) -> Output<'a> {
@@ -65,7 +65,7 @@ fn thread<'a>(
     } {
         for _ in start..end {
             let phot = input.light.emit(&mut rng, phot_energy);
-            engine.run(input, &mut output, &mut rng, phot);
+            engine.run(&input, &mut output, &mut rng, phot);
         }
     }
 

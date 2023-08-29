@@ -5,7 +5,7 @@ use crate::{
     err::Error,
     fs::{File, Load, Redirect},
     geom::{Emitter, GridBuilder, MeshLoader, Ray},
-    math::{stat::SphericalCdf, Dir3, Point3},
+    math::{stat::SphericalCdf, Dir3, Point3, Trans3Builder},
     ord::{Build, X, Y, Z},
 };
 use arctk_attr::file;
@@ -29,7 +29,7 @@ pub enum EmitterLoader {
     /// Volume map.
     Volume(PathBuf, Redirect<GridBuilder>),
     /// Non-isotropic point source.
-    NonIsotropicPoints(PathBuf, PathBuf),
+    NonIsotropic(PathBuf, Trans3Builder),
 }
 
 impl Load for EmitterLoader {
@@ -67,17 +67,11 @@ impl Load for EmitterLoader {
                 let spatial_map: Array3<f64> = Array3::new_from_file(&in_dir.join(spatial_map))?;
                 Self::Inst::new_volume(spatial_map, grid.load(in_dir)?.build())
             }
-            Self::NonIsotropicPoints(points_path, lid_path) => {
-                let points_data = Table::new_from_file(&in_dir.join(points_path))?;
-                let points = points_data
-                    .into_inner()
-                    .iter()
-                    .map(|row| Point3::new(row[X], row[Y], row[Z]))
-                    .collect();
-
+            Self::NonIsotropic(lid_path, trans_build) => {
                 let cdf = SphericalCdf::load(&in_dir.join(lid_path))?;
+                let trans = trans_build.build();
 
-                Self::Inst::new_non_isotropic_points(points, cdf)
+                Self::Inst::new_non_isotropic(cdf, trans)
             }
         })
     }
@@ -92,7 +86,7 @@ impl Display for EmitterLoader {
             Self::WeightedPoints { .. } => "WeightedPoints",
             Self::Surface { .. } => "Surface",
             Self::Volume { .. } => "Volume",
-            Self::NonIsotropicPoints { .. } => "NonIsotropicPoints",
+            Self::NonIsotropic { .. } => "NonIsotropic",
         };
         write!(fmt, "{}", kind)
     }

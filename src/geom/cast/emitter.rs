@@ -2,7 +2,7 @@
 
 use crate::{
     geom::{Emit, Grid, Mesh, Ray},
-    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf},
+    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf, Trans3},
     tools::linear_to_three_dim,
 };
 use ndarray::Array3;
@@ -13,6 +13,7 @@ use std::{
 };
 
 /// Ray emission structure.
+#[derive(Clone)]
 pub enum Emitter {
     /// Single beam.
     Beam(Ray),
@@ -25,7 +26,7 @@ pub enum Emitter {
     /// Volume map.
     Volume(Array3<f64>, Grid),
     /// Non-isotropic point source.
-    NonIsotropicPoints(Vec<Point3>, SphericalCdf),
+    NonIsotropic(SphericalCdf, Trans3),
 }
 
 impl Emitter {
@@ -83,8 +84,8 @@ impl Emitter {
     /// Construct a new non-isotropic point source instance.
     #[inline]
     #[must_use]
-    pub fn new_non_isotropic_points(points: Vec<Point3>, cdf: SphericalCdf) -> Self {
-        Self::NonIsotropicPoints(points, cdf)
+    pub fn new_non_isotropic(cdf: SphericalCdf, trans: Trans3) -> Self {
+        Self::NonIsotropic(cdf, trans)
     }
 
     /// Emit a new ray.
@@ -120,7 +121,7 @@ impl Emitter {
                 }
                 panic!("Failed to emit ray from volume.")
             }
-            Self::NonIsotropicPoints(ref points, ref cdf) => {
+            Self::NonIsotropic(ref cdf, ref trans) => {
                 // Using the logic from the isotropic emission case.
                 let (az, pol) = cdf.sample(rng);
 
@@ -130,7 +131,14 @@ impl Emitter {
                 let y = az.sin() * (PI - pol).sin();
                 let z = (PI - pol).cos();
 
-                Ray::new(points[rng.gen_range(0..points.len())], Dir3::new(x, y, z))
+                let dir = trans.transform_vector(&Dir3::new(x, y, z).data());
+
+                Ray::new(
+                    trans
+                        .transform_point(&Point3::new(0.0, 0.0, 0.0).data())
+                        .into(),
+                    dir.into(),
+                )
             }
         }
     }
@@ -145,8 +153,115 @@ impl Display for Emitter {
             Self::WeightedPoints { .. } => "WeightedPoints",
             Self::Surface { .. } => "Surface",
             Self::Volume { .. } => "Volume",
-            Self::NonIsotropicPoints { .. } => "Non-isotropic Points",
+            Self::NonIsotropic { .. } => "Non-isotropic",
         };
         write!(fmt, "{}", kind)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Emitter;
+    use rand;
+    use assert_approx_eq::assert_approx_eq;
+    use crate::{
+        geom::{Ray, Mesh, SmoothTriangle, Triangle}, 
+        data::Average,
+        math::{Point3, Dir3},
+    };
+
+    #[test]
+    fn test_beam_emitter() {
+        let mut rng = rand::thread_rng();
+        let emit_ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
+        let emitter = Emitter::new_beam(emit_ray.clone());
+
+        let emitted_ray = emitter.emit(&mut rng);
+        assert_eq!(emitted_ray.dir(), emit_ray.dir());
+        assert_eq!(emitted_ray.pos(), emit_ray.pos());
+    }
+
+    #[test]
+    fn test_points_emitter() {
+        let points = vec![Point3::new(1.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 0.0, 1.0)];
+        let emitter = Emitter::new_points(points.clone());
+
+        let mut ave_x = Average::new();
+        let mut ave_y = Average::new();
+        let mut ave_z = Average::new();
+        let mut rng = rand::thread_rng();
+        for _ in 0..100_000 {
+            let emitted_ray = emitter.emit(&mut rng);
+            assert!(points.contains(emitted_ray.pos()));
+            ave_x += emitted_ray.dir().x();
+            ave_y += emitted_ray.dir().y();
+            ave_z += emitted_ray.dir().z();
+        }
+
+        // In the case that the emission is isotropic, this should even out to be about zero.
+        // I'm testing this to within 1% here. 
+        assert_approx_eq!(ave_x.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_y.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_z.ave(), 0.0, 0.01);
+    }
+
+    #[test]
+    fn test_weighted_points_emitter() {
+        let points = vec![Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0)];
+        let weights = vec![1.0, 2.0];
+        let emitter = Emitter::new_weighted_points(points.clone(), &weights);
+
+        let mut ave_x = Average::new();
+        let mut ave_y = Average::new();
+        let mut ave_z = Average::new();
+        let mut ave_dir_x = Average::new();
+        let mut ave_dir_y = Average::new();
+        let mut ave_dir_z = Average::new();
+        let mut rng = rand::thread_rng();
+        for _ in 0..100_000 {
+            let emitted_ray = emitter.emit(&mut rng);
+            
+            ave_x += emitted_ray.pos().x();
+            ave_y += emitted_ray.pos().y();
+            ave_z += emitted_ray.pos().z();
+
+            ave_dir_x += emitted_ray.dir().x();
+            ave_dir_y += emitted_ray.dir().y();
+            ave_dir_z += emitted_ray.dir().z();
+        }
+
+        assert_approx_eq!(ave_x.ave(), 0.666, 0.005);
+        assert_eq!(ave_y.ave(), 0.0);
+        assert_eq!(ave_z.ave(), 0.0);
+
+        // In the case that the emission is isotropic, this should even out to be about zero.
+        // I'm testing this to within 1% here. 
+        assert_approx_eq!(ave_dir_x.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_dir_y.ave(), 0.0, 0.01);
+        assert_approx_eq!(ave_dir_z.ave(), 0.0, 0.01);
+    }
+
+    #[test]
+    fn test_surface_emitter() {
+        let mut rng = rand::thread_rng();
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+
+        // Make a single upward facing triangle to emit from. 
+        let triangles = vec![ SmoothTriangle::new(
+            Triangle::new([
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(1.0, 0.0, 0.0),
+                Point3::new(0.0, 1.0, 0.0),
+        ]),
+            [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+        )];
+        let mesh = Mesh::new(triangles);
+        let emitter = Emitter::new_surface(mesh);
+
+        let emitted_ray = emitter.emit(&mut rng);
+        assert_eq!(emitted_ray.dir(), &norm);
+        assert_eq!(emitted_ray.pos().z(), 0.0);
+        assert!(emitted_ray.pos().x() >= 0.0 && emitted_ray.pos().x() <= 1.0);
+        assert!(emitted_ray.pos().y() >= 0.0 && emitted_ray.pos().y() <= 1.0);
     }
 }

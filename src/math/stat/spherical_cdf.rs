@@ -15,7 +15,7 @@ use std::f64::consts::PI;
 /// to ensure that we can sample the sin(theta) area term well enough.
 const TARGET_NANGLES: usize = 360;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SphericalCdfPlane {
     /// The central azimurhal angle of the plane.
     azimuth_angle: Real,
@@ -60,7 +60,7 @@ impl SphericalCdfPlane {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// The spherical CDF object.
 pub struct SphericalCdf {
     planes: Vec<SphericalCdfPlane>,
@@ -87,16 +87,28 @@ impl SphericalCdf {
     /// Samples the CDF and returns a tuple containing the azimuthal and polar angles in radians.
     /// These angles are randomly chosen based on the underlying CDF.
     pub fn sample<R: Rng>(&self, rng: &mut R) -> (Real, Real) {
-        // First, draw the azimuthal angle from the azimuthal CDF and apply the offset to map back into an appropriate system.
-        let azim_draw = self.azimuth_cdf.sample(rng);
+        let mut azim_draw = 0.0;
+        let mut polar_draw= 0.0;
 
-        // Now find the plane for which this azimuthal angle corresponds, so that we can sampe polar angle.
-        let iplane = self
-            .planes
-            .iter()
-            .position(|pl| pl.azimuthal_angle_in_plane(azim_draw))
-            .unwrap();
-        let polar_draw = self.planes[iplane].sample(rng);
+        loop {
+            // First, draw the azimuthal angle from the azimuthal CDF and apply the offset to map back into an appropriate system.
+            azim_draw = self.azimuth_cdf.sample(rng);
+
+            // Now find the plane for which this azimuthal angle corresponds, so that we can sampe polar angle.
+            let iplane = self
+                .planes
+                .iter()
+                .position(|pl| pl.azimuthal_angle_in_plane(azim_draw));
+            // Some searches come back with a `None`. To avoid this crashing the code, let's instead perform an iteration
+            if iplane.is_none() { 
+                println!("Unable to find plane for azimuthal angle: {} rad. Trying again. ", azim_draw);
+                continue; 
+            }
+
+            // Now that we know we have a plane, let's draw the polare coordinate from it. 
+            polar_draw = self.planes[iplane.unwrap()].sample(rng);
+            break;
+        }
 
         (azim_draw, polar_draw)
     }
@@ -284,7 +296,7 @@ pub mod tests {
         let planes = (0..360)
             .step_by(90)
             .enumerate()
-            .map(|(ipl, ang)| {
+            .map(|(_, ang)| {
                 let mut plane = Plane::new();
 
                 let mut intens = vec![];
@@ -507,5 +519,37 @@ pub mod tests {
                 )
             })
             .collect();
+    }
+
+    /// In this test case, the number of angles is above TARGET_NANGLES, so the
+    /// code path where we don't perform an interpolation is tested. 
+    #[test]
+    fn spherical_cdf_well_sampled_case() {
+        // For this test case, we only have a single, axially symmetric plane.
+        let mut plane = Plane::new();
+
+        // Iterate through the surfaces in the current plane to get the spline points for the CDF.
+        let mut intens = vec![];
+        let mut angles = vec![];
+
+        let mut ang = 0.0;
+        const DELTA_ANG: f64 = 0.1;
+        const END_ANG: f64 = 90.0;
+        while ang < END_ANG {
+            intens.push((ang * (PI / 180_f64)).cos());
+            angles.push(ang);
+            ang += DELTA_ANG;
+        }
+
+        plane.set_angles_degrees(&angles);
+        plane.set_intensities(intens);
+        plane.set_angle_degrees(0.0);
+        plane.set_units(lidrs::photweb::IntensityUnits::Candela);
+        plane.set_orientation(lidrs::photweb::PlaneOrientation::Vertical);
+
+        let mut photweb = PhotometricWeb::new();
+        photweb.set_planes(vec![plane]);
+
+        assert_eq!(END_ANG / DELTA_ANG + 1.0, photweb.planes()[0].angles().len() as f64);
     }
 }

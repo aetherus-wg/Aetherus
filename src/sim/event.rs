@@ -3,7 +3,9 @@
 use crate::geom::Hit;
 
 /// Event determination enumeration.
-pub enum Event<'a, T> {
+#[derive(PartialEq, Debug)]
+pub enum Event<'a, T> 
+{
     /// Voxel boundary collision.
     Voxel(f64),
     /// Scattering event.
@@ -45,5 +47,44 @@ impl<'a, T> Event<'a, T> {
             return Self::Scattering(scat_dist);
         }
         Self::Voxel(voxel_dist)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        sim::Attribute,
+        geom::Side,
+        math::Dir3,
+    };
+    use super::*;
+
+    /// In this scenario, the surface hit is the closest event. 
+    #[test]
+    fn test_new_surface_hit() {
+        let surf_hit = Some(Hit::new(&Attribute::Mirror(0.5), 1.0, Side::Outside(Dir3::new(1.0, 0.0, 0.0))));
+        let event = Event::new(2.0, 3.0, surf_hit, 0.5);
+
+        // Check each of the components of the event.
+        if let Event::Surface(hit) = event {
+            assert_eq!(hit.tag(), &Attribute::Mirror(0.5));
+            assert_eq!(hit.dist(), 1.0);
+            assert_eq!(hit.side(), &Side::Outside(Dir3::new(1.0, 0.0, 0.0)));
+        } else {
+            panic!("Expected surface hit.");
+        }
+    }
+
+    #[test]
+    fn test_new_voxel_collision() {
+        let event: Event<'_, Attribute> = Event::new(2.0, 3.0, None, 0.5);
+        assert_eq!(event, Event::Voxel(2.0));
+    }
+
+    #[test]
+    fn test_new_scattering_event() {
+        let surf_hit = Some(Hit::new(&Attribute::Mirror(0.5), 2.0, Side::Outside(Dir3::new(1.0, 0.0, 0.0))));
+        let event = Event::new(2.0, 1.0, surf_hit, 4.0);
+        assert_eq!(event, Event::Scattering(1.0));
     }
 }

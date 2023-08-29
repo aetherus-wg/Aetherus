@@ -2,40 +2,79 @@ use crate::{
     core::Real,
     fmt_report,
     geom::{Hit, Ray},
+    phys::Spectrum,
     sim::Attribute,
 };
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 use std::{f64::consts::PI, fmt::Display};
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+use super::Photon;
+
+/// A small utility function that checks that the provided spectrum is valid as a
+/// reflectance spectrum. This means that it should have values that are between 0.0
+/// and 1.0.
+pub fn reflectance_spectrum_valid(spec: &Spectrum) -> bool {
+    match *spec {
+        Spectrum::Constant(ref val) | Spectrum::Tophat(_, _, ref val) => {
+            if *val >= 0.0 && *val <= 1.0 {
+                true
+            } else {
+                false
+            }
+        }
+        Spectrum::Data(_, _) => {
+            let max = spec.max_val();
+            let min = spec.min_val();
+
+            if min.is_some() && max.is_some() {
+                if *max.unwrap() <= 1.0 && *max.unwrap() >= 0.0 {
+                    if *max.unwrap() <= 1.0 && *max.unwrap() >= 0.0 {
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Reflectance {
     /// Lambertian Reflectance
     ///
     /// Provides a purely diffuse reflectance, and reflects evenly in the hemisphere
     /// around the normal vector, irrespective of the direction of the incident
     /// light ray.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    Lambertian { albedo: Real },
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    Lambertian { refspec: Spectrum },
     /// Specular Reflectance
     ///
     /// Provides a purely specular reflectance, where the angle of the reflected
     /// photon from the normal vector is the same as the incoming ray.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    Specular { albedo: Real },
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    Specular { refspec: Spectrum },
     /// Composition Reflectance Model - Specular + Diffuse
     ///
     /// A composite reflectance model combines a combination of diffuse and specular reflectance.
-    /// The ratio between diffuse and soecular reflection is determined by `specular_diffuse_ratio`,
-    /// with 1.0 corresponding to pure diffuse and 0.0 corresponding to pure specular.
-    /// The `diffuse_albedo` and `specular_albedo` are directly fed through to the
-    /// albedos of their respective models and have their usual meanings.
+    /// The ratio between diffuse and soecular reflection is determined by `specularity`,
+    /// with 0.0 corresponding to pure diffuse and 1.0 corresponding to pure specular.
+    /// The `diffuse_refspec` and `specular_refspec` are directly fed through to the
+    /// spectral reflectances of their respective models.
     Composite {
-        diffuse_albedo: Real,
-        specular_albedo: Real,
-        diffuse_specular_ratio: Real,
+        diffuse_refspec: Spectrum,
+        specular_refspec: Spectrum,
+        specularity: Real,
     },
 }
 
@@ -44,101 +83,120 @@ impl Reflectance {
     /// This returns a purely diffuse reflection.
     /// In this case photons are randomly distributed in the hemisphere in which
     /// the normal to the surface lies.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    pub fn new_lambertian(albedo: Real) -> Self {
-        debug_assert!(albedo <= 1.0 && albedo >= 0.0);
-
-        Self::Lambertian { albedo }
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    pub fn new_lambertian(refspec: Spectrum) -> Self {
+        // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
+        assert!(reflectance_spectrum_valid(&refspec));
+        Self::Lambertian { refspec }
     }
 
     /// Produces a new Specular reflectance instance.
     /// This returns a purely specular reflection. In this case the incoming photons
     /// are reflected like they would be from a mirror; at the same angle to the normal vector of the surface.
-    /// The albdeo determines which portion of the incoming photons are reflected or killed.
-    /// An albedo of 1.0 will reflect all photons, and 0.0 will kill all photons.
-    pub fn new_specular(albedo: Real) -> Self {
-        debug_assert!(albedo <= 1.0 && albedo >= 0.0);
-
-        Self::Specular { albedo }
+    /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
+    /// dependent way of determining how many photons are reflected or killed. 
+    /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
+    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    pub fn new_specular(refspec: Spectrum) -> Self {
+        // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
+        assert!(reflectance_spectrum_valid(&refspec));
+        Self::Specular { refspec }
     }
 
-    /// Prodduces a new Reflectance instance that is a composite between diffuse and specular reflection.
+    /// Produces a new Reflectance instance that is a composite between diffuse and specular reflection.
     /// This is a combination of diffuse (Lambertian) and specular reflection, with the ratio between them
-    /// determined by the `specular_diffuse_ratio`. 1.0 corresponds to pure diffuse and 0.0 corresponds to pure specular.
+    /// determined by the `specularity`. 0.0 corresponds to pure diffuse and 1.0 corresponds to pure specular.
     pub fn new_composite(
-        diffuse_albedo: Real,
-        specular_albedo: Real,
-        diffuse_specular_ratio: Real,
+        diffuse_refspec: Spectrum,
+        specular_refspec: Spectrum,
+        specularity: Real,
     ) -> Self {
-        debug_assert!(diffuse_albedo <= 1.0 && diffuse_albedo >= 0.0);
-        debug_assert!(specular_albedo <= 1.0 && specular_albedo >= 0.0);
-        debug_assert!(diffuse_specular_ratio <= 1.0 && diffuse_specular_ratio >= 0.0);
+        // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
+        assert!(reflectance_spectrum_valid(&diffuse_refspec));
+        assert!(reflectance_spectrum_valid(&specular_refspec));
 
         Self::Composite {
-            diffuse_albedo,
-            specular_albedo,
-            diffuse_specular_ratio,
+            diffuse_refspec,
+            specular_refspec,
+            specularity,
         }
     }
 
-    /// Provided an incident ray, this will reflect the raw according to the
+    /// Provided an incident photon, this will reflect the its ray according to the
     /// reflectance model that is used. Note that the returned ray can be an
     /// option. In the case that `None` is returned, this is indicative that the
-    /// ray should not be reflected, and should be destroyed.
+    /// photon should not be reflected, and should be destroyed.
     #[inline]
     pub fn reflect<R: Rng>(
         &self,
         rng: &mut R,
-        incident_ray: &Ray,
+        incident_photon: &Photon,
         hit: &Hit<Attribute>,
     ) -> Option<Ray> {
         match *self {
-            Self::Lambertian { ref albedo } => {
+            Self::Lambertian { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
-                let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
+                match refspec.value_at(incident_photon.wavelength()) {
+                    None => None,
+                    Some(ref_prob) => {
+                        let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
 
-                if should_reflect {
-                    let theta = rng.gen_range(0.0..2.0 * PI);
-                    // We sample the phi angle using PDF = sin(theta)
-                    let phi = (rng.gen_range(0.0..1.0) as Real).asin();
+                        if should_reflect {
+                            let theta = rng.gen_range(0.0..2.0 * PI);
+                            // We sample the phi angle using PDF = sin(theta)
+                            let phi = (rng.gen_range(0.0..1.0) as Real).asin();
 
-                    let mut reflected_ray =
-                        Ray::new(incident_ray.pos().clone(), hit.side().norm().clone());
-                    reflected_ray.rotate(phi, theta);
-                    Some(reflected_ray)
-                } else {
-                    None
+                            let mut reflected_ray = Ray::new(
+                                incident_photon.ray().pos().clone(),
+                                hit.side().norm().clone(),
+                            );
+                            reflected_ray.rotate(phi, theta);
+                            Some(reflected_ray)
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
-            Self::Specular { ref albedo } => {
+            Self::Specular { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
-                let should_reflect = rng.gen_range(0.0..1.0) < *albedo;
+                match refspec.value_at(incident_photon.wavelength()) {
+                    None => None,
+                    Some(ref_prob) => {
+                        let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
 
-                if should_reflect {
-                    // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
-                    let reflect = *incident_ray.dir()
-                        + 2.0 * hit.side().norm().dot(&-*incident_ray.dir()) * hit.side().norm();
-                    let reflected_ray = Ray::new(incident_ray.pos().clone(), reflect.into());
-                    Some(reflected_ray)
-                } else {
-                    None
+                        if should_reflect {
+                            // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
+                            let reflect = *incident_photon.ray().dir()
+                                + 2.0
+                                    * hit.side().norm().dot(&-*incident_photon.ray().dir())
+                                    * hit.side().norm();
+                            let reflected_ray =
+                                Ray::new(incident_photon.ray().pos().clone(), reflect.into());
+                            Some(reflected_ray)
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
             Self::Composite {
-                ref diffuse_albedo,
-                ref specular_albedo,
-                ref diffuse_specular_ratio,
+                ref diffuse_refspec,
+                ref specular_refspec,
+                ref specularity,
             } => {
-                // This random draw determines, based on the ratio, whether the reflection for the
+                // This random draw determines, based on the specularity, whether the reflection for the
                 // current photon should be diffuse (Lambertian) or specular.
-                let is_specular = rng.gen_range(0.0..1.0) > *diffuse_specular_ratio;
+                let is_specular = rng.gen_range(0.0..1.0) <= *specularity;
 
                 // Then we just delegate handling of the reflection to the respective model.
                 if is_specular {
-                    Self::new_specular(*specular_albedo).reflect(rng, incident_ray, hit)
+                    Self::new_specular(specular_refspec.clone()).reflect(rng, incident_photon, hit)
                 } else {
-                    Self::new_lambertian(*diffuse_albedo).reflect(rng, incident_ray, hit)
+                    Self::new_lambertian(diffuse_refspec.clone()).reflect(rng, incident_photon, hit)
                 }
             }
         }
@@ -149,25 +207,25 @@ impl Display for Reflectance {
     #[inline]
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            Self::Lambertian { ref albedo } => {
+            Self::Lambertian { ref refspec } => {
                 writeln!(fmt, "Lambertian: ")?;
-                fmt_report!(fmt, albedo, "albedo");
+                fmt_report!(fmt, refspec, "reflectance spectrum");
                 Ok(())
             }
-            Self::Specular { ref albedo } => {
+            Self::Specular { ref refspec } => {
                 writeln!(fmt, "Specular: ")?;
-                fmt_report!(fmt, albedo, "albedo");
+                fmt_report!(fmt, refspec, "reflectance spectrum");
                 Ok(())
             }
             Self::Composite {
-                ref diffuse_albedo,
-                ref specular_albedo,
-                ref diffuse_specular_ratio,
+                ref diffuse_refspec,
+                ref specular_refspec,
+                ref specularity,
             } => {
                 writeln!(fmt, "Composite: ")?;
-                fmt_report!(fmt, diffuse_albedo, "diffuse albedo");
-                fmt_report!(fmt, specular_albedo, "specular albedo");
-                fmt_report!(fmt, diffuse_specular_ratio, "diffuse-to-specular ratio");
+                fmt_report!(fmt, diffuse_refspec, "diffuse reflectance spectrum");
+                fmt_report!(fmt, specular_refspec, "specular reflectance spectrum");
+                fmt_report!(fmt, specularity, "specularity");
                 Ok(())
             }
         }
@@ -182,10 +240,11 @@ mod tests {
         data::Histogram,
         geom::{Hit, Ray, Side},
         math::{Dir2, Dir3, Point3},
+        phys::{Photon, Spectrum},
         sim::Attribute,
     };
     use assert_approx_eq::assert_approx_eq;
-    use rand;
+    use rand::Rng;
     use statrs::statistics::Statistics;
     use std::f64::consts::PI;
 
@@ -198,9 +257,10 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 1.0);
-        let reflect = Reflectance::new_lambertian(1.0);
+        let reflect = Reflectance::new_lambertian(Spectrum::new_tophat(300.0, 900.0, 1.0));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
         // We only initialise between 0
@@ -210,7 +270,7 @@ mod tests {
         let n_phot: usize = 100_000;
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
@@ -273,9 +333,10 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 1.0);
-        let reflect = Reflectance::new_lambertian(0.5);
+        let reflect = Reflectance::new_lambertian(Spectrum::new_tophat(300.0, 900.0, 0.5));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 1.0, Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Prepare bins for capturing statistics.
         let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
@@ -285,7 +346,7 @@ mod tests {
         let n_phot = 100_000;
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
@@ -354,14 +415,15 @@ mod tests {
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
-        let reflect = Reflectance::new_specular(1.0);
+        let reflect = Reflectance::new_specular(Spectrum::new_tophat(300.0, 900.0, 1.0));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Expected output - analytically determined by working through the equations.
         let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
 
-        match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+        match reflect.reflect(&mut rng, &incoming_photon, &hit) {
             Some(ray) => {
                 // Use assert_approx_eq due to numerical noise.
                 assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
@@ -378,9 +440,10 @@ mod tests {
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
-        let reflect = Reflectance::new_specular(0.5);
+        let reflect = Reflectance::new_specular(Spectrum::new_tophat(300.0, 900.0, 0.5));
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Expected output - analytically determined by working through the equations.
         let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
@@ -389,7 +452,7 @@ mod tests {
         let n_photon: usize = 100_000;
         let mut n_killed_photons: usize = 0;
         for _ in 0..n_photon {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Use assert_approx_eq due to numerical noise.
                     assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
@@ -416,9 +479,14 @@ mod tests {
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let surf_vec = Dir2::new(1.0, 0.0);
-        let reflect = Reflectance::new_composite(1.0, 1.0, 0.5);
+        let reflect = Reflectance::new_composite(
+            Spectrum::new_tophat(300.0, 900.0, 1.0),
+            Spectrum::new_tophat(300.0, 900.0, 1.0),
+            0.5,
+        );
         let attrib = Attribute::Reflector(reflect.clone());
         let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+        let incoming_photon = Photon::new(incoming_ray, 550.0, 1.0);
 
         // Prepare bins for capturing statistics.
         let mut phi_hist = Histogram::new(0.0, PI / 2.0, 90);
@@ -427,7 +495,7 @@ mod tests {
         let n_phot = 100_000;
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
-            match reflect.reflect(&mut rng, &incoming_ray, &hit) {
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(ray) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
@@ -498,5 +566,37 @@ mod tests {
             n_phot as Real * 0.25,
             n_phot as Real * 0.01
         );
+    }
+
+    /// This test is simply to check that our reflectance spectrum actually gets correctly applied to the incident photons.
+    /// In this test, we have a tophat where we let all photons between the lower and upper wavelengths through.
+    /// If any that make it through are not, this test instantly fails.
+    #[test]
+    fn test_reflectance_spectrum() {
+        // Create an incoming ray.
+        let incoming_ray = Ray::new(Point3::new(1., 0., 1.0), Dir3::new(1.0, 0.0, -1.0));
+        let mut rng = rand::thread_rng();
+        let lower = 500.0;
+        let upper = 550.0;
+
+        // Simulate a hit on a surface.
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+        let reflect = Reflectance::new_specular(Spectrum::new_tophat(lower, upper, 1.0));
+        let attrib = Attribute::Reflector(reflect.clone());
+        let hit = Hit::new(&attrib, 2.0_f64.sqrt(), Side::Outside(norm));
+
+        for _ in 0..100_000 {
+            let incoming_photon =
+                Photon::new(incoming_ray.clone(), rng.gen_range(300.0..900.0), 1.0);
+            println!("{}", incoming_photon.wavelength());
+            match reflect.reflect(&mut rng, &incoming_photon, &hit) {
+                Some(_) => assert!(
+                    lower <= incoming_photon.wavelength() && incoming_photon.wavelength() <= upper
+                ),
+                None => assert!(
+                    incoming_photon.wavelength() <= lower || upper <= incoming_photon.wavelength()
+                ), // With a perfect reflector, we should have no killed photons.
+            }
+        }
     }
 }

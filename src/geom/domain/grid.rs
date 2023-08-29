@@ -9,6 +9,7 @@ use crate::{
 use std::fmt::{Display, Formatter};
 
 /// Regular Cartesian-grid structure.
+#[derive(Clone)]
 pub struct Grid {
     /// Boundary.
     boundary: Cube,
@@ -145,5 +146,81 @@ impl Display for Grid {
             "voxel size"
         );
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        geom::Cube,
+    };
+
+    #[test]
+    fn test_new() {
+        let mins = Point3::new(0.0, 0.0, 0.0);
+        let maxs = Point3::new(1.0, 1.0, 1.0);
+        let boundary = Cube::new(mins, maxs);
+        let res = [2, 2, 2];
+        let grid = Grid::new(boundary, res);
+
+        assert_eq!(grid.boundary(), &Cube::new(mins, maxs));
+        assert_eq!(grid.res(), &[2, 2, 2]);
+        assert_eq!(grid.voxel_size(), &Vec3::new(0.5, 0.5, 0.5));
+        assert_eq!(grid.voxel_vol(), 0.125);
+        assert_eq!(grid.num_cells(), 8);
+    }
+
+    #[test]
+    fn test_gen_index_voxel() {
+        let mins = Point3::new(0.0, 0.0, 0.0);
+        let maxs = Point3::new(1.0, 1.0, 1.0);
+        let boundary = Cube::new(mins, maxs);
+        let res = [2, 2, 2];
+        let grid = Grid::new(boundary, res);
+
+        let p = Point3::new(0.5, 0.5, 0.5);
+        let (index, voxel) = grid.gen_index_voxel(&p).unwrap();
+        assert_eq!(index, [1, 1, 1]);
+        assert_eq!(voxel, Cube::new(Point3::new(0.5, 0.5, 0.5), Point3::new(1.0, 1.0, 1.0)));
+    }
+
+    #[test]
+    fn test_gen_index_voxel_outside_boundary() {
+        let mins = Point3::new(0.0, 0.0, 0.0);
+        let maxs = Point3::new(1.0, 1.0, 1.0);
+        let boundary = Cube::new(mins, maxs);
+        let res = [2, 2, 2];
+        let grid = Grid::new(boundary, res);
+
+        let p = Point3::new(2.0, 2.0, 2.0);
+        let result = grid.gen_index_voxel(&p);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_gen_voxel() {
+        let mins = Point3::new(0.0, 0.0, 0.0);
+        let maxs = Point3::new(1.0, 1.0, 1.0);
+        let boundary = Cube::new(mins, maxs);
+        let res = [2, 2, 2];
+        let grid = Grid::new(boundary, res);
+
+        let index = [1, 1, 1];
+        let voxel = grid.gen_voxel(&index);
+        assert_eq!(index, [1, 1, 1]);
+        assert_eq!(voxel, Cube::new(Point3::new(0.5, 0.5, 0.5), Point3::new(1.0, 1.0, 1.0)));
+    }
+
+    #[test]
+    fn test_clone() {
+        let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let res = [10, 10, 10];
+
+        let grid = Grid::new(boundary, res);
+        let cloned = grid.clone();
+
+        assert_eq!(grid.boundary(), cloned.boundary());
+        assert_eq!(grid.res(), cloned.res());
     }
 }

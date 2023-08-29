@@ -72,7 +72,8 @@ pub fn peel_off(input: &Input, mut phot: Photon, env: &Local, pos: Point3) -> Op
                 | Attribute::Spectrometer(..)
                 | Attribute::Imager(..)
                 | Attribute::Ccd(..)
-                | Attribute::Reflector(..) => return None,
+                | Attribute::Reflector(..)
+                | Attribute::PhotonCollector(..) => return None,
             }
         } else {
             prob *= (-tar_dist * inter_coeff).exp();

@@ -9,7 +9,7 @@ use crate::math::Dir3;
 /// the outside of a surface, with normal vector $\uvec{n}$, will be coming from
 /// outside of the surface if $\uvec{d} \dot \uvec{n} > 0.0$. Likewise, it assumes
 /// that a ray with $\uvec{d} \dot \uvec{n} < 0.0$ is coming from inside of the sufrace.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Side {
     /// Inside of surface hit. d.dot(n) > 0.0
     Inside(Dir3),
@@ -47,5 +47,44 @@ impl Side {
         match *self {
             Self::Inside(ref dir) | Self::Outside(ref dir) => dir,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::Dir3;
+
+    /// Checks that the position of the 
+    #[test]
+    fn test_new_inside() {
+        // Importantly, we are testing the side of the surface hit.
+        // Hence, the normal vector and direction of the ray eigenvectors
+        let dir = Dir3::new(-1.0, 0.0, 0.0);
+        let norm = Dir3::new(-1.0, 0.0, 0.0);
+        let side = Side::new(&dir, norm);
+        assert_eq!(side, Side::Inside(-norm));
+
+        // Check that the test for being inside works as well.
+        assert!(side.is_inside());
+    }
+
+    #[test]
+    fn test_new_outside() {
+        let dir = Dir3::new(1.0, 0.0, 0.0);
+        let norm = Dir3::new(-1.0, 0.0, 0.0);
+        let side = Side::new(&dir, norm);
+        assert_eq!(side, Side::Outside(norm));
+
+        // Check that the test for being inside has a false result when outside.
+        assert!(!side.is_inside());
+    }
+
+    #[test]
+    fn test_norm() {
+        let dir = Dir3::new(1.0, 0.0, 0.0);
+        let norm = Dir3::new(-1.0, 0.0, 0.0);
+        let side = Side::new(&dir, norm);
+        assert_eq!(side.norm(), &norm);
     }
 }

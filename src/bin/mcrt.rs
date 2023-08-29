@@ -15,8 +15,8 @@ use Aetherus::{
     ord::{Build, Link, Register, Set, X, Y},
     report,
     sim::{
-        run, AttributeLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
-        ParametersBuilderLoader,
+        run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
+        ParametersBuilderLoader, PhotonCollector,
     },
     util::{
         banner::{section, sub_section, title},
@@ -48,17 +48,27 @@ fn main() {
     report!(mats, "materials");
 
     sub_section(term_width, "Registration");
-    let (spec_reg, img_reg, ccd_reg) = gen_detector_registers(&params.attrs);
-    let output = gen_base_output(&engine, &grid, &spec_reg, &img_reg, &ccd_reg, &params.attrs);
+    let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
+    let base_output = gen_base_output(
+        &engine,
+        &grid,
+        &spec_reg,
+        &img_reg,
+        &ccd_reg,
+        &phot_col_reg,
+        &params.attrs,
+    );
 
     sub_section(term_width, "Linking");
-    let light = params
-        .light
+    let lights = params
+        .lights
         .link(&mats)
-        .expect("Failed to link materials to light.");
-    report!(light, "light");
+        .expect("Failed to link materials to lights.");
+    report!(lights, "lights");
     let attrs = params
         .attrs
+        .link(phot_col_reg.set())
+        .expect("Failed to link photon collectors to attributes.")
         .link(ccd_reg.set())
         .expect("Failed to link ccds to attributes.")
         .link(img_reg.set())
@@ -78,11 +88,39 @@ fn main() {
     let tree = Tree::new(&params.tree, &surfs);
     report!(tree, "hit-scan tree");
 
-    section(term_width, "Running");
-    let input = Input::new(&spec_reg, &mats, &attrs, &light, &tree, &grid, &sett);
-    report!(input, "input");
+    let nlights = lights.len();
+    let data = lights
+        .into_iter()
+        .enumerate()
+        .fold(base_output.clone(), |mut output, (light_idx, (light_id, light))| {
+            section(term_width, &format!("Running for light {} ({} / {})", light_id, light_idx + 1, nlights));
+            report!(light, light_id);
+            let input = Input::new(&spec_reg, &mats, &attrs, light, &tree, &grid, &sett);
 
-    let data = run::multi_thread(&engine, &input, &output).expect("Failed to run cartographer.");
+            let data =
+                run::multi_thread(&engine, input, &base_output).expect("Failed to run MCRT.");
+
+            // In the case that we are outputting the files for each individual light, we can output it here with a simple setting.
+            if let Some(output_individual) = sett.output_individual_lights() {
+                if output_individual {
+                    let indiv_outpath = out_dir.join(&light_id.as_string());
+                    if !indiv_outpath.exists() {
+                        // Create the directory for the output if it does not already exist.
+                        std::fs::create_dir(&indiv_outpath).expect(&format!(
+                            "Unable to create output directory for light '{}'",
+                            light_id
+                        ));
+                    }
+                    data.save(&indiv_outpath).expect(&format!(
+                        "Failed to save output data for light '{}'",
+                        light_id
+                    ));
+                }
+            }
+
+            output += &data;
+            output
+        });
 
     section(term_width, "Saving");
     report!(data, "data");
@@ -134,16 +172,18 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
 }
 
 /// Generate the detector registers.
-fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register) {
+fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register, Register) {
     let mut spec_names = Vec::new();
     let mut img_names = Vec::new();
     let mut ccd_names = Vec::new();
+    let mut phot_col_names = Vec::new();
 
     for attr in attrs.map().values() {
         match *attr {
             Attr::Spectrometer(ref name, ..) => spec_names.push(name.clone()),
             Attr::Imager(ref name, ..) => img_names.push(name.clone()),
             Attr::Ccd(ref name, ..) => ccd_names.push(name.clone()),
+            Attr::PhotonCollector(ref name, ..) => phot_col_names.push(name.clone()),
             _ => {}
         }
     }
@@ -157,7 +197,10 @@ fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register) {
     let ccd_reg = Register::new(ccd_names);
     report!(ccd_reg, "ccd register");
 
-    (spec_reg, img_reg, ccd_reg)
+    let phot_col_reg = Register::new(phot_col_names);
+    report!(phot_col_reg, "photon collector register");
+
+    (spec_reg, img_reg, ccd_reg, phot_col_reg)
 }
 
 /// Generate the base output instance.
@@ -167,6 +210,7 @@ fn gen_base_output<'a>(
     spec_reg: &'a Register,
     img_reg: &'a Register,
     ccd_reg: &'a Register,
+    phot_col_reg: &'a Register,
     attrs: &Set<Attr>,
 ) -> Output<'a> {
     let res = *grid.res();
@@ -216,15 +260,31 @@ fn gen_base_output<'a>(
         }
     }
 
+    let mut phot_cols: Vec<PhotonCollector> = Vec::new();
+    for name in phot_col_reg.set().map().keys() {
+        for attr in attrs.values() {
+            if let Attr::PhotonCollector(phot_col_id, kill_phot) = attr {
+                if name == phot_col_id {
+                    let mut photcol = PhotonCollector::new();
+                    photcol.kill_photon = *kill_phot;
+                    phot_cols.push(photcol);
+                    continue;
+                }
+            }
+        }
+    }
+
     Output::new(
         grid.boundary().clone(),
         res,
         spec_reg,
         img_reg,
         ccd_reg,
+        phot_col_reg,
         specs,
         imgs,
         ccds,
         photos,
+        phot_cols,
     )
 }

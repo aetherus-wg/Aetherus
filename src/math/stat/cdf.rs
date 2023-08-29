@@ -152,7 +152,7 @@ mod tests {
             .map(|val| 2.0 * (val as Real) / (npts as Real))
             .collect();
         let norm = Normal::new(1.0, 0.5).unwrap();
-        let mut probs: Vec<Real> = vals.iter().map(|val| norm.pdf(*val)).collect();
+        let probs: Vec<Real> = vals.iter().map(|val| norm.pdf(*val)).collect();
 
         let cdf = CumulativeDistributionFunction::from_pdf(probs, vals);
 

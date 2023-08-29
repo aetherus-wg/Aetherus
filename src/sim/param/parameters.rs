@@ -5,7 +5,7 @@ use crate::{
     geom::{Grid, SurfaceLinker, TreeSettings},
     ord::Set,
     phys::{LightLinker, Material},
-    sim::{AttributeLinkerLinkerLinkerLinker, Engine, Settings},
+    sim::{AttributeLinkerLinkerLinkerLinkerLinker, Engine, Settings},
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -20,11 +20,11 @@ pub struct Parameters {
     /// Surfaces.
     pub surfs: Set<SurfaceLinker>,
     /// Attributes.
-    pub attrs: Set<AttributeLinkerLinkerLinkerLinker>,
+    pub attrs: Set<AttributeLinkerLinkerLinkerLinkerLinker>,
     /// Materials.
     pub mats: Set<Material>,
     /// Main light.
-    pub light: LightLinker,
+    pub lights: Set<LightLinker>,
     /// Engine selection.
     pub engine: Engine,
 }
@@ -39,9 +39,9 @@ impl Parameters {
         tree: TreeSettings,
         grid: Grid,
         surfs: Set<SurfaceLinker>,
-        attrs: Set<AttributeLinkerLinkerLinkerLinker>,
+        attrs: Set<AttributeLinkerLinkerLinkerLinkerLinker>,
         mats: Set<Material>,
-        light: LightLinker,
+        lights: Set<LightLinker>,
         engine: Engine,
     ) -> Self {
         Self {
@@ -51,7 +51,7 @@ impl Parameters {
             surfs,
             attrs,
             mats,
-            light,
+            lights,
             engine,
         }
     }
@@ -67,7 +67,7 @@ impl Display for Parameters {
         fmt_report!(fmt, self.surfs, "surfaces");
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.mats, "materials");
-        fmt_report!(fmt, self.light, "light");
+        fmt_report!(fmt, self.lights, "lights");
         fmt_report!(fmt, self.engine, "engine");
         Ok(())
     }

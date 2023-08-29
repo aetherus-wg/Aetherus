@@ -6,7 +6,9 @@ use crate::{
     geom::{GridBuilder, SurfaceLinkerLoader, TreeSettings},
     ord::Set,
     phys::{LightLinkerBuilderLoader, MaterialBuilder},
-    sim::{AttributeLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings},
+    sim::{
+        AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings,
+    },
 };
 use arctk_attr::file;
 use std::path::Path;
@@ -23,11 +25,11 @@ pub struct ParametersBuilderLoader {
     /// Surfaces.
     surfs: Redirect<Set<SurfaceLinkerLoader>>,
     /// Attributes.
-    attrs: Redirect<Set<AttributeLinkerLinkerLinkerLinker>>,
+    attrs: Redirect<Set<AttributeLinkerLinkerLinkerLinkerLinker>>,
     /// Materials.
     mats: Redirect<Set<Redirect<MaterialBuilder>>>,
     /// Main light.
-    light: Redirect<LightLinkerBuilderLoader>,
+    lights: Redirect<Set<LightLinkerBuilderLoader>>,
     /// Engine selection.
     engine: EngineBuilderLoader,
 }
@@ -43,11 +45,11 @@ impl Load for ParametersBuilderLoader {
         let surfs = self.surfs.load(in_dir)?.load(in_dir)?;
         let attrs = self.attrs.load(in_dir)?;
         let mats = self.mats.load(in_dir)?.load(in_dir)?;
-        let light = self.light.load(in_dir)?.load(in_dir)?;
+        let lights = self.lights.load(in_dir)?.load(in_dir)?;
         let engine = self.engine.load(in_dir)?;
 
         Ok(Self::Inst::new(
-            sett, tree, grid, surfs, attrs, mats, light, engine,
+            sett, tree, grid, surfs, attrs, mats, lights, engine,
         ))
     }
 }

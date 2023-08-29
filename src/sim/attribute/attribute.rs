@@ -4,6 +4,7 @@ use crate::{fmt_report, geom::Orient, phys::Material, phys::Reflectance, tools::
 use std::fmt::{Display, Error, Formatter};
 
 /// Surface attributes.
+#[derive(Debug, PartialEq, Clone)]
 pub enum Attribute<'a> {
     /// Material interface, inside material reference, outside material reference.
     Interface(&'a Material, &'a Material),
@@ -17,6 +18,9 @@ pub enum Attribute<'a> {
     Ccd(usize, f64, Orient, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     Reflector(Reflectance),
+    /// A photon collector, which collects the photon that interact with the linked entities.
+    /// These photons can be optionally killed, or left to keep propogating.
+    PhotonCollector(usize),
 }
 
 impl Display for Attribute<'_> {
@@ -50,6 +54,11 @@ impl Display for Attribute<'_> {
             Self::Reflector(ref reflectance) => {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(fmt, reflectance, "reflectance");
+                Ok(())
+            }
+            Self::PhotonCollector(ref id) => {
+                writeln!(fmt, "Photon Collector: ...")?;
+                fmt_report!(fmt, id, "name");
                 Ok(())
             }
         }

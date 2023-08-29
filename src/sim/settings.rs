@@ -21,6 +21,8 @@ pub struct Settings {
     min_weight: f64,
     /// Number of roulette barrels.
     roulette_barrels: u64,
+    /// Whether or not to output each night.
+    output_individual_lights: Option<bool>,
 }
 
 impl Settings {
@@ -31,6 +33,7 @@ impl Settings {
     clone!(loop_limit: u64);
     clone!(min_weight: f64);
     clone!(roulette_barrels: u64);
+    clone!(output_individual_lights: Option<bool>);
 
     /// Construct a new instance.
     #[inline]
@@ -43,6 +46,7 @@ impl Settings {
         loop_limit: u64,
         min_weight: f64,
         roulette_barrels: u64,
+        output_individual_lights: Option<bool>,
     ) -> Self {
         debug_assert!(num_threads.is_none() || num_threads.unwrap() >= 1);
         debug_assert!(num_phot > 0);
@@ -59,6 +63,7 @@ impl Settings {
             loop_limit,
             min_weight,
             roulette_barrels,
+            output_individual_lights,
         }
     }
 }
@@ -78,6 +83,9 @@ impl Display for Settings {
         fmt_report!(fmt, self.loop_limit, "loop limit");
         fmt_report!(fmt, self.min_weight, "minimum simulation weight");
         fmt_report!(fmt, self.roulette_barrels, "roulette barrels");
+        if let Some(output_individual_lights) = self.output_individual_lights {
+            fmt_report!(fmt, output_individual_lights, "output individual lights");
+        }
         Ok(())
     }
 }

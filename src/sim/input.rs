@@ -10,6 +10,7 @@ use crate::{
 use std::fmt::{Display, Error, Formatter};
 
 /// MCRT simulation resources conglomerate.
+#[derive(Clone)]
 pub struct Input<'a> {
     /// Spectrometer register.
     pub spec_reg: &'a Register,
@@ -18,7 +19,7 @@ pub struct Input<'a> {
     /// Attributes.
     pub attrs: &'a Set<Attribute<'a>>,
     /// Emission light.
-    pub light: &'a Light<'a>,
+    pub light: Light<'a>,
     /// Hit-scan tree.
     pub tree: &'a Tree<'a, Attribute<'a>>,
     /// Measurement grid.
@@ -35,7 +36,7 @@ impl<'a> Input<'a> {
         spec_reg: &'a Register,
         mats: &'a Set<Material>,
         attrs: &'a Set<Attribute>,
-        light: &'a Light,
+        light: Light<'a>,
         tree: &'a Tree<Attribute>,
         grid: &'a Grid,
         sett: &'a Settings,
