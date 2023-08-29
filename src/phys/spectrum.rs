@@ -1,7 +1,7 @@
 use crate::{data::Table, err::Error, fmt_report, fs::File};
 use std::{fmt::Display, path::Path};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Spectrum {
     Constant(f64),
     Tophat(f64, f64, f64),
@@ -161,6 +161,20 @@ mod tests {
     use super::Spectrum;
     use tempfile::NamedTempFile;
 
+    /// Test that the constant spectrum produces the correct results.
+    #[test]
+    fn test_constant_interp() {
+        let spec = Spectrum::new_constant(1.0);
+        assert_eq!(spec.value_at(0.0), Some(1.0));
+        assert_eq!(spec.value_at(0.5), Some(1.0));
+        assert_eq!(spec.value_at(1.0), Some(1.0));
+
+        assert_eq!(spec.min_lam(), None);
+        assert_eq!(spec.max_lam(), None);
+        assert_eq!(spec.min_val(), Some(&1.0));
+        assert_eq!(spec.max_val(), Some(&1.0));
+    }
+
     /// Test that the tophat spectrum produces the correct results.
     /// Also implicitly tests that the linear interpolation is working as expected.
     #[test]
@@ -169,6 +183,11 @@ mod tests {
         assert_eq!(spec.value_at(0.25), Some(1.0));
         assert_eq!(spec.value_at(0.5), Some(1.0));
         assert_eq!(spec.value_at(0.75), Some(1.0));
+
+        assert_eq!(spec.min_lam(), Some(&0.0));
+        assert_eq!(spec.max_lam(), Some(&1.0));
+        assert_eq!(spec.min_val(), Some(&1.0));
+        assert_eq!(spec.max_val(), Some(&1.0));
     }
 
     /// Test that the the linear function specturm produces the correct results.
@@ -213,6 +232,12 @@ mod tests {
         assert_eq!(spec.value_at(0.25), Some(0.25));
         assert_eq!(spec.value_at(0.5), Some(0.5));
         assert_eq!(spec.value_at(0.75), Some(0.75));
+
+        // Check other functions.
+        assert_eq!(spec.min_lam(), Some(&0.0));
+        assert_eq!(spec.max_lam(), Some(&1.0));
+        assert_eq!(spec.min_val(), Some(&0.0));
+        assert_eq!(spec.max_val(), Some(&1.0));
     }
 
     /// The same as the linear funcion interpolation from file, but with 11 points rather than just the start and end.
@@ -234,8 +259,17 @@ mod tests {
         // Now sample from the loaded spectrum.
         let spec = spec_res.unwrap();
         assert_eq!(spec.value_at(0.25), Some(0.25));
-        assert_eq!(spec.value_at(0.5), Some(0.5));
+        assert_eq!(spec.value_at(0.5), Some(0.5)); // This is a real value, so should not require interpolation.
         assert_eq!(spec.value_at(0.75), Some(0.75));
+
+        // Check other functions.
+        assert_eq!(spec.min_lam(), Some(&0.0));
+        assert_eq!(spec.max_lam(), Some(&1.0));
+        assert_eq!(spec.min_val(), Some(&0.0));
+        assert_eq!(spec.max_val(), Some(&1.0));
+
+        // Sample a point that is not in the spectrum.
+        assert_eq!(spec.value_at(1.1), None);
     }
 
     /// In this test I will ensure that the behaviour is as expected for samples that lie

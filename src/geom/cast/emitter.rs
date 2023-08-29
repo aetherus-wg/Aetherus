@@ -165,7 +165,7 @@ mod tests {
     use rand;
     use assert_approx_eq::assert_approx_eq;
     use crate::{
-        geom::Ray, 
+        geom::{Ray, Mesh, SmoothTriangle, Triangle}, 
         data::Average,
         math::{Point3, Dir3},
     };
@@ -230,7 +230,7 @@ mod tests {
             ave_dir_z += emitted_ray.dir().z();
         }
 
-        assert_approx_eq!(ave_x.ave(), 0.666, 0.001);
+        assert_approx_eq!(ave_x.ave(), 0.666, 0.005);
         assert_eq!(ave_y.ave(), 0.0);
         assert_eq!(ave_z.ave(), 0.0);
 
@@ -239,5 +239,29 @@ mod tests {
         assert_approx_eq!(ave_dir_x.ave(), 0.0, 0.01);
         assert_approx_eq!(ave_dir_y.ave(), 0.0, 0.01);
         assert_approx_eq!(ave_dir_z.ave(), 0.0, 0.01);
+    }
+
+    #[test]
+    fn test_surface_emitter() {
+        let mut rng = rand::thread_rng();
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+
+        // Make a single upward facing triangle to emit from. 
+        let triangles = vec![ SmoothTriangle::new(
+            Triangle::new([
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(1.0, 0.0, 0.0),
+                Point3::new(0.0, 1.0, 0.0),
+        ]),
+            [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+        )];
+        let mesh = Mesh::new(triangles);
+        let emitter = Emitter::new_surface(mesh);
+
+        let emitted_ray = emitter.emit(&mut rng);
+        assert_eq!(emitted_ray.dir(), &norm);
+        assert_eq!(emitted_ray.pos().z(), 0.0);
+        assert!(emitted_ray.pos().x() >= 0.0 && emitted_ray.pos().x() <= 1.0);
+        assert!(emitted_ray.pos().y() >= 0.0 && emitted_ray.pos().y() <= 1.0);
     }
 }

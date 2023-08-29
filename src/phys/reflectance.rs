@@ -43,7 +43,7 @@ pub fn reflectance_spectrum_valid(spec: &Spectrum) -> bool {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Reflectance {
     /// Lambertian Reflectance
     ///

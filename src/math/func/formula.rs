@@ -5,7 +5,7 @@ use ndarray::Array1;
 use std::fmt::{Display, Error, Formatter};
 
 /// Mathematical formulae accepting a single scalar argument.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Formula {
     /// Constant value. = c
     Constant {

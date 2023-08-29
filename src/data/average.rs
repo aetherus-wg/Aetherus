@@ -126,4 +126,31 @@ mod tests {
         assert_eq!(a.counts, 10_000);
         assert_approx_eq!(a.ave(), 1.5, 0.02);
     }
+
+    /// This test checks that the AddAssign trait is implemented correctly for
+    /// the Average struct.
+    #[test]
+    fn test_add_assign() {
+        let mut a = Average::new();
+        let mut b = Average::new();
+
+        for n in 0..100 {
+            a += Real::from(n);
+        }
+
+        for n in 100..200 {
+            b += Real::from(n);
+        }
+
+        a += &b;
+
+        assert_eq!(a.counts, 200);
+        assert_approx_eq!(a.total, 19_900.0);
+        assert_approx_eq!(a.ave(), 99.5);
+
+        // Also test not having a reference to the right hand side.
+        // This should be equivalent to the above.
+        a += b;
+        assert_eq!(a.counts, 300);
+    }
 }

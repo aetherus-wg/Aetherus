@@ -381,3 +381,79 @@ impl<T> Display for Tree<'_, T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{sim::Attribute, math::Dir3};
+    use std::collections::BTreeMap;
+    use crate::{
+        ord::{Name, Set},
+        math::{Point3},
+        geom::{Triangle, SmoothTriangle, Surface, Mesh, Cube},
+    };
+    use assert_approx_eq::assert_approx_eq;
+
+    fn make_test_surfs() -> BTreeMap<Name, Surface<'static, Attribute<'static>>> {
+        let norm = Dir3::new(0.0, 0.0, 1.0);
+        let mut surfs_map = BTreeMap::new();
+        // Make a single upward facing triangle for the surface. 
+        let first_triangle_mesh = Mesh::new(vec![ SmoothTriangle::new(
+            Triangle::new([
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(1.0, 0.0, 0.0),
+                Point3::new(0.0, 1.0, 0.0),
+        ]),
+            [norm, norm, norm]
+        )]);
+        surfs_map.insert(Name::new("test_surf1"), Surface::new(first_triangle_mesh, &Attribute::Mirror(0.5)));
+
+        // Make a single upward facing triangle for the surface. 
+        let second_triangle_mesh = Mesh::new(vec![ SmoothTriangle::new(
+            Triangle::new([
+                Point3::new(1.0, 1.0, 1.0),
+                Point3::new(2.0, 1.0, 1.0),
+                Point3::new(1.0, 2.0, 1.0),
+        ]),
+            [norm, norm, norm]
+        )]);
+        surfs_map.insert(Name::new("test_surf2"), Surface::new(second_triangle_mesh, &Attribute::Mirror(0.5)));
+
+        surfs_map
+    }
+
+    /// This is an overly simple test to check that the tree is constructed correctly.
+    /// I would like to do a more rigorous test with much tree refinement.
+    /// However, I'm not entirely sure of a good analytical case at the moment. 
+    #[test]
+    fn test_basic_tree_init
+    () {
+        // Make a surface consisting of two separate triangles.
+        let surfs_map = make_test_surfs();
+        let surfs = Set::new(surfs_map);
+        let padding = 1e-6;
+
+        let tree_settings = TreeSettings::new(1, 1, padding);
+        let tree: Tree<'_, Attribute<'_>> = Tree::new(&tree_settings, &surfs);
+
+        // Check that the boundary for the tree is correct.
+        // The factor of two is because the padding is applied at both sides of each voxel in the tree. 
+        let (mins, maxs) = tree.boundary().mins_maxs();
+        assert_approx_eq!(mins.x(), -2.0 * padding);
+        assert_approx_eq!(mins.y(), -2.0 * padding);
+        assert_approx_eq!(mins.z(), -2.0 * padding);
+        assert_approx_eq!(maxs.x(), 2.0 + 2.0 * padding);
+        assert_approx_eq!(maxs.y(), 2.0 + 2.0 * padding);
+        assert_approx_eq!(maxs.z(), 1.0 + 2.0 * padding);
+
+        // Make sure that we only have a single level of refinement. 
+        assert_eq!(tree.num_cells(), 9);
+
+        // Make sure that we have 8 leaves (one layer).
+        assert_eq!(tree.num_leaves(), 8);
+
+        // THe triangles will fall into all but 1 of the voxels, hence we should have 7 triangles.
+        assert_eq!(tree.num_tris(), 7);
+
+    }
+}

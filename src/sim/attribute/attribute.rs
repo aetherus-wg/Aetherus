@@ -4,6 +4,7 @@ use crate::{fmt_report, geom::Orient, phys::Material, phys::Reflectance, tools::
 use std::fmt::{Display, Error, Formatter};
 
 /// Surface attributes.
+#[derive(Debug, PartialEq, Clone)]
 pub enum Attribute<'a> {
     /// Material interface, inside material reference, outside material reference.
     Interface(&'a Material, &'a Material),

@@ -4,6 +4,7 @@ use crate::{access, fmt_report, math::Formula, phys::Local};
 use std::fmt::{Display, Error, Formatter};
 
 /// Optical properties.
+#[derive(Debug, PartialEq)]
 pub struct Material {
     /// Refractive index.
     ref_index: Formula,

@@ -17,7 +17,7 @@ use std::{
 /// Axis-aligned bounding box geometry.
 /// Used for spatial partitioning.
 #[file]
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Cube {
     /// Minimum bound.
     mins: Point3,
@@ -333,5 +333,218 @@ impl Display for Cube {
         fmt_report!(fmt, self.area(), "area (m^2)");
         fmt_report!(fmt, self.vol(), "volume (m^3)");
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::geom::{Triangle, SmoothTriangle};
+    use assert_approx_eq::assert_approx_eq;
+    use super::*;
+
+    #[test]
+    fn test_cube_new() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
+        assert_eq!(cube.mins, Point3::new(0.0, 0.0, 0.0));
+        assert_eq!(cube.maxs, Point3::new(2.0, 2.0, 2.0));
+        assert_eq!(cube.centre(), Point3::new(1.0, 1.0, 1.0));
+        assert_eq!(cube.half_widths(), Vec3::new(1.0, 1.0, 1.0));
+    }
+
+    #[test]
+    fn test_new_centre() {
+        let cube = Cube::new_centred(&Point3::new(1.0, 1.0, 1.0), &Vec3::new(1.0, 1.0, 1.0));
+        
+        // Try this using the alternate method so that we can test this in the process. 
+        let (mins, maxs) = cube.mins_maxs();
+        assert_eq!(mins, Point3::new(0.0, 0.0, 0.0));
+        assert_eq!(maxs, Point3::new(2.0, 2.0, 2.0));
+        assert_eq!(cube.centre(), Point3::new(1.0, 1.0, 1.0));
+    }
+
+    #[test]
+    fn test_new_shrink() {
+        // Make a single upward facing triangle to emit from. 
+        let tris = vec![ SmoothTriangle::new(
+            Triangle::new([
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(1.0, 0.0, 0.0),
+                Point3::new(0.0, 1.0, 0.0),
+        ]),
+            [Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0), Dir3::new(0.0, 0.0, 1.0)],
+        )];
+        let mesh = Mesh::new(tris);
+
+        let cube = Cube::new_shrink(&[mesh]);
+        let (mins, maxs) = cube.mins_maxs();
+        assert_eq!(mins, Point3::new(-1.0e-6, -1.0e-6, -1.0e-6));
+        assert_eq!(maxs, Point3::new(1.000001, 1.000001, 1e-6));
+        
+        assert_approx_eq!(cube.centre().x(), 0.5);
+        assert_approx_eq!(cube.centre().y(), 0.5);
+        assert_approx_eq!(cube.centre().z(), 0.0);
+    }
+
+    #[test]
+    fn test_cube_area() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        assert_eq!(cube.area(), 6.0);
+    }
+
+    #[test]
+    fn test_cube_vol() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        assert_eq!(cube.vol(), 1.0);
+    }
+
+    #[test]
+    fn test_shrink_expand() {
+        let mut cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
+        assert_eq!(cube.mins, Point3::new(0.0, 0.0, 0.0));
+        assert_eq!(cube.maxs, Point3::new(2.0, 2.0, 2.0));
+        assert_eq!(cube.centre(), Point3::new(1.0, 1.0, 1.0));
+
+        cube.shrink(0.5);
+        assert_eq!(cube.mins, Point3::new(0.5, 0.5, 0.5));
+        assert_eq!(cube.maxs, Point3::new(1.5, 1.5, 1.5));
+        assert_eq!(cube.centre(), Point3::new(1.0, 1.0, 1.0));
+
+        cube.expand(0.5);
+        assert_eq!(cube.mins, Point3::new(0.25, 0.25, 0.25));
+        assert_eq!(cube.maxs, Point3::new(1.75, 1.75, 1.75));
+        assert_eq!(cube.centre(), Point3::new(1.0, 1.0, 1.0));
+    }
+
+    /// A unit test to check the generation of random positions within the cube volume, taking 10,000 samples.
+    #[test]
+    fn test_random_pos() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+
+        let mut rng = rand::thread_rng();
+        let mut count = 0;
+        let mut sum = 0.0;
+        let mut sum_sq = 0.0;
+        let n = 10000;
+        while count < n {
+            let pos = cube.rand_pos(&mut rng);
+            assert!(cube.contains(&pos));
+            sum += pos.x();
+            sum_sq += pos.x() * pos.x();
+            count += 1;
+        }
+
+        let mean = sum / n as f64;
+        let var = sum_sq / n as f64 - mean * mean;
+        assert!(mean - 0.5 < 0.01);
+        assert!(var - 1.0 / 12.0 < 0.01);
+    }
+
+    #[test]
+    fn test_intersection_hit() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
+        let ray = Ray::new(Point3::new(1.0, 1.0, -1.0), Dir3::new(0.0, 0.0, 1.0));
+        let (t_min, t_max) = cube.intersections(&ray);
+
+        assert_eq!(t_min, 1.0);
+        assert_eq!(t_max, 3.0);
+    }
+
+    #[test]
+    fn test_intersection_miss() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
+        let ray = Ray::new(Point3::new(1.0, 1.0, -1.0), Dir3::new(0.0, 0.0, -1.0));
+        let (t_min, t_max) = cube.intersections(&ray);
+
+        // The ray is pointing away from the cube, so there should be no intersections, hence no positive solutions for distance.
+        assert!(t_min < 0.0);
+        assert!(t_max < 0.0);
+    }
+
+    #[test]
+    fn test_cube_trace_inside() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let ray = Ray::new(Point3::new(0.5, 0.5, 2.0), Dir3::new(0.0, 0.0, -1.0));
+        
+        // Determine if a Ray hit occurs -- it should.
+        let will_hit = cube.hit(&ray);
+        assert_eq!(will_hit, true);
+
+        let hit = cube.dist_side(&ray);
+        assert!(hit.is_some());
+        let (dist, side) = hit.unwrap();
+        assert_eq!(dist, 1.0);
+        assert_eq!(side, Side::Inside(Dir3::new(-1.0, -0.0, -0.0)));
+    }
+
+    #[test]
+    #[ignore = "This case is currently not handled correctly."]
+    fn test_cube_trace_outside() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let ray = Ray::new(Point3::new(0.5, 0.5, -2.0), Dir3::new(0.0, 0.0, 1.0));
+        
+        // Determine if a Ray hit occurs -- it should.
+        let will_hit = cube.hit(&ray);
+        assert_eq!(will_hit, true);
+
+        let hit = cube.dist_side(&ray);
+        assert!(hit.is_some());
+        let (dist, side) = hit.unwrap();
+        assert_eq!(dist, 1.0);
+        assert_eq!(side, Side::Outside(Dir3::new(-1.0, -0.0, -0.0)));
+    }
+
+    #[test]
+    fn test_cube_trace_miss() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
+        let ray = Ray::new(Point3::new(0.5, 0.5, 2.0), Dir3::new(0.0, 0.0, 1.0));
+        
+        // Determine if a Ray hit occurs -- it should not.
+        let will_hit = cube.hit(&ray);
+        assert_eq!(will_hit, false);
+
+        let hit = cube.dist_side(&ray);
+        assert!(hit.is_none());
+    }
+
+    #[test]
+    fn test_uniform_pos() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
+        let res = [10, 10, 10];
+
+        // Try the lower end of the domain. 
+        let sample = cube.uniform_pos(&res, &[0, 0, 0]);
+        assert_eq!(sample, Point3::new(0.1, 0.1, 0.1));
+
+        // Try the upper end of the domain.
+        let sample = cube.uniform_pos(&res, &[9, 9, 9]);
+        assert_approx_eq!(sample.x(), 1.9);
+        assert_approx_eq!(sample.y(), 1.9);
+        assert_approx_eq!(sample.z(), 1.9);
+
+        // Try the middle of the domain.
+        let sample = cube.uniform_pos(&res, &[5, 5, 5]);
+        assert_approx_eq!(sample.x(), 1.1);
+        assert_approx_eq!(sample.y(), 1.1);
+        assert_approx_eq!(sample.z(), 1.1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_uniform_pos_index_too_large() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
+        let res = [10, 10, 10];
+
+        // Try a point outside the domain.
+        let _ = cube.uniform_pos(&res, &[10, 10, 10]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_uniform_pos_res_zero() {
+        let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
+        let res = [0, 0, 0];
+
+        // Try to sample with zero resolution.
+        let _ = cube.uniform_pos(&res, &[0, 0, 0]);
     }
 }
