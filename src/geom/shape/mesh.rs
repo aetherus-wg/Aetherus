@@ -2,12 +2,17 @@
 
 use crate::{
     access, clone, fmt_report,
+    err::Error,
     geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Trace, Transformable},
+    fs::{File, mesh_from_obj, mesh_from_ugrid},
     math::Trans3,
     ord::{ALPHA, X},
 };
 use rand::Rng;
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    path::Path
+};
 
 /// Boundary padding.
 const PADDING: f64 = 1e-6;
@@ -169,5 +174,29 @@ impl Display for Mesh {
         fmt_report!(fmt, self.tris.len(), "num triangles");
         fmt_report!(fmt, self.area, "area (m)");
         Ok(())
+    }
+}
+
+impl File for Mesh {
+    #[inline]
+    fn load(path: &Path) -> Result<Self, Error> {
+        if path.extension().unwrap() == "obj" {
+            let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
+                panic!("Unable to read mesh from wavefront file: {}", path.display())
+            });
+
+            Ok(Self::new(mesh_tris))
+
+        } else if path.extension().unwrap() == "nc" {
+            let mesh_tris = mesh_from_ugrid(path).unwrap_or_else(|_| {
+                panic!("Unable to read mesh from ugrid file: {}", path.display())
+            });
+
+            Ok(Self::new(mesh_tris))
+
+        } else {
+            panic!("Mesh file {} has unsupported file type", path.display());
+        }
+
     }
 }

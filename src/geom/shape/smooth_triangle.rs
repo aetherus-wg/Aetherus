@@ -114,3 +114,10 @@ impl Emit for SmoothTriangle {
         Ray::new(pos, dir)
     }
 }
+
+impl PartialEq for SmoothTriangle {
+    fn eq(&self, other: &Self) -> bool {
+        self.tri.verts() == other.tri.verts()
+    }
+}
+impl Eq for SmoothTriangle {}
