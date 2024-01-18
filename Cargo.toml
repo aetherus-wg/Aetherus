@@ -50,6 +50,8 @@ lidrs = "0.2.*"
 # Formats for the File I/O Library. 
 json5 = "0.4.*"
 netcdf = "0.8.1"
+mpi = "0.7.0"
+memoffset = "0.9.0"
 
 [dev-dependencies]
 tempfile = "3.2.*"

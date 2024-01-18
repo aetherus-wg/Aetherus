@@ -1,6 +1,11 @@
 //! Photon particle.
-
 use crate::{access, clone, geom::Ray, math::{Dir3, Point3}};
+use mpi::{
+    datatype::{UncommittedUserDatatype, UserDatatype},
+    traits::*,
+    Address,
+};
+use memoffset::{offset_of};
 
 /// Photon.
 #[derive(Clone)]
@@ -42,7 +47,6 @@ impl Photon {
         self.weight = 0.0;
     }
 }
-
 
 /// Photon reconstructed into raw data for MPI buffer.
 #[derive(Clone)]
