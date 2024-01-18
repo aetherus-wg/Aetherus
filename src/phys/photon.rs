@@ -1,6 +1,6 @@
 //! Photon particle.
 
-use crate::{access, clone, geom::Ray};
+use crate::{access, clone, geom::Ray, math::{Dir3, Point3}};
 
 /// Photon.
 #[derive(Clone)]
@@ -41,4 +41,47 @@ impl Photon {
     pub fn kill(&mut self) {
         self.weight = 0.0;
     }
+}
+
+
+/// Photon reconstructed into raw data for MPI buffer.
+#[derive(Clone)]
+pub struct PhotonBuf {
+    /// Ray of travel broken down to component arrays
+    pub ray_pos: [f64; 3],
+    pub ray_dir: [f64; 3],
+    /// Statistical weight.
+    pub weight: f64,
+    /// Wavelength (m).
+    pub wavelength: f64,
+    /// Power (J/s).
+    pub power: f64,
+}
+
+impl PhotonBuf {
+
+    /// Construct a new instance.
+    #[inline]
+    #[must_use]
+    pub fn new(photon: Photon) -> Self {
+        Self {
+            ray_pos: [photon.ray().pos().x(), photon.ray().pos().y(), photon.ray().pos().z()],
+            ray_dir: [photon.ray().dir().x(), photon.ray().dir().y(), photon.ray().dir().z()],
+            weight: photon.weight(),
+            wavelength: photon.wavelength(),
+            power: photon.power(),
+        }
+    }
+
+    /// Convert photon buffer back to Photon struct
+    #[inline]
+    pub fn as_photon(self) -> Photon {
+        let ray = Ray::new(
+            Point3::new(self.ray_pos[0], self.ray_pos[1], self.ray_pos[2]),
+            Dir3::new(self.ray_dir[0], self.ray_dir[1], self.ray_dir[2]));
+        return Photon::new(ray, self.wavelength, self.power);
+    }
+
+    
+
 }
