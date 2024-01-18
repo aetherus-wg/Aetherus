@@ -82,6 +82,27 @@ impl PhotonBuf {
         return Photon::new(ray, self.wavelength, self.power);
     }
 
-    
+}
 
+unsafe impl Equivalence for PhotonBuf {
+    type Out = UserDatatype;
+    fn equivalent_datatype() -> Self::Out {
+        UserDatatype::structured(
+            &[1, 1, 1, 1, 1],
+            &[
+                offset_of!(PhotonBuf, ray_pos) as Address,
+                offset_of!(PhotonBuf, ray_dir) as Address,
+                offset_of!(PhotonBuf, weight) as Address,
+                offset_of!(PhotonBuf, wavelength) as Address,
+                offset_of!(PhotonBuf, power) as Address,
+            ],
+            &[
+                UncommittedUserDatatype::contiguous(3, &f64::equivalent_datatype()).as_ref(),
+                UncommittedUserDatatype::contiguous(3, &f64::equivalent_datatype()).as_ref(),
+                f64::equivalent_datatype().into(),
+                f64::equivalent_datatype().into(),
+                f64::equivalent_datatype().into(),
+            ],
+        )
+    }
 }
