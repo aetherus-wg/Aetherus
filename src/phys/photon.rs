@@ -1,10 +1,13 @@
 //! Photon particle.
 use crate::{access, clone, geom::Ray, math::{Dir3, Point3}};
+
+#[cfg(feature = "mpi")]
 use mpi::{
     datatype::{UncommittedUserDatatype, UserDatatype},
     traits::*,
     Address,
 };
+#[cfg(feature = "mpi")]
 use memoffset::{offset_of};
 
 /// Photon.
@@ -49,6 +52,7 @@ impl Photon {
 }
 
 /// Photon reconstructed into raw data for MPI buffer.
+#[cfg(feature = "mpi")]
 #[derive(Clone)]
 pub struct PhotonBuf {
     /// Ray of travel broken down to component arrays
@@ -62,12 +66,13 @@ pub struct PhotonBuf {
     pub power: f64,
 }
 
+#[cfg(feature = "mpi")]
 impl PhotonBuf {
 
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(photon: Photon) -> Self {
+    pub fn new(photon: &Photon) -> Self {
         Self {
             ray_pos: [photon.ray().pos().x(), photon.ray().pos().y(), photon.ray().pos().z()],
             ray_dir: [photon.ray().dir().x(), photon.ray().dir().y(), photon.ray().dir().z()],
@@ -88,6 +93,7 @@ impl PhotonBuf {
 
 }
 
+#[cfg(feature = "mpi")]
 unsafe impl Equivalence for PhotonBuf {
     type Out = UserDatatype;
     fn equivalent_datatype() -> Self::Out {
@@ -109,4 +115,51 @@ unsafe impl Equivalence for PhotonBuf {
             ],
         )
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::Photon;
+    use crate::geom::Ray;
+    use crate::math::{Dir3, Point3};
+    use assert_approx_eq::assert_approx_eq;
+    use std::f64;
+
+    #[cfg(feature = "mpi")]
+    use super::PhotonBuf;
+
+    /// Check that the creation and accessing code is working correctly.
+    #[test]
+    #[cfg(feature = "mpi")]
+    fn buf_init_test() {
+        let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 1.0, 1.0));
+        let phot = Photon::new(ray, 500.0, 10.0);
+
+        let phot_buf  = PhotonBuf::new(&phot);
+        // Check that we get the correct
+        assert_eq!(phot_buf.ray_pos, [0.0, 0.0, 0.0]);
+        //assert_eq!(phot_buf.ray_dir, [1.0, 1.0, 1.0]);
+        assert_eq!(phot_buf.weight, 1.0);
+        assert_eq!(phot_buf.wavelength, 500.0);
+        assert_eq!(phot_buf.power, 10.0);
+    }
+
+    /// Check that arrays destruct correctly
+    #[test]
+    #[cfg(feature = "mpi")]
+    fn buf_as_photon_test() {
+        let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 1.0, 1.0));
+        let phot = Photon::new(ray, 500.0, 10.0);
+        let phot_buf = PhotonBuf::new(&phot);
+
+        let phot_return = phot_buf.as_photon();
+
+        assert_eq!(phot.ray.pos(), phot_return.ray.pos());
+        assert_eq!(phot.ray.dir(), phot_return.ray.dir());
+        assert_eq!(phot.weight(), phot_return.weight());
+        assert_eq!(phot.wavelength(), phot_return.wavelength());
+        assert_eq!(phot.power(), phot_return.power());
+    }
+
 }
