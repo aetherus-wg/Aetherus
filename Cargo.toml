@@ -70,3 +70,8 @@ rustdoc-args = [ "--html-in-header", "./src/docs-header.html" ]
 
 [[bin]]
 name = "mcrt"
+
+[[bin]]
+name = "mpi_tests"
+path = "src/bin/tests/mpi_tests.rs"
+required-features = ["mpi"]
