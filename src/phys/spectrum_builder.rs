@@ -60,7 +60,7 @@ impl Display for SpectrumBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{phys::Spectrum, sim::input};
+    use crate::phys::Spectrum;
     use tempfile::NamedTempFile;
     use std::io::{Write, Seek};
     use json5;

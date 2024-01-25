@@ -4,7 +4,7 @@ use crate::{
     access, fmt_report,
     geom::Cube,
     math::{Point3, Vec3},
-    ord::{X, Y, Z},
+    ord::cartesian::{X, Y, Z},
 };
 use std::fmt::{Display, Formatter};
 

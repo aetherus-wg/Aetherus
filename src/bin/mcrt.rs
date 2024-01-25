@@ -6,13 +6,13 @@ use std::{
     env::current_dir,
     path::{Path, PathBuf},
 };
-use Aetherus::{
+use aetherus::{
     args,
     data::Histogram,
     fs::{File, Load, Save},
     geom::{Grid, Tree},
     img::{Colour, Image},
-    ord::{Build, Link, Register, Set, X, Y},
+    ord::{Build, Link, Register, Set, cartesian::{X, Y}},
     report,
     sim::{
         run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,

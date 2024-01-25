@@ -4,7 +4,7 @@ use crate::{
     err::Error,
     fmt_report,
     math::{Point3, Vec3},
-    ord::{Link, Name, Set, X, Y},
+    ord::{Link, Name, Set, cartesian::{X, Y}},
     phys::{Reflectance, SpectrumBuilder},
     sim::attribute::AttributeLinkerLinkerLinkerLinker,
     tools::{Binner, Range},

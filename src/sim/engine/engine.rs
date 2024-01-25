@@ -2,7 +2,7 @@
 
 use crate::{
     math::{Formula, Point3},
-    ord::{X, Y},
+    ord::cartesian::{X, Y},
     phys::Photon,
     sim::{engines, Frame, Input, Output},
 };

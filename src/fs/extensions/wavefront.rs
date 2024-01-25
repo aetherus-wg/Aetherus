@@ -99,9 +99,7 @@ mod tests {
     use crate::{
         geom::SmoothTriangle,
         math::{Dir3, Point3}};
-    use std::{
-        fs::read_dir,
-        path::Path};
+    use std::path::Path;
 
     #[test]
     fn test_mesh_from_obj() {

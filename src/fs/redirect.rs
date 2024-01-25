@@ -8,8 +8,8 @@
 //!
 //! An example implementation of this pattern, using redirect can be seen below:
 //! ```ignore
-//! # use Aetherus::fs::{from_json_str, Redirect, Load};
-//! # use Aetherus::err::Error;
+//! # use aetherus::fs::{from_json_str, Redirect, Load};
+//! # use aetherus::err::Error;
 //! # use tempfile::NamedTempFile;
 //! # use std::io::Write;
 //! # use serde_derive::{Deserialize};
