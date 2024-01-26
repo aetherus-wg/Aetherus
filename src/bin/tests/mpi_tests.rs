@@ -9,6 +9,7 @@ use Aetherus::{
     math::{Formula, Probability, Point3, Dir3},
     geom::{Emitter, Ray},
     phys::{Light, Material, Photon, PhotonBuf},
+    sim::PhotonCollector,
 };
 use rand;
 
@@ -25,11 +26,12 @@ fn main() {
         panic!("Test case only works with 2 MPI ranks");
     }
 
-    single_photon(world, rank);
+    single_photon(&world, rank);
+    photon_vec(&world, rank);
 
 }
 
-fn single_photon(world: SimpleCommunicator, rank: i32) {
+fn single_photon(world: &SimpleCommunicator, rank: i32) {
     // Init photon on home rank
     if rank == 0 {
 
@@ -51,6 +53,55 @@ fn single_photon(world: SimpleCommunicator, rank: i32) {
         let msg = world.process_at_rank(0).receive::<PhotonBuf>().0;
 
         let phot_return = msg.as_photon();
+
+        assert_eq!(phot_return.ray().pos(), &Point3::new(0.0, 0.0, 0.0));
+        assert_eq!(phot_return.ray().dir(), &Dir3::new(1.0, 0.0, 0.0));
+        assert_eq!(phot_return.weight(), 1.0);
+        assert_eq!(phot_return.wavelength(), 1.0);
+        assert_eq!(phot_return.power(), 1.0);
+
+    }
+
+}
+
+fn photon_vec(world: &SimpleCommunicator, rank: i32) {
+
+    let nphots = 10;
+
+    // Init photon on home rank
+    if rank == 0 {
+
+        // Create light source
+        let mut rng = rand::thread_rng();
+        let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
+        let emitter = Emitter::new_beam(ray.clone());
+        let mat = get_air_material();
+        let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
+
+        // Create photon collector
+        let mut photcol = PhotonCollector::new();
+
+        // Emit and collect a set of photons
+        let mut n = 0;
+        while n < nphots {
+            let mut photon = light.emit(&mut rng, 1.0);
+            photcol.collect_photon(&mut photon);
+            n += 1;
+        }
+
+        // Send photons across MPI rank
+        let mut photon_buffer: Vec<PhotonBuf> = Vec::with_capacity(photcol.nphoton());
+        for phot in photcol.photons {
+            photon_buffer.push(PhotonBuf::new(&phot));
+        }
+        world.process_at_rank(1).send(&photon_buffer);
+
+    } else {
+        let buf_recv = world.process_at_rank(0).receive_vec::<PhotonBuf>().0;
+
+        assert_eq!(buf_recv.len(), nphots);
+
+        let phot_return = buf_recv[0].clone().as_photon();
 
         assert_eq!(phot_return.ray().pos(), &Point3::new(0.0, 0.0, 0.0));
         assert_eq!(phot_return.ray().dir(), &Dir3::new(1.0, 0.0, 0.0));
