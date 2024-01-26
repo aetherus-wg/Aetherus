@@ -2,6 +2,7 @@
 
 use mpi::{
     point_to_point::send_receive_replace_into,
+    topology::SimpleCommunicator,
     traits::*,
 };
 use Aetherus::{
@@ -18,13 +19,17 @@ fn main() {
     // Init MPI communicator
     let comm = mpi::initialize().unwrap();
     let world = comm.world();
-    let size = world.size();
     let rank = world.rank();
 
-    if size != 2 {
+    if world.size() != 2 {
         panic!("Test case only works with 2 MPI ranks");
     }
 
+    single_photon(world, rank);
+
+}
+
+fn single_photon(world: SimpleCommunicator, rank: i32) {
     // Init photon on home rank
     if rank == 0 {
 
