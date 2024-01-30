@@ -422,7 +422,7 @@ impl Display for Probability {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::Probability;
     use assert_approx_eq::assert_approx_eq;
     use ndarray::Array1;
