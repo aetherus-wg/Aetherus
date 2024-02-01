@@ -4,7 +4,7 @@
 /// As opposed to the `access!()` macro, this will return a value by cloning it.
 /// To automatically implement a getter, use it like so:
 /// ```rust
-/// # use Aetherus::clone;
+/// # use aetherus::clone;
 /// pub struct DocStruct {
 ///     number_prop: f64,   
 /// }
@@ -21,7 +21,7 @@
 /// be augmented as below
 ///
 /// ```rust
-/// # use Aetherus::clone;
+/// # use aetherus::clone;
 /// pub struct DocStruct {
 ///     number_prop: f64,
 /// }

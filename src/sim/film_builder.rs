@@ -4,7 +4,10 @@ use crate::{
     clone,
     geom::Track,
     math::{Mat4, Vec3},
-    ord::{Build, X, Y},
+    ord::{
+        Build, 
+        cartesian::{X, Y}
+    },
     sim::Frame,
 };
 use arctk_attr::file;

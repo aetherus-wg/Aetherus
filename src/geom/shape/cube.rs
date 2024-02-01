@@ -4,7 +4,7 @@ use crate::{
     access, fmt_report,
     geom::{Collide, Mesh, Ray, Side, Trace},
     math::{Dir3, Point3, Vec3},
-    ord::{X, Y, Z},
+    ord::cartesian::{X, Y, Z},
     tools::Range,
 };
 use arctk_attr::file;

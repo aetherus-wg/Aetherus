@@ -3,8 +3,8 @@
 //! This module provides `Triangle`---an implementation of a flat triangle.
 //! As an an example, a new instance of an isoceles triangle can be created using:
 //! ```rust
-//! # use Aetherus::geom::Triangle;
-//! # use Aetherus::math::Point3;
+//! # use aetherus::geom::Triangle;
+//! # use aetherus::math::Point3;
 //! let tri = Triangle::new([Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0), Point3::new(0.5, 1.0, 0.0)]);
 //!
 //! // The geometric properties of this triangle can be interrogated

@@ -1,7 +1,7 @@
 use assert_approx_eq::assert_approx_eq;
 use rand::Rng;
 use std::f64::consts::FRAC_PI_4;
-use Aetherus as aether;
+use aetherus as aether;
 
 /// This benchmark case is a barebones test of the core libraries.
 /// This serves as a test for the averaging class, and our ability

@@ -8,7 +8,10 @@ use crate::{
     fs::Save,
     geom::Cube,
     img::Image,
-    ord::{Register, X, Y, Z},
+    ord::{
+        Register, 
+        cartesian::{X, Y, Z}
+    },
     util::fmt::DataCube,
 };
 use ndarray::Array3;

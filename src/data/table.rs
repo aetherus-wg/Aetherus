@@ -119,8 +119,6 @@ impl<T: Display> Display for Table<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::format;
-    use std::fs::File;
     use ndarray::Array1;
 
     use super::*;
