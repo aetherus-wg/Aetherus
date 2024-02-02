@@ -1,6 +1,8 @@
 //! Photon particle.
-use crate::{access, clone, geom::Ray, math::{Dir3, Point3}};
+use crate::{access, clone, geom::Ray};
 
+#[cfg(feature = "mpi")]
+use crate::math::{Dir3, Point3};
 #[cfg(feature = "mpi")]
 use mpi::{
     datatype::{UncommittedUserDatatype, UserDatatype},
@@ -8,7 +10,7 @@ use mpi::{
     Address,
 };
 #[cfg(feature = "mpi")]
-use memoffset::{offset_of};
+use memoffset::offset_of;
 
 /// Photon.
 #[derive(Clone)]
@@ -120,10 +122,15 @@ unsafe impl Equivalence for PhotonBuf {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "mpi")]
     use super::Photon;
+    #[cfg(feature = "mpi")]
     use crate::geom::Ray;
+    #[cfg(feature = "mpi")]
     use crate::math::{Dir3, Point3};
+    #[cfg(feature = "mpi")]
     use assert_approx_eq::assert_approx_eq;
+    #[cfg(feature = "mpi")]
     use std::f64;
 
     #[cfg(feature = "mpi")]

@@ -1,13 +1,10 @@
 //! Simple integration tests for MPI functionality
 
-use mpi::{
-    point_to_point::send_receive_replace_into,
-    traits::*,
-};
-use Aetherus::{
+use mpi::traits::*;
+use aetherus::{
     math::{Formula, Probability, Point3, Dir3},
     geom::{Emitter, Ray},
-    phys::{Light, Material, Photon, PhotonBuf},
+    phys::{Light, Material, PhotonBuf},
 };
 use rand;
 
@@ -54,7 +51,6 @@ fn main() {
         assert_eq!(phot_return.power(), 1.0);
 
     }
-
 }
 
 fn get_air_material() -> Material {
