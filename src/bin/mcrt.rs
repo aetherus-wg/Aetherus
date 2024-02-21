@@ -10,8 +10,9 @@ use aetherus::{
     args,
     data::Histogram,
     fs::{File, Load, Save},
-    geom::{Grid, Tree},
+    geom::{Grid, Tree, Boundary, BoundaryCondition},
     img::{Colour, Image},
+    math::{Point3},
     ord::{Build, Link, Register, Set, cartesian::{X, Y}},
     report,
     sim::{
@@ -84,6 +85,14 @@ fn main() {
         .expect("Failed to link attribute to surfaces.");
     report!(surfs, "surfaces");
 
+    /*
+     * Create a boundary for the simulation with boundary coneditions. 
+     * For now we hard-code this to kill, but we can link this to configuration soon. 
+     * TODO: We probably want to implement the MPI adjacent rank transfer here too. 
+     */
+    let bound = Boundary::new_kill(grid.boundary().clone());
+    report!(bound, "boundary conditions");
+
     sub_section(term_width, "Growing");
     let tree = Tree::new(&params.tree, &surfs);
     report!(tree, "hit-scan tree");
@@ -95,7 +104,7 @@ fn main() {
         .fold(base_output.clone(), |mut output, (light_idx, (light_id, light))| {
             section(term_width, &format!("Running for light {} ({} / {})", light_id, light_idx + 1, nlights));
             report!(light, light_id);
-            let input = Input::new(&spec_reg, &mats, &attrs, light, &tree, &grid, &sett);
+            let input = Input::new(&spec_reg, &mats, &attrs, light, &tree, &grid, &sett, &bound);
 
             let data =
                 run::multi_thread(&engine, input, &base_output).expect("Failed to run MCRT.");

@@ -67,9 +67,10 @@ pub fn photo(
         let surf_hit = input
             .tree
             .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist));
+        let boundary_hit = None;
 
         // Event handling.
-        match Event::new(voxel_dist, scat_dist, surf_hit, bump_dist) {
+        match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
             Event::Voxel(dist) => travel(&mut data, &mut phot, &env, index, dist + bump_dist),
             Event::Scattering(dist) => {
                 travel(&mut data, &mut phot, &env, index, dist);
@@ -95,6 +96,10 @@ pub fn photo(
                 travel(&mut data, &mut phot, &env, index, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
                 travel(&mut data, &mut phot, &env, index, bump_dist);
+            },
+            Event::Boundary(boundary_hit) => {
+                travel(&mut data, &mut phot, &env, index, boundary_hit.dist());
+                input.bound.apply(rng, &boundary_hit, &mut phot);
             }
         }
 
