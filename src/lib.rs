@@ -42,7 +42,6 @@ pub mod fs;
 pub mod geom;
 pub mod img;
 pub mod math;
-pub mod meta;
 pub mod ord;
 pub mod phys;
 pub mod sim;
