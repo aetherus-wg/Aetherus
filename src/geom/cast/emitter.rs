@@ -166,7 +166,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
     use crate::{
         geom::{Ray, Mesh, SmoothTriangle, Triangle}, 
-        data::Average,
+        diag::Average,
         math::{Point3, Dir3},
     };
 

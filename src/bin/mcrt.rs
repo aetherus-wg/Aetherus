@@ -8,7 +8,7 @@ use std::{
 };
 use aetherus::{
     args,
-    data::Histogram,
+    diag::Histogram,
     fs::{File, Load, Save},
     geom::{Grid, Tree},
     diag::{Colour, Image},

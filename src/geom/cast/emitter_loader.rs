@@ -1,7 +1,7 @@
 //! Optical material.
 
 use crate::{
-    data::Table,
+    diag::Table,
     err::Error,
     fs::{File, Load, Redirect},
     geom::{Emitter, GridBuilder, MeshLoader, Ray},

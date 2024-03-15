@@ -1,6 +1,6 @@
 //! Comma-Separated-Variable file handling.
 
-use crate::{data::Table, err::Error, fs::File};
+use crate::{diag::Table, err::Error, fs::File};
 use std::{
     io::{BufRead, BufReader},
     path::Path,

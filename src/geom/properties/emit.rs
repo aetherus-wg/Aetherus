@@ -39,7 +39,7 @@ impl Emit for Point3 {
 #[cfg(test)]
 mod tests {
     use super::Emit;
-    use crate::{data::Average, math::Point3};
+    use crate::{diag::Average, math::Point3};
     use assert_approx_eq::assert_approx_eq;
 
     /// As the default mode of emission is isotropic, I will test this using the

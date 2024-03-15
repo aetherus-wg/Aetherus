@@ -139,7 +139,7 @@ impl Default for CumulativeDistributionFunction {
 #[cfg(test)]
 mod tests {
     use super::CumulativeDistributionFunction;
-    use crate::{core::Real, data::Average};
+    use crate::{core::Real, diag::Average};
     use assert_approx_eq::assert_approx_eq;
     use statrs::distribution::{Continuous, Normal};
     use statrs::statistics::Distribution;

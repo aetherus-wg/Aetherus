@@ -22,7 +22,7 @@ fn pi_estimator() {
 
     let mut rng = rand::thread_rng();
 
-    let mut a = aether::data::Average::new();
+    let mut a = aether::diag::Average::new();
     for _ in 0..samples {
         let x: f64 = rng.gen();
         let y: f64 = rng.gen();

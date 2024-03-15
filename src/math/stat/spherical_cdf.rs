@@ -225,7 +225,7 @@ impl From<PhotometricWeb> for SphericalCdf {
 #[cfg(test)]
 mod tests {
     use super::SphericalCdf;
-    use crate::data::Average;
+    use crate::diag::Average;
     use assert_approx_eq::assert_approx_eq;
     use lidrs::photweb::{PhotometricWeb, Plane};
     use std::f64::consts::PI;

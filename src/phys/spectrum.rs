@@ -1,4 +1,4 @@
-use crate::{data::Table, err::Error, fmt_report, fs::File};
+use crate::{diag::Table, err::Error, fmt_report, fs::File};
 use std::{fmt::Display, path::Path};
 
 #[derive(Debug, Clone, PartialEq)]

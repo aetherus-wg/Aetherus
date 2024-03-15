@@ -237,7 +237,7 @@ mod tests {
     use super::Reflectance;
     use crate::{
         core::Real,
-        data::Histogram,
+        diag::Histogram,
         geom::{Hit, Ray, Side},
         math::{Dir2, Dir3, Point3},
         phys::{Photon, Spectrum},

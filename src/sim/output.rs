@@ -2,7 +2,7 @@
 
 use crate::{
     access, clone,
-    data::Histogram,
+    diag::Histogram,
     err::Error,
     fmt_report,
     fs::Save,

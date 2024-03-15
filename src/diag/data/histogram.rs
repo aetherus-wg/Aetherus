@@ -2,7 +2,7 @@
 
 use crate::{
     access,
-    data::HistogramIterator,
+    diag::HistogramIterator,
     err::Error,
     fmt_report,
     fs::Save,
