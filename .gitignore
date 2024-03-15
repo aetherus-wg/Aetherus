@@ -29,3 +29,4 @@ Cargo.lock
 
 .spack/packages/aetherus-env/__pycache__/
 .spack-env
+spack.lock
