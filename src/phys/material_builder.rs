@@ -1,6 +1,6 @@
 //! Material builder.
 
-use crate::{fmt_report, math::FormulaBuilder, ord::Build, phys::Material};
+use crate::{fmt_report, math::FormulaBuilder, core::Build, phys::Material};
 use arctk_attr::file;
 use std::fmt::{Display, Error, Formatter};
 

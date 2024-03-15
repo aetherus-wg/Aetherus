@@ -1,10 +1,8 @@
-//! Core machine-level functionality.
-pub mod dim;
-pub mod memory;
-pub mod number;
+//! Core functionality.
+pub mod ord;
 pub mod meta;
+pub mod types;
 
-pub use self::dim::*;
-pub use self::memory::*;
-pub use self::number::*;
+pub use self::ord::*;
 pub use self::meta::*;
+pub use self::types::*;

@@ -4,7 +4,7 @@ use crate::{
     fmt_report,
     geom::Emitter,
     math::ProbabilityBuilder,
-    ord::{Build, Name},
+    core::{Build, Name},
     phys::LightLinker,
 };
 use std::fmt::{Display, Error, Formatter};

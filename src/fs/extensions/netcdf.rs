@@ -3,7 +3,7 @@
 use crate::{
     err::Error,
     fs::{File, Save},
-    ord::cartesian::{X, Y, Z},
+    core::cartesian::{X, Y, Z},
 };
 use ndarray::{Array2, Array3, ArrayView2, ArrayView3};
 use netcdf::NcPutGet;

@@ -3,7 +3,7 @@
 use crate::{
     access,
     math::{Mat4, Point3},
-    ord::cartesian::{X, Y},
+    core::cartesian::{X, Y},
 };
 
 /// Real-space to frame-space transformer.

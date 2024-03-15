@@ -3,7 +3,7 @@
 use crate::{
     fmt_report,
     geom::{Grid, Tree},
-    ord::{Register, Set},
+    core::{Register, Set},
     phys::{Light, Material},
     sim::{Attribute, Settings},
 };

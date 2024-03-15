@@ -4,7 +4,7 @@ use crate::{
     access, clone, fmt_report,
     geom::{Orient, Ray},
     math::{Point3, Rot3, Vec3},
-    ord::cartesian::{X, Y},
+    core::cartesian::{X, Y},
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -118,7 +118,7 @@ mod tests {
     use crate::{
         geom::{CameraBuilder}, 
         math::{Point3, Vec3, Dir3},
-        ord::Build,
+        core::Build,
     };
     use rand::random;
 

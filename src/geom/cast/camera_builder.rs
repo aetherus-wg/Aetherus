@@ -4,7 +4,7 @@ use crate::{
     fmt_report,
     geom::{Camera, Orient},
     math::{Point3, Vec3},
-    ord::{Build, cartesian::{X, Y}},
+    core::{Build, cartesian::{X, Y}},
 };
 use arctk_attr::file;
 use std::fmt::{Display, Error, Formatter};
@@ -110,7 +110,7 @@ mod tests {
     use super::{Camera, CameraBuilder};
     use crate::{
         fs::File,
-        ord::Build,
+        core::Build,
         math::linalg::{Point3, Vec3},
     };
 

@@ -4,7 +4,7 @@ use crate::{
     fmt_report,
     geom::{Collide, Cube, Hit, Ray, Scan, SmoothTriangle, Surface, Trace, TreeSettings},
     math::Point3,
-    ord::Set,
+    core::Set,
     tools::ProgressBar,
 };
 use std::fmt::{Display, Error, Formatter};
@@ -388,7 +388,7 @@ mod tests {
     use crate::{sim::Attribute, math::Dir3};
     use std::collections::BTreeMap;
     use crate::{
-        ord::{Name, Set},
+        core::{Name, Set},
         geom::{Triangle, SmoothTriangle, Surface, Mesh},
     };
     use assert_approx_eq::assert_approx_eq;

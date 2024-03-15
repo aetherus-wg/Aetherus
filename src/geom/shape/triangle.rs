@@ -16,7 +16,7 @@ use crate::{
     access,
     geom::{Collide, Cube, Emit, Ray, Side, Trace, Transformable},
     math::{Dir3, Point3, Trans3, Vec3},
-    ord::{ALPHA, BETA, GAMMA},
+    core::{ALPHA, BETA, GAMMA},
 };
 use rand::Rng;
 

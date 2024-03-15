@@ -5,7 +5,7 @@ use crate::{
     fmt_report,
     geom::{Orient, Ray},
     math::{Dir3, Point3, Vec3},
-    ord::{Link, Name, Set, cartesian::{X, Y}},
+    core::{Link, Name, Set, cartesian::{X, Y}},
     phys::Reflectance,
     sim::attribute::AttributeLinkerLinker,
     tools::{Binner, Range},

@@ -2,7 +2,7 @@
 
 use crate::{
     fmt_report,
-    ord::cartesian::{X, Y, Z},
+    core::cartesian::{X, Y, Z},
     util::fmt::Analyze,
 };
 use ndarray::Array3;

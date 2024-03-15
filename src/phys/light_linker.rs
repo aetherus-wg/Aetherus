@@ -5,7 +5,7 @@ use crate::{
     fmt_report,
     geom::Emitter,
     math::Probability,
-    ord::{Link, Name, Set},
+    core::{Link, Name, Set},
     phys::{Light, Material},
 };
 use std::fmt::{Display, Formatter};

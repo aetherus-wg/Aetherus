@@ -4,7 +4,7 @@ use crate::{
     err::Error,
     fs::Load,
     geom::{MeshLoader, SurfaceLinker},
-    ord::Name,
+    core::Name,
 };
 use arctk_attr::file;
 use std::path::Path;

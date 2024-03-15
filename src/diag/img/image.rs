@@ -3,7 +3,7 @@
 use crate::{
     access,
     diag::Colour,
-    ord::cartesian::{X, Y},
+    core::cartesian::{X, Y},
 };
 use ndarray::Array2;
 use std::ops::AddAssign;

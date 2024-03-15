@@ -2,7 +2,7 @@
 
 use crate::{
     fmt_report,
-    ord::{Map, Name, Set},
+    core::{Map, Name, Set},
 };
 use std::fmt::{Display, Error, Formatter};
 

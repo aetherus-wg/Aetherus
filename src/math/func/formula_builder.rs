@@ -1,6 +1,6 @@
 //! Formula form implementation.
 
-use crate::ord::Build;
+use crate::core::Build;
 use arctk_attr::file;
 use ndarray::Array1;
 use std::fmt::{Display, Formatter};

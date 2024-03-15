@@ -2,7 +2,7 @@
 
 use crate::{
     err::Error,
-    ord::{Name, Set},
+    core::{Name, Set},
 };
 
 /// Types implementing this trait can be linked to a set to produce a referenced type.

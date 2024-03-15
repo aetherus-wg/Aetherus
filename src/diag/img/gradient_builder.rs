@@ -2,7 +2,7 @@
 
 use crate::{
     diag::{Colour, Gradient},
-    ord::Build,
+    core::Build,
 };
 use arctk_attr::file;
 use std::fmt::{Display, Error, Formatter};

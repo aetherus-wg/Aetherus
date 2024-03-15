@@ -4,7 +4,7 @@ use crate::{
     err::Error,
     fmt_report,
     geom::{Mesh, Surface},
-    ord::{Link, Name, Set},
+    core::{Link, Name, Set},
 };
 use std::fmt::{Display, Formatter};
 

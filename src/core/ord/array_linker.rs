@@ -2,7 +2,7 @@
 
 use crate::{
     err::Error,
-    ord::{Link, Name, Set},
+    core::{Link, Name, Set},
 };
 use arctk_attr::file;
 use ndarray::Array1;

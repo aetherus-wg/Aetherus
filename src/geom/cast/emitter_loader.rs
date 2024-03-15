@@ -6,7 +6,7 @@ use crate::{
     fs::{File, Load, Redirect},
     geom::{Emitter, GridBuilder, MeshLoader, Ray},
     math::{stat::SphericalCdf, Dir3, Point3, Trans3Builder},
-    ord::{Build, cartesian::{X, Y, Z}},
+    core::{Build, cartesian::{X, Y, Z}},
 };
 use arctk_attr::file;
 use ndarray::Array3;

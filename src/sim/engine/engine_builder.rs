@@ -2,7 +2,7 @@
 
 use crate::{
     math::{FormulaBuilder, Point3},
-    ord::Build,
+    core::Build,
     sim::{Engine, FilmBuilder},
 };
 use ndarray::Array3;

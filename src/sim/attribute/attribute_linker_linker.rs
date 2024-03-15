@@ -4,7 +4,7 @@ use crate::{
     err::Error,
     fmt_report,
     geom::Orient,
-    ord::{Link, Name, Set},
+    core::{Link, Name, Set},
     phys::Reflectance,
     sim::attribute::AttributeLinker,
     tools::{Binner, Range},

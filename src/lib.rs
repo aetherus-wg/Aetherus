@@ -41,7 +41,6 @@ pub mod fs;
 pub mod geom;
 pub mod diag;
 pub mod math;
-pub mod ord;
 pub mod phys;
 pub mod sim;
 pub mod tools;

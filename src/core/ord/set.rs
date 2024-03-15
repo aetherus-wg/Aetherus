@@ -4,7 +4,7 @@ use crate::{
     err::Error,
     fmt_report,
     fs::{from_json, File, Load},
-    ord::{Build, Link, Map, Name},
+    core::{Build, Link, Map, Name},
 };
 use serde::{Deserialize, Serialize};
 use std::{

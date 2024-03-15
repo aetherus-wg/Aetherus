@@ -1,6 +1,6 @@
 //! International System of Units
 
-use crate::core::dim::dimension::*;
+use crate::core::types::dim::dimension::*;
 
 /// Create the constant used to form the SI equivalent base unit.
 /// As UCUM uses grams as a base, not kilograms, then some values are scaled to account.

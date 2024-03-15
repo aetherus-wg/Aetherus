@@ -6,7 +6,7 @@ use crate::{
     geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Trace, Transformable},
     fs::{File, mesh_from_obj, mesh_from_ugrid},
     math::Trans3,
-    ord::{ALPHA, cartesian::X},
+    core::{ALPHA, cartesian::X},
 };
 use rand::Rng;
 use std::{

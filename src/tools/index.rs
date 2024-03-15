@@ -1,6 +1,6 @@
 //! Index manipulation functions.
 
-use crate::ord::cartesian::{X, Y, Z};
+use crate::core::cartesian::{X, Y, Z};
 
 /// Determine the linear index form a two-dimension index and resolution.
 #[inline]

@@ -6,7 +6,7 @@ use crate::{
     fs::{Load, Redirect},
     geom::EmitterLoader,
     math::ProbabilityBuilder,
-    ord::Name,
+    core::Name,
     phys::LightLinkerBuilder,
 };
 use arctk_attr::file;

@@ -1,8 +1,8 @@
 //! International System of Units
-//! This module contains the complementary SI prefixes for the units in core::dim::si;
+//! This module contains the complementary SI prefixes for the units in core::types::dim::si;
 //! Some examples of their use:
 //! ```rust
-//! # use aetherus::core::dim::{si::*, prefix::*};
+//! # use aetherus::core::types::dim::{si::*, prefix::*};
 //! let equatorial_radius_of_earth = 6_378. * KILO * Meter;
 //! let equatorial_radius_of_earth = 6_378. * KILO * Meter;
 //! ```
@@ -24,7 +24,7 @@ pub const PICO: Real = 1.0e-12;
 
 #[cfg(test)]
 mod tests {
-    use crate::core::dim::{prefix::*, si::*};
+    use crate::core::types::dim::{prefix::*, si::*};
     use assert_approx_eq::assert_approx_eq;
     use dimensioned::Dimensioned;
 

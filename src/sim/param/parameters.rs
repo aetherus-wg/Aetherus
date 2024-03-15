@@ -3,7 +3,7 @@
 use crate::{
     fmt_report,
     geom::{Grid, SurfaceLinker, TreeSettings},
-    ord::Set,
+    core::Set,
     phys::{LightLinker, Material},
     sim::{AttributeLinkerLinkerLinkerLinkerLinker, Engine, Settings},
 };

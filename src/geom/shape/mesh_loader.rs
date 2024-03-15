@@ -5,7 +5,7 @@ use crate::{
     fs::{File, Load},
     geom::{Mesh, Transformable},
     math::Trans3Builder,
-    ord::Build,
+    core::Build,
 };
 use arctk_attr::file;
 use std::path::{Path, PathBuf};

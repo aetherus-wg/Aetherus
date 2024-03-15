@@ -8,7 +8,7 @@ use crate::{
     fs::Save,
     geom::Cube,
     diag::Image,
-    ord::{
+    core::{
         Register, 
         cartesian::{X, Y, Z}
     },

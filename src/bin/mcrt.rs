@@ -12,7 +12,7 @@ use aetherus::{
     fs::{File, Load, Save},
     geom::{Grid, Tree},
     diag::{Colour, Image},
-    ord::{Build, Link, Register, Set, cartesian::{X, Y}},
+    core::{Build, Link, Register, Set, cartesian::{X, Y}},
     report,
     sim::{
         run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,

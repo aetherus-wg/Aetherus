@@ -1,6 +1,6 @@
 //! Transform form implementation.
 
-use crate::{math::Vec3, ord::Build};
+use crate::{math::Vec3, core::Build};
 use arctk_attr::file;
 use nalgebra::{Translation3, UnitQuaternion};
 
