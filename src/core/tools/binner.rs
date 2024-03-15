@@ -1,6 +1,6 @@
 //! Binner implementation.
 
-use crate::{access, clone, tools::Range};
+use crate::{access, clone, core::Range};
 use arctk_attr::file;
 use std::fmt::{Display, Error, Formatter};
 

@@ -8,7 +8,7 @@ use crate::{
     core::{Link, Name, Set, cartesian::{X, Y}},
     phys::Reflectance,
     sim::attribute::AttributeLinkerLinkerLinker,
-    tools::{Binner, Range},
+    core::{Binner, Range},
 };
 use std::fmt::{Display, Formatter};
 

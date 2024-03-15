@@ -7,7 +7,7 @@ use crate::{
     core::{Link, Name, Set, cartesian::{X, Y}},
     phys::{Reflectance, SpectrumBuilder},
     sim::attribute::AttributeLinkerLinkerLinkerLinker,
-    tools::{Binner, Range},
+    core::{Binner, Range},
 };
 use arctk_attr::file;
 use std::fmt::{Display, Formatter};

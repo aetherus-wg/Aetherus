@@ -1,6 +1,6 @@
 //! Optical attributes.
 
-use crate::{fmt_report, geom::Orient, phys::Material, phys::Reflectance, tools::Binner};
+use crate::{fmt_report, geom::Orient, phys::Material, phys::Reflectance, core::Binner};
 use std::fmt::{Display, Error, Formatter};
 
 /// Surface attributes.

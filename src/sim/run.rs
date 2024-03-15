@@ -3,7 +3,7 @@
 use crate::{
     err::Error,
     sim::{Engine, Input, Output},
-    tools::ProgressBar,
+    core::ProgressBar,
 };
 use rand::thread_rng;
 use rayon::prelude::*;

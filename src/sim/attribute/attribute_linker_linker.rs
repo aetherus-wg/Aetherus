@@ -7,7 +7,7 @@ use crate::{
     core::{Link, Name, Set},
     phys::Reflectance,
     sim::attribute::AttributeLinker,
-    tools::{Binner, Range},
+    core::{Binner, Range},
 };
 use std::fmt::{Display, Formatter};
 

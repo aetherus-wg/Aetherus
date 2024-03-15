@@ -1,4 +1,4 @@
-use crate::{err::Error, fmt_report, fs::Save, phys::Photon, tools::ProgressBar};
+use crate::{err::Error, fmt_report, fs::Save, phys::Photon, core::ProgressBar};
 use std::{fmt::Display, fs::File, io::Write, ops::AddAssign, path::Path};
 
 /*

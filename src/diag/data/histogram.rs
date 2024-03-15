@@ -6,7 +6,7 @@ use crate::{
     err::Error,
     fmt_report,
     fs::Save,
-    tools::{Binner, Range},
+    core::{Binner, Range},
 };
 use ndarray::Array1;
 use std::{
@@ -134,7 +134,7 @@ mod tests {
     use std::io::Read;
 
     use super::Histogram;
-    use crate::{tools::Range, fs::Save};
+    use crate::{core::Range, fs::Save};
     use tempfile::NamedTempFile;
 
     #[test]

@@ -5,7 +5,7 @@ use crate::{
     geom::{Collide, Cube, Hit, Ray, Scan, SmoothTriangle, Surface, Trace, TreeSettings},
     math::Point3,
     core::Set,
-    tools::ProgressBar,
+    core::ProgressBar,
 };
 use std::fmt::{Display, Error, Formatter};
 
