@@ -7,7 +7,7 @@ use crate::{
     fmt_report,
     fs::Save,
     geom::Cube,
-    img::Image,
+    diag::Image,
     ord::{
         Register, 
         cartesian::{X, Y, Z}

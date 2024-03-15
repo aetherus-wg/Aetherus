@@ -1,7 +1,7 @@
 //! Gradient builder implementation.
 
 use crate::{
-    img::{Colour, Gradient},
+    diag::{Colour, Gradient},
     ord::Build,
 };
 use arctk_attr::file;

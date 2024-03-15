@@ -1,6 +1,6 @@
 //! Png writing.
 
-use crate::{err::Error, fs::Save, img::Image};
+use crate::{err::Error, fs::Save, diag::Image};
 use ndarray::{Array2, ShapeBuilder};
 use palette::{Pixel, Srgba};
 use png::{BitDepth, ColorType, Encoder};
@@ -36,7 +36,7 @@ impl Save for Image {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::img::{Image, Colour};
+    use crate::diag::{Image, Colour};
     use ndarray::arr2;
 
     #[test]

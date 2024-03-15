@@ -1,6 +1,6 @@
 //! Gradient alias.
 
-use crate::img::Colour;
+use crate::diag::Colour;
 
 /// Colour gradient alias.
 pub type Gradient = palette::Gradient<Colour>;

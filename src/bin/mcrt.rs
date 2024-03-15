@@ -11,7 +11,7 @@ use aetherus::{
     data::Histogram,
     fs::{File, Load, Save},
     geom::{Grid, Tree},
-    img::{Colour, Image},
+    diag::{Colour, Image},
     ord::{Build, Link, Register, Set, cartesian::{X, Y}},
     report,
     sim::{

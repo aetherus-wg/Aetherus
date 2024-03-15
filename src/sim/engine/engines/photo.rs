@@ -2,7 +2,7 @@
 
 use crate::{
     geom::Trace,
-    img::Colour,
+    diag::Colour,
     phys::Photon,
     sim::{
         peel_off::peel_off, scatter::scatter, surface::surface, travel::travel, Event, Frame,

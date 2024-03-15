@@ -40,7 +40,7 @@ pub mod data;
 pub mod err;
 pub mod fs;
 pub mod geom;
-pub mod img;
+pub mod diag;
 pub mod math;
 pub mod ord;
 pub mod phys;

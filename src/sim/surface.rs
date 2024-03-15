@@ -2,7 +2,7 @@
 
 use crate::{
     geom::Hit,
-    img::Colour,
+    diag::Colour,
     ord::cartesian::{X, Y},
     phys::{Crossing, Local, Photon},
     sim::{Attribute, Output},

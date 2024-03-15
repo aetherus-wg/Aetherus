@@ -2,7 +2,7 @@
 
 use crate::{
     access,
-    img::Colour,
+    diag::Colour,
     ord::cartesian::{X, Y},
 };
 use ndarray::Array2;
