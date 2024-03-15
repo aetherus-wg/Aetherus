@@ -1,18 +1,14 @@
 //! Datacube formatting functions.
 
-use crate::{
-    fmt_report,
-    core::cartesian::{X, Y},
-    util::fmt::Analyze,
-};
-use ndarray::Array2;
+use crate::{fmt_report, core::fmt::Analyze};
+use ndarray::Array4;
 use ndarray_stats::QuantileExt;
 use std::fmt::{Display, Error, Formatter};
 
-/// Two-dimensional array analysis structure.
-pub struct DataSquare {
+/// Four-dimensional array analysis structure.
+pub struct DataTesseract {
     /// Resolution.
-    res: [usize; 2],
+    res: [usize; 4],
     /// Sum of values.
     sum: f64,
     /// Minimum value.
@@ -25,12 +21,12 @@ pub struct DataSquare {
     sd: f64,
 }
 
-impl DataSquare {
+impl DataTesseract {
     /// Construct a new instance.
     #[allow(clippy::expect_used)]
     #[inline]
     #[must_use]
-    pub fn new(data: &Array2<f64>) -> Self {
+    pub fn new(data: &Array4<f64>) -> Self {
         let shape = data.shape();
 
         let ave = data.sum() / data.len() as f64;
@@ -57,7 +53,7 @@ impl DataSquare {
         };
 
         Self {
-            res: [shape[X], shape[Y]],
+            res: [shape[0], shape[1], shape[2], shape[3]],
             sum: data.sum(),
             min,
             max,
@@ -67,16 +63,23 @@ impl DataSquare {
     }
 }
 
-impl Display for DataSquare {
+impl Display for DataTesseract {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(
             fmt,
-            &format!("[{} x {}]", self.res[X], self.res[Y]),
+            &format!(
+                "[{} x {} x {} x {}]",
+                self.res[0], self.res[1], self.res[2], self.res[3]
+            ),
             "resolution"
         );
-        fmt_report!(fmt, self.res[X] * self.res[Y], "length");
+        fmt_report!(
+            fmt,
+            self.res[0] * self.res[1] * self.res[2] * self.res[3],
+            "length"
+        );
         fmt_report!(fmt, self.sum, "sum");
         fmt_report!(fmt, self.min, "minimum value");
         fmt_report!(fmt, self.max, "maximum value");
@@ -86,8 +89,8 @@ impl Display for DataSquare {
     }
 }
 
-impl Analyze for Array2<f64> {
-    type Inst = DataSquare;
+impl Analyze for Array4<f64> {
+    type Inst = DataTesseract;
 
     #[inline]
     #[must_use]

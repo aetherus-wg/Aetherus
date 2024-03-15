@@ -43,4 +43,3 @@ pub mod diag;
 pub mod math;
 pub mod phys;
 pub mod sim;
-pub mod util;

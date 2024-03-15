@@ -2,17 +2,16 @@
 
 use crate::{
     fmt_report,
-    core::cartesian::{X, Y, Z},
-    util::fmt::Analyze,
+    core::{cartesian::{X, Y}, fmt::Analyze}
 };
-use ndarray::Array3;
+use ndarray::Array2;
 use ndarray_stats::QuantileExt;
 use std::fmt::{Display, Error, Formatter};
 
-/// Three-dimensional array analysis structure.
-pub struct DataCube {
+/// Two-dimensional array analysis structure.
+pub struct DataSquare {
     /// Resolution.
-    res: [usize; 3],
+    res: [usize; 2],
     /// Sum of values.
     sum: f64,
     /// Minimum value.
@@ -25,12 +24,12 @@ pub struct DataCube {
     sd: f64,
 }
 
-impl DataCube {
+impl DataSquare {
     /// Construct a new instance.
     #[allow(clippy::expect_used)]
     #[inline]
     #[must_use]
-    pub fn new(data: &Array3<f64>) -> Self {
+    pub fn new(data: &Array2<f64>) -> Self {
         let shape = data.shape();
 
         let ave = data.sum() / data.len() as f64;
@@ -57,7 +56,7 @@ impl DataCube {
         };
 
         Self {
-            res: [shape[X], shape[Y], shape[Z]],
+            res: [shape[X], shape[Y]],
             sum: data.sum(),
             min,
             max,
@@ -67,16 +66,16 @@ impl DataCube {
     }
 }
 
-impl Display for DataCube {
+impl Display for DataSquare {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(
             fmt,
-            &format!("[{} x {} x {}]", self.res[X], self.res[Y], self.res[Z]),
+            &format!("[{} x {}]", self.res[X], self.res[Y]),
             "resolution"
         );
-        fmt_report!(fmt, self.res[X] * self.res[Y] * self.res[Z], "length");
+        fmt_report!(fmt, self.res[X] * self.res[Y], "length");
         fmt_report!(fmt, self.sum, "sum");
         fmt_report!(fmt, self.min, "minimum value");
         fmt_report!(fmt, self.max, "maximum value");
@@ -86,8 +85,8 @@ impl Display for DataCube {
     }
 }
 
-impl Analyze for Array3<f64> {
-    type Inst = DataCube;
+impl Analyze for Array2<f64> {
+    type Inst = DataSquare;
 
     #[inline]
     #[must_use]

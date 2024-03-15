@@ -1,6 +1,6 @@
 //! Install directory information.
 
-use crate::{err, util};
+use crate::{err, core};
 use std::{
     env::{current_dir, set_current_dir, var},
     fs::create_dir_all,
@@ -40,7 +40,7 @@ pub fn io_dirs(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
 ) -> Result<(PathBuf, PathBuf), err::Error> {
-    let exec_name = util::exec::name()?;
+    let exec_name = core::exec::name()?;
 
     let in_dir = if let Some(input) = input {
         input

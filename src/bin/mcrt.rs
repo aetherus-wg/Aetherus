@@ -12,16 +12,13 @@ use aetherus::{
     fs::{File, Load, Save},
     geom::{Grid, Tree},
     diag::{Colour, Image},
-    core::{Build, Link, Register, Set, cartesian::{X, Y}},
+    core::{
+        Build, Link, Register, Set, cartesian::{X, Y},
+        banner::{section, sub_section, title}, dir, fmt::term},
     report,
     sim::{
         run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
         ParametersBuilderLoader, PhotonCollector,
-    },
-    util::{
-        banner::{section, sub_section, title},
-        dir,
-        fmt::term,
     },
 };
 

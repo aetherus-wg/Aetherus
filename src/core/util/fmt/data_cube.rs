@@ -1,14 +1,20 @@
 //! Datacube formatting functions.
 
-use crate::{fmt_report, util::fmt::Analyze};
-use ndarray::Array4;
+use crate::{
+    fmt_report,
+    core::{
+        cartesian::{X, Y, Z},
+        fmt::Analyze,
+    }
+};
+use ndarray::Array3;
 use ndarray_stats::QuantileExt;
 use std::fmt::{Display, Error, Formatter};
 
-/// Four-dimensional array analysis structure.
-pub struct DataTesseract {
+/// Three-dimensional array analysis structure.
+pub struct DataCube {
     /// Resolution.
-    res: [usize; 4],
+    res: [usize; 3],
     /// Sum of values.
     sum: f64,
     /// Minimum value.
@@ -21,12 +27,12 @@ pub struct DataTesseract {
     sd: f64,
 }
 
-impl DataTesseract {
+impl DataCube {
     /// Construct a new instance.
     #[allow(clippy::expect_used)]
     #[inline]
     #[must_use]
-    pub fn new(data: &Array4<f64>) -> Self {
+    pub fn new(data: &Array3<f64>) -> Self {
         let shape = data.shape();
 
         let ave = data.sum() / data.len() as f64;
@@ -53,7 +59,7 @@ impl DataTesseract {
         };
 
         Self {
-            res: [shape[0], shape[1], shape[2], shape[3]],
+            res: [shape[X], shape[Y], shape[Z]],
             sum: data.sum(),
             min,
             max,
@@ -63,23 +69,16 @@ impl DataTesseract {
     }
 }
 
-impl Display for DataTesseract {
+impl Display for DataCube {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(
             fmt,
-            &format!(
-                "[{} x {} x {} x {}]",
-                self.res[0], self.res[1], self.res[2], self.res[3]
-            ),
+            &format!("[{} x {} x {}]", self.res[X], self.res[Y], self.res[Z]),
             "resolution"
         );
-        fmt_report!(
-            fmt,
-            self.res[0] * self.res[1] * self.res[2] * self.res[3],
-            "length"
-        );
+        fmt_report!(fmt, self.res[X] * self.res[Y] * self.res[Z], "length");
         fmt_report!(fmt, self.sum, "sum");
         fmt_report!(fmt, self.min, "minimum value");
         fmt_report!(fmt, self.max, "maximum value");
@@ -89,8 +88,8 @@ impl Display for DataTesseract {
     }
 }
 
-impl Analyze for Array4<f64> {
-    type Inst = DataTesseract;
+impl Analyze for Array3<f64> {
+    type Inst = DataCube;
 
     #[inline]
     #[must_use]

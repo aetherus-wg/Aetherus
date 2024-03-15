@@ -9,10 +9,10 @@ use crate::{
     geom::Cube,
     diag::Image,
     core::{
-        Register, 
-        cartesian::{X, Y, Z}
+        Register,
+        cartesian::{X, Y, Z},
+        fmt::DataCube,
     },
-    util::fmt::DataCube,
 };
 use ndarray::Array3;
 use std::{
