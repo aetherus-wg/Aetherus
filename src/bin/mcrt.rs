@@ -8,13 +8,12 @@ use std::{
 };
 use aetherus::{
     args,
-    diag::Histogram,
-    fs::{File, Load, Save},
-    geom::{Grid, Tree},
-    diag::{Colour, Image},
     core::{
         Build, Link, Register, Set, cartesian::{X, Y},
         banner::{section, sub_section, title}, dir, fmt::term},
+    diag::{Colour, Histogram, Image},
+    fs::{File, Load, Save},
+    geom::{Grid, Tree},
     report,
     sim::{
         run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
