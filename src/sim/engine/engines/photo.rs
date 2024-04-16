@@ -42,7 +42,7 @@ pub fn photo(
 
     // Main event loop.
     let mut num_loops = 0;
-    while let Some((index, voxel)) = input.grid.gen_index_voxel(phot.ray().pos()) {
+    while input.bound.contains(phot.ray().pos()) {
         // Loop limit check.
         if num_loops >= loop_limit {
             println!("[WARN] : Terminating photon: loop limit reached.");
@@ -60,20 +60,24 @@ pub fn photo(
         }
 
         // Interaction distances.
-        let voxel_dist = voxel
-            .dist(phot.ray())
-            .expect("Could not determine voxel distance.");
+        let index = input.grid.gen_index_voxel(phot.ray().pos());
+        let voxel_dist = match &index {
+            Some((_index, voxel)) => {
+                voxel.dist(phot.ray()).expect("Could not determine voxel distance.")
+            },
+            None => f64::INFINITY,
+        };
         let scat_dist = -(rng.gen::<f64>()).ln() / env.inter_coeff();
         let surf_hit = input
             .tree
             .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist));
-        let boundary_hit = None;
+        let boundary_hit = input.bound.dist_boundary(phot.ray()).expect("Photon not contained in boundary. ");
 
         // Event handling.
         match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, index, dist + bump_dist),
+            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, &index, dist + bump_dist),
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, index, dist);
+                travel(&mut data, &mut phot, &env, &index, dist);
 
                 // Capture.
                 for (frame, photo) in frames.iter().zip(data.photos.iter_mut()) {
@@ -93,12 +97,12 @@ pub fn photo(
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, index, hit.dist());
+                travel(&mut data, &mut phot, &env, &index, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
-                travel(&mut data, &mut phot, &env, index, bump_dist);
+                travel(&mut data, &mut phot, &env, &index, bump_dist);
             },
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, index, boundary_hit.dist());
+                travel(&mut data, &mut phot, &env, &index, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
             }
         }

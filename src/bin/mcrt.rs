@@ -10,9 +10,8 @@ use aetherus::{
     args,
     data::Histogram,
     fs::{File, Load, Save},
-    geom::{Grid, Tree, Boundary, BoundaryCondition},
+    geom::{Grid, Tree, Boundary},
     img::{Colour, Image},
-    math::{Point3},
     ord::{Build, Link, Register, Set, cartesian::{X, Y}},
     report,
     sim::{
