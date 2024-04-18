@@ -9,7 +9,6 @@ pub mod film_builder;
 pub mod frame;
 pub mod input;
 pub mod output;
-pub mod output_volume;
 pub mod param;
 pub mod peel_off;
 pub mod photon_collector;
@@ -20,6 +19,6 @@ pub mod surface;
 pub mod travel;
 
 pub use self::{
-    attribute::*, engine::*, event::*, film_builder::*, frame::*, input::*, output::*, output_volume::*, param::*,
+    attribute::*, engine::*, event::*, film_builder::*, frame::*, input::*, output::*, param::*,
     peel_off::*, photon_collector::*, run::*, scatter::*, settings::*, surface::*, travel::*,
 };
