@@ -21,6 +21,9 @@ pub enum Attribute<'a> {
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(usize),
+    /// A chain of attributes, allowing us to perform multiple actions with a 
+    /// photon packet for each interaction. We can chain attributes together here. 
+    AttributeChain(Vec<Attribute<'a>>),
 }
 
 impl Display for Attribute<'_> {
@@ -60,7 +63,14 @@ impl Display for Attribute<'_> {
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "name");
                 Ok(())
-            }
+            },
+            Self::AttributeChain(ref attrs) => {
+                writeln!(fmt, "Attribute Chain: ...")?;
+                for attr in attrs {
+                    attr.fmt(fmt)?;
+                }
+                Ok(())
+            },
         }
     }
 }
