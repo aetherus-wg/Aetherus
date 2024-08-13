@@ -14,9 +14,10 @@ use aetherus::{
     img::{Colour, Image},
     ord::{Build, Link, Register, Set, cartesian::{X, Y}},
     report,
+    io::output::PhotonCollector,
     sim::{
         run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
-        ParametersBuilderLoader, PhotonCollector,
+        ParametersBuilderLoader,
     },
     util::{
         banner::{section, sub_section, title},

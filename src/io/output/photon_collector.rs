@@ -1,44 +1,6 @@
 use crate::{err::Error, fmt_report, fs::Save, phys::Photon, tools::ProgressBar};
 use std::{fmt::Display, fs::File, io::Write, ops::AddAssign, path::Path};
 
-/*
-pub fn photon_collector_write_thread(path_str: String, rx: Receiver<Option<Photon>>) {
-    let file_path = Path::new(&path_str);
-    let mut file = File::create(file_path).expect("Unable to open file for writing. ");
-
-    // To reduce the time to run, I am manually do my won CSV write, directly from this vec.
-    let headings = vec!["pos_x", "pos_y", "pos_z", "dir_x", "dir_y", "dir_z", "wavelength", "weight"];
-    write!(file, "{}", headings[0]).expect("Unable to write header to file. ");;
-    for heading in headings.iter().skip(1) {
-        write!(file, ",{}", heading).expect("Unable to write header to file. ");
-    }
-    writeln!(file).expect("Unable to write header to file. ");
-
-    loop {
-        while let optphot = rx.recv().unwrap() {
-            match optphot {
-                Some(phot) => {
-                    writeln!(file, "{},{},{},{},{},{},{},{}",
-                        phot.ray().pos().x(),
-                        phot.ray().pos().y(),
-                        phot.ray().pos().z(),
-                        phot.ray().dir().x(),
-                        phot.ray().dir().y(),
-                        phot.ray().dir().z(),
-                        phot.wavelength(),
-                        phot.weight(),
-                    ).expect("Unable to write photon to file. ");
-                }
-                None => break,
-            }
-        }
-
-        // Wait for new photons.
-        thread::sleep(Duration::from_millis(1000));
-    }
-}
-*/
-
 #[derive(Default, Clone)]
 pub struct PhotonCollector {
     /// The vector of collected photons.

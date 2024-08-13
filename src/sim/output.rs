@@ -13,6 +13,7 @@ use crate::{
         cartesian::{X, Y, Z}
     },
     util::fmt::DataCube,
+    io::output::PhotonCollector,
 };
 use ndarray::Array3;
 use std::{
@@ -21,7 +22,6 @@ use std::{
     path::Path,
 };
 
-use super::PhotonCollector;
 
 /// MCRT output data.
 #[derive(Clone)]
