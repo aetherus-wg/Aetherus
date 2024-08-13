@@ -3,12 +3,14 @@ use std::ops::AddAssign;
 use pyo3::prelude::*;
 
 use ndarray::Array3;
+use serde::{Deserialize, Serialize};
 use crate::{
-    access, fs::Save, geom::Cube, ord::cartesian::{X, Y, Z}
+    access, core::Real, fs::Save, geom::Cube, ord::cartesian::{X, Y, Z}
 };
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "pyo3", pyclass)]
+#[serde(rename_all = "lowercase")] 
 pub enum OutputParameter {
     Energy, 
     Absorption,
@@ -68,6 +70,7 @@ impl Save for OutputVolume {
 #[cfg(test)]
 mod tests {
     use crate::math::Point3;
+    use json5;
     use super::*;
 
     #[test]

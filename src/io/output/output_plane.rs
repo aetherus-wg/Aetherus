@@ -1,13 +1,27 @@
 use ndarray::Array2;
+use serde::{Deserialize, Serialize};
 use crate::{
-    math::Point2,
+    math::{Point2, Point3},
     ord::cartesian::{X, Y}
 };
 
-pub enum AxisAlignedPlane{
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "pyo3", pyclass)]
+#[serde(rename_all = "lowercase")] 
+pub enum AxisAlignedPlane {
     XY,
     XZ,
     YZ,
+}
+
+impl AxisAlignedPlane {
+    pub fn project_onto_plane(&self, p: &Point3) -> (f64, f64) {
+        match *self {
+            Self::XY => (p.x(), p.y()),
+            Self::XZ => (p.x(), p.z()),
+            Self::YZ => (p.y(), p.z()),
+        }
+    }
 }
 
 #[derive(Debug)]
