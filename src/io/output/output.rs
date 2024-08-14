@@ -1,10 +1,19 @@
 use crate::{
+    fs::Save,
     data::Histogram, 
     img::Image, 
+    err::Error,
     io::output::{OutputPlane, OutputRegistry, OutputVolume, PhotonCollector}, phys::Photon, 
+};
+use std::{
+    ops::AddAssign,
+    path::Path,
 };
 use ndarray::Array3;
 
+use super::OutputParameter;
+
+#[derive(Clone)]
 pub struct Output {
     /// Output volumes.
     pub vol: Vec<OutputVolume>,
@@ -42,5 +51,58 @@ impl Output {
             Some(val) => val,
             None => f64::INFINITY,
         }
+    }
+
+    pub fn get_volumes_for_param(&self, param: OutputParameter) -> Vec<&OutputVolume> {
+        self.vol.iter()
+            .filter(|&vol| vol.param() == &param)
+            .collect()
+    }
+
+    pub fn get_volumes_for_param_mut(&mut self, param: OutputParameter) -> Vec<&mut OutputVolume> {
+        self.vol.iter_mut()
+            .filter(|vol| vol.param() == &param)
+            .collect()
+    }
+}
+
+impl AddAssign for Output {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        for (a, b) in self.vol.iter_mut().zip(&rhs.vol) {
+            *a += b;
+        }
+
+        for (a, b) in self.plane.iter_mut().zip(&rhs.plane) {
+            *a += b;
+        }
+
+        for (a, b) in self.phot_cols.iter_mut().zip(&rhs.phot_cols) {
+            *a += b;
+        }
+
+        for (a, b) in self.specs.iter_mut().zip(&rhs.specs) {
+            *a += b;
+        }
+
+        for (a, b) in self.imgs.iter_mut().zip(&rhs.imgs) {
+            *a += b;
+        }
+
+        for (a, b) in self.ccds.iter_mut().zip(&rhs.ccds) {
+            *a += b;
+        }
+
+        for (a, b) in self.photos.iter_mut().zip(&rhs.photos) {
+            *a += b;
+        }
+    }
+}
+
+
+impl Save for Output {
+    #[inline]
+    fn save_data(&self, out_dir: &Path) -> Result<(), Error> {
+        todo!()
     }
 }

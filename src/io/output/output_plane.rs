@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
 use crate::{
@@ -24,7 +26,7 @@ impl AxisAlignedPlane {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OutputPlane {
     mins: Point2,
     maxs: Point2,
@@ -94,6 +96,14 @@ impl OutputPlane {
         Some(&mut self.data[[i, j]])
     }
 
+}
+
+impl AddAssign<&Self> for OutputPlane {
+    fn add_assign(&mut self, rhs: &Self) {
+        debug_assert_eq!(self.res, rhs.res);
+        
+        self.data += &rhs.data;
+    }
 }
 
 #[cfg(test)]

@@ -2,10 +2,12 @@ use std::ops::AddAssign;
 #[cfg(feature = "pyo3")]
 use pyo3::prelude::*;
 
+use std::fmt::{Display, Formatter};
 use ndarray::Array3;
 use serde::{Deserialize, Serialize};
 use crate::{
     access, 
+    fmt_report,
     fs::Save, 
     geom::{Cube, Trace}, 
     math::{Point3, Vec3},
@@ -17,12 +19,13 @@ use crate::{
 #[cfg_attr(feature = "pyo3", pyclass)]
 #[serde(rename_all = "lowercase")] 
 pub enum OutputParameter {
+    Emission,
     Energy, 
     Absorption,
     Shift,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OutputVolume {
     boundary: Cube,
     res: [usize; 3],
@@ -34,6 +37,7 @@ pub struct OutputVolume {
 impl OutputVolume {
     access!(boundary: Cube);
     access!(res: [usize; 3]);
+    access!(param: OutputParameter);
     access!(data, data_mut: Array3<f64>);
 
     pub fn new(boundary: Cube, res: [usize; 3],  param: OutputParameter) -> Self {
@@ -58,8 +62,21 @@ impl OutputVolume {
 
     #[inline]
     #[must_use]
-    pub fn cell_volume(&self) -> f64 {
+    pub fn voxel_volume(&self) -> f64 {
         self.boundary.vol() / (self.res[X] * self.res[Y] * self.res[Z]) as f64
+    }
+
+    /// Determine the total number of cells.
+    #[inline]
+    #[must_use]
+    pub const fn num_cells(&self) -> usize {
+        self.res[X] * self.res[Y] * self.res[Z]
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn contains(&self, p: &Point3) -> bool {
+        self.boundary.contains(p)
     }
 
     /// If the given position is contained within the grid,
@@ -115,7 +132,7 @@ impl OutputVolume {
 impl AddAssign<&Self> for OutputVolume {
     fn add_assign(&mut self, rhs: &Self) {
         debug_assert_eq!(self.boundary(), rhs.boundary());
-        debug_assert_eq!(self.cell_volume(), rhs.cell_volume());
+        debug_assert_eq!(self.voxel_volume(), rhs.voxel_volume());
         debug_assert_eq!(self.param, rhs.param);
 
         self.data += &rhs.data
@@ -125,7 +142,31 @@ impl AddAssign<&Self> for OutputVolume {
 impl Save for OutputVolume {
     #[inline]
     fn save_data(&self, path: &std::path::Path) -> Result<(), crate::err::Error> {
-        (&self.data / self.cell_volume()).save(&path)?;
+        (&self.data / self.voxel_volume()).save(&path)?;
+        Ok(())
+    }
+}
+
+impl Display for OutputVolume {
+    #[inline]
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
+        writeln!(fmt, "...")?;
+        fmt_report!(fmt, self.boundary, "boundary");
+        fmt_report!(
+            fmt,
+            &format!("[{} x {} x {}]", self.res[X], self.res[Y], self.res[Z]),
+            "resolution"
+        );
+        fmt_report!(
+            fmt,
+            &format!(
+                "({}, {}, {})",
+                self.voxel_size.x(),
+                self.voxel_size.y(),
+                self.voxel_size.z()
+            ),
+            "voxel size"
+        );
         Ok(())
     }
 }
@@ -139,6 +180,6 @@ mod tests {
     fn new_test() {
         let boundary = Cube::new(Point3::new(0.0,0.0,0.0), Point3::new(10.0,10.0,10.0));
         let outvol = OutputVolume::new(boundary, [10, 10, 10], OutputParameter::Energy);
-        assert_eq!(outvol.cell_volume(), 1.0);
+        assert_eq!(outvol.voxel_volume(), 1.0);
     }
 }

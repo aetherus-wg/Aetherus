@@ -2,6 +2,7 @@ use crate::{
     io::output::OutputConfig, ord::{Name, Register}
 };
 
+#[derive(Clone)]
 pub struct OutputRegistry {
     pub vol_reg: Register,
     pub plane_reg: Register,

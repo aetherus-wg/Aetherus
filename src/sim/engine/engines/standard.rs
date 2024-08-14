@@ -1,9 +1,7 @@
 //! Standard photon-lifetime engine function.
 
 use crate::{
-    geom::Trace,
-    phys::Photon,
-    sim::{scatter::scatter, surface::surface, travel::travel, Event, Input, Output},
+    geom::Trace, io::output::{self, Output}, phys::Photon, sim::{scatter::scatter, surface::surface, travel::travel, Event, Input}
 };
 use rand::{rngs::ThreadRng, Rng};
 
@@ -11,11 +9,18 @@ use rand::{rngs::ThreadRng, Rng};
 #[allow(clippy::expect_used)]
 #[inline]
 pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, mut phot: Photon) {
-    // Check photon is within the grid.
-    if let Some(index) = input.grid.gen_index(phot.ray().pos()) {
-        data.emission[index] += phot.power() * phot.weight();
-    } else {
-        panic!("Photon was not emitted within the grid.");
+    // Add the emission to output volumes. 
+    // if let Some(index) = input.grid.gen_index(phot.ray().pos()) {
+    //     data.emission[index] += phot.power() * phot.weight();
+    // } else {
+    //     panic!("Photon was not emitted within the grid.");
+    // }
+
+    // Add to the emission variables in which the photon is present. 
+    for vol in data.get_volumes_for_param_mut(output::OutputParameter::Emission) {
+        if let Some(index) = vol.gen_index(phot.ray().pos()) {
+            vol.data_mut()[index] += phot.power() * phot.weight();
+        }
     }
 
     // Common constants.
@@ -67,20 +72,20 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
 
         // Event handling.
         match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, &index, dist + bump_dist),
+            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, dist + bump_dist),
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, &index, dist);
+                travel(&mut data, &mut phot, &env,dist);
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, &index, hit.dist());
+                travel(&mut data, &mut phot, &env,hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
-                travel(&mut data, &mut phot, &env, &index, bump_dist);
+                travel(&mut data, &mut phot, &env,bump_dist);
             },
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, &index, boundary_hit.dist());
+                travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
-                travel(&mut data, &mut phot, &env, &index, 100.0 * bump_dist);
+                travel(&mut data, &mut phot, &env, 100.0 * bump_dist);
             }
         }
 

@@ -4,9 +4,10 @@ use crate::{
     geom::Trace,
     img::Colour,
     phys::Photon,
+    io::output::{Output, OutputParameter},
     sim::{
         peel_off::peel_off, scatter::scatter, surface::surface, travel::travel, Event, Frame,
-        Input, Output,
+        Input,
     },
 };
 use rand::{rngs::ThreadRng, Rng};
@@ -21,11 +22,11 @@ pub fn photo(
     mut rng: &mut ThreadRng,
     mut phot: Photon,
 ) {
-    // Check photon is within the grid.
-    if let Some(index) = input.grid.gen_index(phot.ray().pos()) {
-        data.emission[index] += phot.power() * phot.weight();
-    } else {
-        panic!("Photon was not emitted within the grid.");
+    // Add to the emission variables in which the photon is present. 
+    for vol in data.get_volumes_for_param_mut(OutputParameter::Emission) {
+        if let Some(index) = vol.gen_index(phot.ray().pos()) {
+            vol.data_mut()[index] += phot.power() * phot.weight();
+        }
     }
 
     // Common constants.
@@ -75,9 +76,9 @@ pub fn photo(
 
         // Event handling.
         match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, &index, dist + bump_dist),
+            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, dist + bump_dist),
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, &index, dist);
+                travel(&mut data, &mut phot, &env, dist);
 
                 // Capture.
                 for (frame, photo) in frames.iter().zip(data.photos.iter_mut()) {
@@ -97,12 +98,12 @@ pub fn photo(
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, &index, hit.dist());
+                travel(&mut data, &mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
-                travel(&mut data, &mut phot, &env, &index, bump_dist);
+                travel(&mut data, &mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, &index, boundary_hit.dist());
+                travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
             }
         }

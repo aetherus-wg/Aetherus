@@ -1,5 +1,9 @@
 use crate::{
-    access, clone, fmt_report, geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace}, math::{Dir3, Point3, Vec3}, phys::{Photon, Reflectance}, sim::Attribute
+    access, clone, fmt_report, 
+    geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace}, 
+    math::{Dir3, Point3, Vec3}, 
+    phys::{Photon, Reflectance}, 
+    sim::Attribute
 };
 use rand::rngs::ThreadRng;
 use std::fmt::{Display, Formatter};

@@ -38,6 +38,6 @@ mod tests {
 
         let builder: OutputVolumeBuilder = json5::from_str(input).unwrap();
         let outvol = builder.build();
-        assert_eq!(outvol.cell_volume(), 1.0);
+        assert_eq!(outvol.voxel_volume(), 1.0);
     }
 }

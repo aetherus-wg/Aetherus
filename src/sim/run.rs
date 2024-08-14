@@ -2,8 +2,9 @@
 
 use crate::{
     err::Error,
-    sim::{Engine, Input, Output},
+    sim::{Engine, Input},
     tools::ProgressBar,
+    io::output::Output,
 };
 use rand::thread_rng;
 use rayon::prelude::*;
@@ -17,8 +18,8 @@ use std::sync::{Arc, Mutex};
 pub fn multi_thread<'a>(
     engine: &Engine,
     input: Input<'a>,
-    output: &Output<'a>,
-) -> Result<Output<'a>, Error> {
+    output: &Output,
+) -> Result<Output, Error> {
     let pb = ProgressBar::new("MCRT", input.sett.num_phot());
     let pb = Arc::new(Mutex::new(pb));
 
@@ -36,7 +37,7 @@ pub fn multi_thread<'a>(
 
     let mut data = out.pop().expect("No data received.");
     while let Some(o) = out.pop() {
-        data += &o;
+        data += o;
     }
 
     Ok(data)
@@ -49,9 +50,9 @@ pub fn multi_thread<'a>(
 fn thread<'a>(
     engine: &Engine,
     input: Input<'a>,
-    mut output: Output<'a>,
+    mut output: Output,
     pb: &Arc<Mutex<ProgressBar>>,
-) -> Output<'a> {
+) -> Output {
     let mut rng = thread_rng();
 
     let phot_energy = input.light.power() / input.sett.num_phot() as f64;

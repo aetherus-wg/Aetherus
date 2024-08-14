@@ -5,7 +5,8 @@ use crate::{
     img::Colour,
     ord::cartesian::{X, Y},
     phys::{Crossing, Local, Photon},
-    sim::{Attribute, Output},
+    sim::Attribute,
+    io::output::Output,
 };
 use rand::{rngs::ThreadRng, Rng};
 

@@ -7,6 +7,7 @@ use crate::{
 use std::fmt::{Display, Error, Formatter};
 
 /// Register used to index named data.
+#[derive(Clone)]
 pub struct Register(Set<usize>);
 
 impl Register {
