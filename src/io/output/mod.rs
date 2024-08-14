@@ -1,3 +1,4 @@
+pub mod ccd_builder;
 pub mod output;
 pub mod output_config;
 pub mod output_plane;
@@ -10,6 +11,7 @@ pub mod photon_collector;
 pub mod photon_collector_builder;
 
 pub use self::{
+    ccd_builder::*,
     output::*, 
     output_config::*,
     output_plane::*, 

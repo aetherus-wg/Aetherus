@@ -1,7 +1,7 @@
 use crate::{
     data::Histogram, 
     img::Image, 
-    io::output::{OutputPlane, OutputVolume, OutputRegistry, PhotonCollector}, 
+    io::output::{OutputPlane, OutputRegistry, OutputVolume, PhotonCollector}, phys::Photon, 
 };
 use ndarray::Array3;
 
@@ -24,4 +24,21 @@ pub struct Output {
     /// Contains the mapping between index and name for
     /// each of the output types. 
     pub reg: OutputRegistry,
+}
+
+impl Output {
+    /// This function polls each of the output volumes in the output object to
+    /// find the closest voxel distance based on the position of the current 
+    /// photon packet. This will then return the shortest distance to the 
+    /// the current voxel boundary. There may be a case where there is no voxel
+    /// in the path of travel of the packet, in that case return `None`. 
+    pub fn voxel_dist(&self, phot: &Photon) -> Option<f64> {
+        let dists = self.vol.iter()
+            .map(|grid| { grid.voxel_dist(phot) })
+            .filter(Option::is_some);
+        match dists.min_by(|a, b| a.partial_cmp(b).unwrap()) {
+            Some(val) => val,
+            None => None,
+        }
+    }
 }
