@@ -32,13 +32,15 @@ impl Output {
     /// photon packet. This will then return the shortest distance to the 
     /// the current voxel boundary. There may be a case where there is no voxel
     /// in the path of travel of the packet, in that case return `None`. 
-    pub fn voxel_dist(&self, phot: &Photon) -> Option<f64> {
-        let dists = self.vol.iter()
+    pub fn voxel_dist(&self, phot: &Photon) -> f64 {
+        let dists: Vec<f64> = self.vol.iter()
             .map(|grid| { grid.voxel_dist(phot) })
-            .filter(Option::is_some);
-        match dists.min_by(|a, b| a.partial_cmp(b).unwrap()) {
+            .filter(Option::is_some)
+            .map(Option::unwrap)
+            .collect();
+        match dists.into_iter().reduce(f64::min) {
             Some(val) => val,
-            None => None,
+            None => f64::INFINITY,
         }
     }
 }
