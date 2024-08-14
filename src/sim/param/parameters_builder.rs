@@ -1,11 +1,7 @@
 //! Buildable parameters.
 
 use crate::{
-    fmt_report,
-    geom::{GridBuilder, SurfaceLinker, TreeSettings},
-    ord::{Build, Set},
-    phys::{LightLinkerBuilder, MaterialBuilder},
-    sim::{AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilder, Parameters, Settings},
+    fmt_report, geom::{GridBuilder, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::{Build, Set}, phys::{LightLinkerBuilder, MaterialBuilder}, sim::{AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilder, Parameters, Settings}
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -27,6 +23,8 @@ pub struct ParametersBuilder {
     lights: Set<LightLinkerBuilder>,
     /// Engine selection.
     engine: EngineBuilder,
+    /// Output
+    output: OutputConfig,
 }
 
 impl ParametersBuilder {
@@ -43,6 +41,7 @@ impl ParametersBuilder {
         mats: Set<MaterialBuilder>,
         lights: Set<LightLinkerBuilder>,
         engine: EngineBuilder,
+        output: OutputConfig
     ) -> Self {
         Self {
             sett,
@@ -53,6 +52,7 @@ impl ParametersBuilder {
             mats,
             lights,
             engine,
+            output,
         }
     }
 }
@@ -70,8 +70,9 @@ impl Build for ParametersBuilder {
         let mats = self.mats.build();
         let light = self.lights.build();
         let engine = self.engine.build();
+        let output = self.output;
 
-        Self::Inst::new(sett, tree, grid, surfs, attrs, mats, light, engine)
+        Self::Inst::new(sett, tree, grid, surfs, attrs, mats, light, engine, output)
     }
 }
 
@@ -87,6 +88,7 @@ impl Display for ParametersBuilder {
         fmt_report!(fmt, self.mats, "materials");
         fmt_report!(fmt, self.lights, "lights");
         fmt_report!(fmt, self.engine, "engine");
+        fmt_report!(fmt, self.output, "output");
         Ok(())
     }
 }

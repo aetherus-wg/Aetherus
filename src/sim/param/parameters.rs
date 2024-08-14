@@ -1,11 +1,7 @@
 //! Runtime parameters.
 
 use crate::{
-    fmt_report,
-    geom::{Grid, SurfaceLinker, TreeSettings},
-    ord::Set,
-    phys::{LightLinker, Material},
-    sim::{AttributeLinkerLinkerLinkerLinkerLinker, Engine, Settings},
+    fmt_report, geom::{Grid, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinker, Material}, sim::{AttributeLinkerLinkerLinkerLinkerLinker, Engine, Settings}
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -27,6 +23,8 @@ pub struct Parameters {
     pub lights: Set<LightLinker>,
     /// Engine selection.
     pub engine: Engine,
+    /// Outputs
+    pub output: OutputConfig,
 }
 
 impl Parameters {
@@ -43,6 +41,7 @@ impl Parameters {
         mats: Set<Material>,
         lights: Set<LightLinker>,
         engine: Engine,
+        output: OutputConfig,
     ) -> Self {
         Self {
             sett,
@@ -53,6 +52,7 @@ impl Parameters {
             mats,
             lights,
             engine,
+            output,
         }
     }
 }
@@ -69,6 +69,7 @@ impl Display for Parameters {
         fmt_report!(fmt, self.mats, "materials");
         fmt_report!(fmt, self.lights, "lights");
         fmt_report!(fmt, self.engine, "engine");
+        fmt_report!(fmt, self.output, "output");
         Ok(())
     }
 }

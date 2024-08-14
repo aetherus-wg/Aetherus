@@ -1,14 +1,9 @@
 //! Loadable parameters.
 
 use crate::{
-    err::Error,
-    fs::{Load, Redirect},
-    geom::{GridBuilder, SurfaceLinkerLoader, TreeSettings},
-    ord::Set,
-    phys::{LightLinkerBuilderLoader, MaterialBuilder},
-    sim::{
+    err::Error, fs::{Load, Redirect}, geom::{GridBuilder, SurfaceLinkerLoader, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinkerBuilderLoader, MaterialBuilder}, sim::{
         AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings,
-    },
+    }
 };
 use arctk_attr::file;
 use std::path::Path;
@@ -32,6 +27,8 @@ pub struct ParametersBuilderLoader {
     lights: Redirect<Set<LightLinkerBuilderLoader>>,
     /// Engine selection.
     engine: EngineBuilderLoader,
+    /// Output
+    output: Redirect<OutputConfig>,
 }
 
 impl Load for ParametersBuilderLoader {
@@ -47,9 +44,10 @@ impl Load for ParametersBuilderLoader {
         let mats = self.mats.load(in_dir)?.load(in_dir)?;
         let lights = self.lights.load(in_dir)?.load(in_dir)?;
         let engine = self.engine.load(in_dir)?;
+        let output = self.output.load(in_dir)?;
 
         Ok(Self::Inst::new(
-            sett, tree, grid, surfs, attrs, mats, lights, engine,
+            sett, tree, grid, surfs, attrs, mats, lights, engine, output,
         ))
     }
 }
