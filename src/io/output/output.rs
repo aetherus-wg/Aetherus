@@ -103,6 +103,38 @@ impl AddAssign for Output {
 impl Save for Output {
     #[inline]
     fn save_data(&self, out_dir: &Path) -> Result<(), Error> {
-        todo!()
+
+        for (vol, name) in self.vol.iter().zip(self.reg.vol_reg.names_list()) {
+            let path = out_dir.join(format!("volume_{}.nc", name.to_string()));
+            vol.save(&path)?;
+        }
+
+        for (plane, name) in self.plane.iter().zip(self.reg.plane_reg.names_list()) {
+            let path = out_dir.join(format!("plane_{}.nc", name.to_string()));
+            plane.save(&path)?;
+        }
+
+        for (name, index) in self.reg.spec_reg.set().map().iter() {
+            self.specs[*index].save(&out_dir.join(&format!("spectrometer_{}.csv", name)))?;
+        }
+
+        for (name, index) in self.reg.img_reg.set().map().iter() {
+            self.imgs[*index].save(&out_dir.join(&format!("img_{}.png", name)))?;
+        }
+
+        for (name, index) in self.reg.ccd_reg.set().map().iter() {
+            self.ccds[*index].save(&out_dir.join(&format!("ccd_{}.nc", name)))?;
+        }
+
+        for (n, photo) in self.photos.iter().enumerate() {
+            photo.save(&out_dir.join(&format!("photo_{:03}.png", n)))?;
+        }
+
+        for (name, index) in self.reg.phot_cols_reg.set().map().iter() {
+            self.phot_cols[*index]
+                .save(&out_dir.join(&format!("photon_collector_{}.csv", name)))?;
+        }
+
+        Ok(())
     }
 }

@@ -57,13 +57,7 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
         }
 
         // Interaction distances.
-        let index = input.grid.gen_index_voxel(phot.ray().pos());
-        let voxel_dist = match &index {
-            Some((_index, voxel)) => {
-                voxel.dist(phot.ray()).expect("Could not determine voxel distance.")
-            },
-            None => f64::INFINITY,
-        };
+        let voxel_dist = data.voxel_dist(&phot);
         let scat_dist = -(rng.gen::<f64>()).ln() / env.inter_coeff();
         let surf_hit = input
             .tree
@@ -85,7 +79,10 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
             Event::Boundary(boundary_hit) => {
                 travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
-                travel(&mut data, &mut phot, &env, 100.0 * bump_dist);
+                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
+                if phot.weight() > 0.0 {
+                    travel(&mut data, &mut phot, &env, 100.0 * bump_dist);
+                }
             }
         }
 

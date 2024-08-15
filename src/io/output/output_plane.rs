@@ -3,6 +3,7 @@ use std::ops::AddAssign;
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
 use crate::{
+    fs::Save,
     math::{Point2, Point3},
     ord::cartesian::{X, Y}
 };
@@ -103,6 +104,13 @@ impl AddAssign<&Self> for OutputPlane {
         debug_assert_eq!(self.res, rhs.res);
         
         self.data += &rhs.data;
+    }
+}
+
+impl Save for OutputPlane {
+    fn save_data(&self, path: &std::path::Path) -> Result<(), crate::err::Error> {
+        self.data.save(&path)?;
+        Ok(())
     }
 }
 
