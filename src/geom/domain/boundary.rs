@@ -3,7 +3,8 @@ use crate::{
     geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace}, 
     math::{Dir3, Point3, Vec3}, 
     phys::{Photon, Reflectance}, 
-    sim::Attribute
+    sim::Attribute,
+    ord::cartesian::{X, Y, Z},
 };
 use rand::rngs::ThreadRng;
 use std::fmt::{Display, Formatter};
@@ -228,6 +229,26 @@ impl Boundary {
         }
 
         return facing_dir;
+    }
+
+    /// If the given position is contained within the grid,
+    /// generate the index for the given position within the grid.
+    #[inline]
+    #[must_use]
+    pub fn gen_index(&self, p: &Point3, res: [usize; 3]) -> Option<[usize; 3]> {
+        self.contains(p).then(|| {
+            let mins = self.bounding_box.mins();
+            let maxs = self.bounding_box.maxs();
+
+            [
+                (((p.x() - mins.x()) / (maxs.x() - mins.x())) * res[X] as f64).floor()
+                    as usize,
+                (((p.y() - mins.y()) / (maxs.y() - mins.y())) * res[Y] as f64).floor()
+                    as usize,
+                (((p.z() - mins.z()) / (maxs.z() - mins.z())) * res[Z] as f64).floor()
+                    as usize,
+            ]
+        })
     }
 }
 

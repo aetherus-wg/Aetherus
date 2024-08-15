@@ -39,6 +39,7 @@ pub fn fluorescence(
     let mat = input.light.mat();
     let mut local = mat.sample_environment(phot.wavelength());
     let mut env;
+    let flu_concs_res = [flu_concs.shape()[0], flu_concs.shape()[1], flu_concs.shape()[2]];
 
     // Main event loop.
     let mut num_loops = 0;
@@ -60,9 +61,8 @@ pub fn fluorescence(
         }
 
         // Local variable modifications.
-        // TODO: I have had to remove this for now, as I've removed the fixed grid.
-        //let index = input.grid.gen_index_voxel(phot.ray().pos());
-        let index = [0, 0, 0];
+        let index = input.bound.gen_index(phot.ray().pos(), flu_concs_res)
+            .expect("Unable to index shift map with photon position. ");
         env = Local::new(
             local.ref_index(),
             local.scat_coeff(),
