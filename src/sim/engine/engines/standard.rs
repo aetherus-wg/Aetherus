@@ -1,7 +1,9 @@
 //! Standard photon-lifetime engine function.
 
 use crate::{
-    geom::Trace, io::output::{self, Output}, phys::Photon, sim::{scatter::scatter, surface::surface, travel::travel, Event, Input}
+    io::output::{self, Output}, 
+    phys::Photon, 
+    sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
 };
 use rand::{rngs::ThreadRng, Rng};
 
@@ -9,12 +11,6 @@ use rand::{rngs::ThreadRng, Rng};
 #[allow(clippy::expect_used)]
 #[inline]
 pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, mut phot: Photon) {
-    // Add the emission to output volumes. 
-    // if let Some(index) = input.grid.gen_index(phot.ray().pos()) {
-    //     data.emission[index] += phot.power() * phot.weight();
-    // } else {
-    //     panic!("Photon was not emitted within the grid.");
-    // }
 
     // Add to the emission variables in which the photon is present. 
     for vol in data.get_volumes_for_param_mut(output::OutputParameter::Emission) {
@@ -81,7 +77,7 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
                 if phot.weight() > 0.0 {
-                    travel(&mut data, &mut phot, &env, 100.0 * bump_dist);
+                    travel(&mut data, &mut phot, &env, bump_dist);
                 }
             }
         }

@@ -1,7 +1,6 @@
 //! Raman photon-lifetime engine function.
 
 use crate::{
-    geom::Trace,
     math::Point3,
     phys::Photon,
     sim::{scatter::shift_scatter, surface::surface, travel::travel, Event, Input},
@@ -90,7 +89,7 @@ pub fn raman(
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
                 if phot.weight() > 0.0 {
-                    travel(&mut data, &mut phot, &env, 100.0 * bump_dist);
+                    travel(&mut data, &mut phot, &env, bump_dist);
                 }
             }
         }

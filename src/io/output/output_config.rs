@@ -6,6 +6,7 @@ use std::{
 use serde::Serialize;
 use arctk_attr::file;
 use crate::{
+    fmt_report,
     data::HistogramBuilder, 
     img::ImageBuilder, 
     io::output::{OutputPlaneBuilder, OutputVolumeBuilder, PhotonCollectorBuilder, Output},
@@ -164,39 +165,81 @@ impl OutputConfig {
 }
 
 impl fmt::Display for OutputConfig {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "OutputConfig {{\n")?;
-        
-        if let Some(volumes) = &self.volumes {
-            write!(f, "  volumes: {{\n")?;
-            for (name, volume) in volumes {
-                write!(f, "    {}: {:?}\n", name, volume)?;
-            }
-            write!(f, "  }}\n")?;
-        }
-        
-        if let Some(planes) = &self.planes {
-            write!(f, "  planes: {{\n")?;
-            for (name, plane) in planes {
-                write!(f, "    {}: {:?}\n", name, plane)?;
-            }
-            write!(f, "  }}\n")?;
-        }
-        
-        if let Some(photon_collectors) = &self.photon_collectors {
-            write!(f, "  photon_collectors: {{\n")?;
-            for (name, collector) in photon_collectors {
-                write!(f, "    {}: {:?}\n", name, collector)?;
-            }
-            write!(f, "  }}\n")?;
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), std::fmt::Error> {
+        writeln!(fmt, "...")?;
+
+        match &self.volumes {
+            Some(vols) => {
+                fmt_report!(fmt, "...", "volume outputs");
+                for (key, vol) in vols {
+                    fmt_report!(fmt, vol, key);
+                }
+            },
+            None => fmt_report!(fmt, "none", "volume outputs")
         }
 
-        // TODO: Add output for spectra. 
-        // TODO: Add output for images. 
-        // TODO: Add output for CCDs. 
-        // TODO: Add output for photos. 
+        match &self.planes {
+            Some(planes) => {
+                fmt_report!(fmt, "...", "plane outputs");
+                for (key, plane) in planes {
+                    fmt_report!(fmt, plane, key);
+                }
+            },
+            None => fmt_report!(fmt, "none", "plane outputs")
+        }
+
+        match &self.photon_collectors {
+            Some(pcs) => {
+                fmt_report!(fmt, "...", "photon collectors");
+                for (key, pc) in pcs {
+                    fmt_report!(fmt, pc, key);
+                }
+            },
+            None => fmt_report!(fmt, "none", "photon collectors")
+        }
+
+        match &self.spectra {
+            Some(spectra) => {
+                fmt_report!(fmt, "...", "spectra");
+                for (key, spec) in spectra {
+                    fmt_report!(fmt, spec, key);
+                }
+            },
+            None => fmt_report!(fmt, "none", "spectra")
+        }
+
+        match &self.images {
+            Some(imgs) => {
+                fmt_report!(fmt, "...", "images");
+                for (key, img) in imgs {
+                    fmt_report!(fmt, img, key);
+                }
+            },
+            None => fmt_report!(fmt, "none", "images")
+        }
+
+        match &self.ccds {
+            Some(ccds) => {
+                fmt_report!(fmt, "...", "ccds");
+                for (key, ccd) in ccds {
+                    fmt_report!(fmt, ccd, key);
+                }
+            },
+            None => fmt_report!(fmt, "none", "ccds")
+        }
+
+        match &self.photos {
+            Some(photos) => {
+                fmt_report!(fmt, "...", "photos");
+                for (key, photo) in photos {
+                    fmt_report!(fmt, photo, key);
+                }
+            },
+            None => fmt_report!(fmt, "none", "photos")
+        }
         
-        write!(f, "}}")
+        Ok(())
     }
 }
 

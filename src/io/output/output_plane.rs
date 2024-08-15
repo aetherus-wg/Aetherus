@@ -2,6 +2,7 @@ use std::ops::AddAssign;
 
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use crate::{
     fs::Save,
     math::{Point2, Point3},
@@ -17,6 +18,17 @@ pub enum AxisAlignedPlane {
     YZ,
 }
 
+impl fmt::Display for AxisAlignedPlane {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let plane_str = match self {
+            AxisAlignedPlane::XY => "XY",
+            AxisAlignedPlane::XZ => "XZ",
+            AxisAlignedPlane::YZ => "YZ",
+        };
+        write!(f, "{}", plane_str)
+    }
+}
+
 impl AxisAlignedPlane {
     pub fn project_onto_plane(&self, p: &Point3) -> (f64, f64) {
         match *self {
@@ -26,6 +38,8 @@ impl AxisAlignedPlane {
         }
     }
 }
+
+
 
 #[derive(Debug, Clone)]
 pub struct OutputPlane {

@@ -1,4 +1,5 @@
 use crate::{
+    fmt_report, 
     fs::Save,
     data::Histogram, 
     img::Image, 
@@ -8,6 +9,7 @@ use crate::{
 use std::{
     ops::AddAssign,
     path::Path,
+    fmt::{Display, Formatter},
 };
 use ndarray::Array3;
 
@@ -135,6 +137,28 @@ impl Save for Output {
                 .save(&out_dir.join(&format!("photon_collector_{}.csv", name)))?;
         }
 
+        Ok(())
+    }
+}
+
+impl Display for Output {
+    #[inline]
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
+        writeln!(fmt, "...")?;
+
+        fmt_report!(fmt, self.reg.vol_reg, "output volume register");
+        fmt_report!(fmt, self.reg.plane_reg, "output plane register");
+        fmt_report!(fmt, self.reg.phot_cols_reg, "photon collector register");
+        fmt_report!(fmt, self.reg.spec_reg, "spectrometer register");
+        fmt_report!(fmt, self.reg.img_reg, "imager register");
+        fmt_report!(fmt, self.reg.ccd_reg, "ccd register");
+
+        fmt_report!(fmt, self.specs.len(), "spectrometers");
+        fmt_report!(fmt, self.imgs.len(), "images");
+        fmt_report!(fmt, self.ccds.len(), "ccds");
+
+        fmt_report!(fmt, self.photos.len(), "photos");
+        fmt_report!(fmt, self.phot_cols.len(), "photon collectors");
         Ok(())
     }
 }

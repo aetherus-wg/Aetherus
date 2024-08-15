@@ -25,6 +25,18 @@ pub enum OutputParameter {
     Shift,
 }
 
+impl std::fmt::Display for OutputParameter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let param_str = match self {
+            OutputParameter::Emission => "Emission",
+            OutputParameter::Energy => "Energy",
+            OutputParameter::Absorption => "Absorption",
+            OutputParameter::Shift => "Shift",
+        };
+        write!(f, "{}", param_str)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct OutputVolume {
     boundary: Cube,

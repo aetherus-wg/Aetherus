@@ -1,5 +1,6 @@
+use std::fmt::{Display, Formatter};
 use serde::{Serialize, Deserialize};
-use crate::io::output::PhotonCollector;
+use crate::{fmt_report, io::output::PhotonCollector};
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct PhotonCollectorBuilder {
@@ -14,6 +15,19 @@ impl PhotonCollectorBuilder {
             None => false
         };
         photcol
+    }
+}
+
+impl Display for PhotonCollectorBuilder {
+    #[inline]
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
+        let kill_str = match self.kill_photons {
+            Some(kf) => kf,
+            None => false,
+        };
+        writeln!(fmt, "PhotonCollector: ")?;
+        fmt_report!(fmt, kill_str, "kill on collect");
+        Ok(())
     }
 }
 

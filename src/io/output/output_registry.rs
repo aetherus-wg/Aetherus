@@ -1,5 +1,5 @@
 use crate::{
-    io::output::OutputConfig, ord::{Name, Register}
+    io::output::OutputConfig, ord::Register,
 };
 
 #[derive(Clone)]
