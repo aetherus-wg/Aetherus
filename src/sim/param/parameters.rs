@@ -1,7 +1,7 @@
 //! Runtime parameters.
 
 use crate::{
-    fmt_report, geom::{Grid, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinker, Material}, sim::{AttributeLinkerLinkerLinkerLinkerLinker, Engine, Settings}
+    fmt_report, geom::{Boundary, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinker, Material}, sim::{AttributeLinkerLinkerLinkerLinkerLinker, Engine, Settings}
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -9,10 +9,10 @@ use std::fmt::{Display, Error, Formatter};
 pub struct Parameters {
     /// Simulation specific settings.
     pub sett: Settings,
+    /// Boundary settings. 
+    pub boundary: Boundary,
     /// Tree settings.
     pub tree: TreeSettings,
-    /// Measurement grid settings.
-    pub grid: Grid,
     /// Surfaces.
     pub surfs: Set<SurfaceLinker>,
     /// Attributes.
@@ -34,8 +34,8 @@ impl Parameters {
     #[inline]
     pub const fn new(
         sett: Settings,
+        boundary: Boundary,
         tree: TreeSettings,
-        grid: Grid,
         surfs: Set<SurfaceLinker>,
         attrs: Set<AttributeLinkerLinkerLinkerLinkerLinker>,
         mats: Set<Material>,
@@ -45,8 +45,8 @@ impl Parameters {
     ) -> Self {
         Self {
             sett,
+            boundary,
             tree,
-            grid,
             surfs,
             attrs,
             mats,
@@ -62,8 +62,8 @@ impl Display for Parameters {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.sett, "settings");
+        fmt_report!(fmt, self.boundary, "boundary");
         fmt_report!(fmt, self.tree, "tree settings");
-        fmt_report!(fmt, self.grid, "grid settings");
         fmt_report!(fmt, self.surfs, "surfaces");
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.mats, "materials");

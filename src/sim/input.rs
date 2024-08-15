@@ -2,7 +2,7 @@
 
 use crate::{
     fmt_report,
-    geom::{Boundary, Grid, Tree},
+    geom::{Boundary, Tree},
     ord::{Register, Set},
     phys::{Light, Material},
     sim::{Attribute, Settings},
@@ -22,8 +22,6 @@ pub struct Input<'a> {
     pub light: Light<'a>,
     /// Hit-scan tree.
     pub tree: &'a Tree<'a, Attribute<'a>>,
-    /// Measurement grid.
-    pub grid: &'a Grid,
     /// General settings.
     pub sett: &'a Settings,
     /// Boundary for the simulation. 
@@ -40,7 +38,6 @@ impl<'a> Input<'a> {
         attrs: &'a Set<Attribute>,
         light: Light<'a>,
         tree: &'a Tree<Attribute>,
-        grid: &'a Grid,
         sett: &'a Settings,
         bound: &'a Boundary
     ) -> Self {
@@ -50,7 +47,6 @@ impl<'a> Input<'a> {
             attrs,
             light,
             tree,
-            grid,
             sett,
             bound,
         }
@@ -66,7 +62,6 @@ impl Display for Input<'_> {
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.light, "light");
         fmt_report!(fmt, self.tree, "hit-scan tree");
-        fmt_report!(fmt, self.grid, "measurement grid");
         fmt_report!(fmt, self.sett, "settings");
         fmt_report!(fmt, self.bound, "boundary");
         Ok(())

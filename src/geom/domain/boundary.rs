@@ -11,14 +11,15 @@ use std::fmt::{Display, Formatter};
 /// Struct that represents a boundary.
 /// This will be used to determine how the boundary conditions behaves when it interacts
 /// with photon packets.
+#[derive(Clone)]
 pub struct Boundary {
-    bounding_box: Cube,
-    top: BoundaryCondition,
-    bottom: BoundaryCondition,
-    north: BoundaryCondition,
-    east: BoundaryCondition,
-    south: BoundaryCondition,
-    west: BoundaryCondition,
+    pub bounding_box: Cube,
+    pub top: BoundaryCondition,
+    pub bottom: BoundaryCondition,
+    pub north: BoundaryCondition,
+    pub east: BoundaryCondition,
+    pub south: BoundaryCondition,
+    pub west: BoundaryCondition,
 }
 
 impl Boundary {
@@ -299,7 +300,7 @@ impl Display for BoundaryDirection {
     }
 }
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub enum BoundaryCondition {
     /// Any photon packet that intersects with this boundary will be down-weighted
     /// and removed from the simulation.

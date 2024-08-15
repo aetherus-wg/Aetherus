@@ -1,10 +1,10 @@
-//! Fluorescence photon-lifetime engine function.
+// Fluorescence photon-lifetime engine function.
 
 use crate::{
+    io::output::{Output, OutputParameter},
     math::Formula,
     phys::{Local, Photon},
     sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
-    io::output::{Output, OutputParameter},
 };
 use ndarray::Array3;
 use rand::{rngs::ThreadRng, Rng};
@@ -20,7 +20,7 @@ pub fn fluorescence(
     mut rng: &mut ThreadRng,
     mut phot: Photon,
 ) {
-    // Add to the emission variables in which the photon is present. 
+    // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(OutputParameter::Emission) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
             vol.data_mut()[index] += phot.power() * phot.weight();
@@ -60,12 +60,14 @@ pub fn fluorescence(
         }
 
         // Local variable modifications.
-        let index = input.grid.gen_index_voxel(phot.ray().pos());
+        // TODO: I have had to remove this for now, as I've removed the fixed grid.
+        //let index = input.grid.gen_index_voxel(phot.ray().pos());
+        let index = [0, 0, 0];
         env = Local::new(
             local.ref_index(),
             local.scat_coeff(),
             local.abs_coeff(),
-            mu_shift.mul_add(flu_concs[index.as_ref().unwrap().0], local.shift_coeff()),
+            mu_shift.mul_add(flu_concs[index], local.shift_coeff()),
             local.asym(),
         );
 
@@ -75,7 +77,10 @@ pub fn fluorescence(
         let surf_hit = input
             .tree
             .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist));
-        let boundary_hit = input.bound.dist_boundary(phot.ray()).expect("Photon not contained in boundary. ");
+        let boundary_hit = input
+            .bound
+            .dist_boundary(phot.ray())
+            .expect("Photon not contained in boundary. ");
 
         // Event handling.
         match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
@@ -88,11 +93,11 @@ pub fn fluorescence(
                 travel(&mut data, &mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut local, &mut data);
                 travel(&mut data, &mut phot, &env, bump_dist);
-            },
+            }
             Event::Boundary(boundary_hit) => {
                 travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
-                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
+                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
                     travel(&mut data, &mut phot, &env, bump_dist);
                 }

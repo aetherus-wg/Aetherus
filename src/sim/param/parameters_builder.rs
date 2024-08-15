@@ -1,7 +1,7 @@
 //! Buildable parameters.
 
 use crate::{
-    fmt_report, geom::{GridBuilder, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::{Build, Set}, phys::{LightLinkerBuilder, MaterialBuilder}, sim::{AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilder, Parameters, Settings}
+    fmt_report, geom::{BoundaryBuilder, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::{Build, Set}, phys::{LightLinkerBuilder, MaterialBuilder}, sim::{AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilder, Parameters, Settings}
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -9,10 +9,10 @@ use std::fmt::{Display, Error, Formatter};
 pub struct ParametersBuilder {
     /// Simulation specific settings.
     sett: Settings,
+    /// Boundary settings. 
+    boundary: BoundaryBuilder,
     /// Tree settings.
     tree: TreeSettings,
-    /// Measurement grid settings.
-    grid: GridBuilder,
     /// Surfaces.
     surfs: Set<SurfaceLinker>,
     /// Attributes.
@@ -34,8 +34,8 @@ impl ParametersBuilder {
     #[inline]
     pub const fn new(
         sett: Settings,
+        boundary: BoundaryBuilder,
         tree: TreeSettings,
-        grid: GridBuilder,
         surfs: Set<SurfaceLinker>,
         attrs: Set<AttributeLinkerLinkerLinkerLinkerLinker>,
         mats: Set<MaterialBuilder>,
@@ -45,8 +45,8 @@ impl ParametersBuilder {
     ) -> Self {
         Self {
             sett,
+            boundary,
             tree,
-            grid,
             surfs,
             attrs,
             mats,
@@ -63,8 +63,8 @@ impl Build for ParametersBuilder {
     #[inline]
     fn build(self) -> Self::Inst {
         let sett = self.sett;
+        let boundary = self.boundary.build();
         let tree = self.tree;
-        let grid = self.grid.build();
         let surfs = self.surfs;
         let attrs = self.attrs;
         let mats = self.mats.build();
@@ -72,7 +72,7 @@ impl Build for ParametersBuilder {
         let engine = self.engine.build();
         let output = self.output;
 
-        Self::Inst::new(sett, tree, grid, surfs, attrs, mats, light, engine, output)
+        Self::Inst::new(sett, boundary, tree, surfs, attrs, mats, light, engine, output)
     }
 }
 
@@ -81,8 +81,8 @@ impl Display for ParametersBuilder {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.sett, "settings");
+        fmt_report!(fmt, self.boundary, "boundary");
         fmt_report!(fmt, self.tree, "tree settings");
-        fmt_report!(fmt, self.grid, "grid settings");
         fmt_report!(fmt, self.surfs, "surfaces");
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.mats, "materials");

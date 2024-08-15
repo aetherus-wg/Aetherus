@@ -8,12 +8,11 @@ use std::{
 use aetherus::{
     args,
     fs::{File, Load, Save},
-    geom::{Tree, Boundary},
-    ord::{Build, Link, Register, Set},
+    geom::Tree,
+    ord::{Build, Link},
     report,
-    io::output::{Output, PhotonCollector},
     sim::{
-        run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Parameters,
+        run, Input, Parameters,
         ParametersBuilderLoader,
     },
     util::{
@@ -22,7 +21,6 @@ use aetherus::{
         fmt::term,
     },
 };
-use nalgebra::base;
 
 /// Backup print width if the terminal width can not be determined.
 const BACKUP_TERM_WIDTH: usize = 80;
@@ -41,13 +39,13 @@ fn main() {
     report!(engine, "engine");
     let sett = params.sett;
     report!(sett, "settings");
-    let grid = params.grid;
-    report!(grid, "measurement grid");
+    let bound = params.boundary;
+    report!(bound, "boundary");
     let mats = params.mats;
     report!(mats, "materials");
 
-    sub_section(term_width, "Registration");
-    let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
+    //sub_section(term_width, "Registration");
+    //let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
     // let base_output = gen_base_output(
     //     &engine,
     //     &grid,
@@ -90,8 +88,6 @@ fn main() {
      * For now we hard-code this to kill, but we can link this to configuration soon. 
      * TODO: We probably want to implement the MPI adjacent rank transfer here too. 
      */
-    let bound = Boundary::new_kill(grid.boundary().clone());
-    report!(bound, "boundary conditions");
 
     sub_section(term_width, "Growing");
     let tree = Tree::new(&params.tree, &surfs);
@@ -104,7 +100,7 @@ fn main() {
         .fold(base_output.clone(), |mut output, (light_idx, (light_id, light))| {
             section(term_width, &format!("Running for light {} ({} / {})", light_id, light_idx + 1, nlights));
             report!(light, light_id);
-            let input = Input::new(&spec_reg, &mats, &attrs, light, &tree, &grid, &sett, &bound);
+            let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, light, &tree, &sett, &bound);
 
             let data =
                 run::multi_thread(&engine, input, &base_output).expect("Failed to run MCRT.");
@@ -180,37 +176,37 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     params
 }
 
-/// Generate the detector registers.
-fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register, Register) {
-    let mut spec_names = Vec::new();
-    let mut img_names = Vec::new();
-    let mut ccd_names = Vec::new();
-    let mut phot_col_names = Vec::new();
+// /// Generate the detector registers.
+// fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register, Register) {
+//     let mut spec_names = Vec::new();
+//     let mut img_names = Vec::new();
+//     let mut ccd_names = Vec::new();
+//     let mut phot_col_names = Vec::new();
 
-    for attr in attrs.map().values() {
-        match *attr {
-            Attr::Spectrometer(ref name, ..) => spec_names.push(name.clone()),
-            Attr::Imager(ref name, ..) => img_names.push(name.clone()),
-            Attr::Ccd(ref name, ..) => ccd_names.push(name.clone()),
-            Attr::PhotonCollector(ref name, ..) => phot_col_names.push(name.clone()),
-            _ => {}
-        }
-    }
+//     for attr in attrs.map().values() {
+//         match *attr {
+//             Attr::Spectrometer(ref name, ..) => spec_names.push(name.clone()),
+//             Attr::Imager(ref name, ..) => img_names.push(name.clone()),
+//             Attr::Ccd(ref name, ..) => ccd_names.push(name.clone()),
+//             Attr::PhotonCollector(ref name, ..) => phot_col_names.push(name.clone()),
+//             _ => {}
+//         }
+//     }
 
-    let spec_reg = Register::new(spec_names);
-    report!(spec_reg, "spectrometer register");
+//     let spec_reg = Register::new(spec_names);
+//     report!(spec_reg, "spectrometer register");
 
-    let img_reg = Register::new(img_names);
-    report!(img_reg, "imager register");
+//     let img_reg = Register::new(img_names);
+//     report!(img_reg, "imager register");
 
-    let ccd_reg = Register::new(ccd_names);
-    report!(ccd_reg, "ccd register");
+//     let ccd_reg = Register::new(ccd_names);
+//     report!(ccd_reg, "ccd register");
 
-    let phot_col_reg = Register::new(phot_col_names);
-    report!(phot_col_reg, "photon collector register");
+//     let phot_col_reg = Register::new(phot_col_names);
+//     report!(phot_col_reg, "photon collector register");
 
-    (spec_reg, img_reg, ccd_reg, phot_col_reg)
-}
+//     (spec_reg, img_reg, ccd_reg, phot_col_reg)
+// }
 
 // Generate the base output instance.
 // fn gen_base_output<'a>(
