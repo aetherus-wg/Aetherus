@@ -258,7 +258,7 @@ mod tests {
         let conf_str = r#"
         {
             volumes: {
-                full_vol: { boundary: [[0, 0, 0], [10, 10, 10]], res: [8000, 8000, 1000], param: "energy" },
+                full_vol: { boundary: [[0, 0, 0], [10, 10, 10]], res: [100, 100, 100], param: "energy" },
                 partial_vol: { boundary: [[2.5, 2.5, 0], [2.5, 2.5, 10]], res: [100, 100, 10], param: "energy" },
             },
             planes: {
