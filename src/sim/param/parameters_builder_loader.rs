@@ -1,14 +1,9 @@
 //! Loadable parameters.
 
 use crate::{
-    err::Error,
-    fs::{Load, Redirect},
-    geom::{GridBuilder, SurfaceLinkerLoader, TreeSettings},
-    ord::Set,
-    phys::{LightLinkerBuilderLoader, MaterialBuilder},
-    sim::{
+    err::Error, fs::{Load, Redirect}, geom::{boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinkerBuilderLoader, MaterialBuilder}, sim::{
         AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings,
-    },
+    }
 };
 use arctk_attr::file;
 use std::path::Path;
@@ -18,10 +13,10 @@ use std::path::Path;
 pub struct ParametersBuilderLoader {
     /// Simulation specific settings.
     sett: Redirect<Settings>,
+    // Boundary conditions. 
+    boundary: Redirect<BoundaryBuilder>,
     /// Tree settings.
     tree: Redirect<TreeSettings>,
-    /// Measurement grid settings.
-    grid: Redirect<GridBuilder>,
     /// Surfaces.
     surfs: Redirect<Set<SurfaceLinkerLoader>>,
     /// Attributes.
@@ -32,6 +27,8 @@ pub struct ParametersBuilderLoader {
     lights: Redirect<Set<LightLinkerBuilderLoader>>,
     /// Engine selection.
     engine: EngineBuilderLoader,
+    /// Output
+    output: Redirect<OutputConfig>,
 }
 
 impl Load for ParametersBuilderLoader {
@@ -40,16 +37,17 @@ impl Load for ParametersBuilderLoader {
     #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         let sett = self.sett.load(in_dir)?;
+        let boundary = self.boundary.load(in_dir)?;
         let tree = self.tree.load(in_dir)?;
-        let grid = self.grid.load(in_dir)?;
         let surfs = self.surfs.load(in_dir)?.load(in_dir)?;
         let attrs = self.attrs.load(in_dir)?;
         let mats = self.mats.load(in_dir)?.load(in_dir)?;
         let lights = self.lights.load(in_dir)?.load(in_dir)?;
         let engine = self.engine.load(in_dir)?;
+        let output = self.output.load(in_dir)?;
 
         Ok(Self::Inst::new(
-            sett, tree, grid, surfs, attrs, mats, lights, engine,
+            sett, boundary, tree, surfs, attrs, mats, lights, engine, output,
         ))
     }
 }

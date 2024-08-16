@@ -4,7 +4,8 @@ use crate::{
     math::{Formula, Point3},
     ord::cartesian::{X, Y},
     phys::Photon,
-    sim::{engines, Frame, Input, Output},
+    sim::{engines, Frame, Input},
+    io::output::Output,
 };
 use ndarray::Array3;
 use rand::rngs::ThreadRng;

@@ -5,6 +5,7 @@ impl File for SphericalCdf {
     #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         // Load the photometric web from the file into a SphericalCDF
+        println!("[LOAD] {}", path.display());
         let lid = lidrs::photweb::PhotometricWebBuilder::from_file(path).build()?;
         let cdf: SphericalCdf = lid.into();
         Ok(cdf)

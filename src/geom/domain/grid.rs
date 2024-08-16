@@ -152,9 +152,6 @@ impl Display for Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        geom::Cube,
-    };
 
     #[test]
     fn test_new() {

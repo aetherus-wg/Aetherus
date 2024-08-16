@@ -1,12 +1,12 @@
 //! Photography photon-lifetime engine function.
 
 use crate::{
-    geom::Trace,
     img::Colour,
     phys::Photon,
+    io::output::{Output, OutputParameter},
     sim::{
         peel_off::peel_off, scatter::scatter, surface::surface, travel::travel, Event, Frame,
-        Input, Output,
+        Input,
     },
 };
 use rand::{rngs::ThreadRng, Rng};
@@ -21,11 +21,11 @@ pub fn photo(
     mut rng: &mut ThreadRng,
     mut phot: Photon,
 ) {
-    // Check photon is within the grid.
-    if let Some(index) = input.grid.gen_index(phot.ray().pos()) {
-        data.emission[index] += phot.power() * phot.weight();
-    } else {
-        panic!("Photon was not emitted within the grid.");
+    // Add to the emission variables in which the photon is present. 
+    for vol in data.get_volumes_for_param_mut(OutputParameter::Emission) {
+        if let Some(index) = vol.gen_index(phot.ray().pos()) {
+            vol.data_mut()[index] += phot.power() * phot.weight();
+        }
     }
 
     // Common constants.
@@ -60,13 +60,7 @@ pub fn photo(
         }
 
         // Interaction distances.
-        let index = input.grid.gen_index_voxel(phot.ray().pos());
-        let voxel_dist = match &index {
-            Some((_index, voxel)) => {
-                voxel.dist(phot.ray()).expect("Could not determine voxel distance.")
-            },
-            None => f64::INFINITY,
-        };
+        let voxel_dist = data.voxel_dist(&phot);
         let scat_dist = -(rng.gen::<f64>()).ln() / env.inter_coeff();
         let surf_hit = input
             .tree
@@ -75,9 +69,9 @@ pub fn photo(
 
         // Event handling.
         match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, &index, dist + bump_dist),
+            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, dist + bump_dist),
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, &index, dist);
+                travel(&mut data, &mut phot, &env, dist);
 
                 // Capture.
                 for (frame, photo) in frames.iter().zip(data.photos.iter_mut()) {
@@ -97,13 +91,17 @@ pub fn photo(
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, &index, hit.dist());
+                travel(&mut data, &mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
-                travel(&mut data, &mut phot, &env, &index, bump_dist);
+                travel(&mut data, &mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, &index, boundary_hit.dist());
+                travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
+                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
+                if phot.weight() > 0.0 {
+                    travel(&mut data, &mut phot, &env, bump_dist);
+                }
             }
         }
 

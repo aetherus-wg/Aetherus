@@ -41,6 +41,7 @@ pub mod err;
 pub mod fs;
 pub mod geom;
 pub mod img;
+pub mod io;
 pub mod math;
 pub mod meta;
 pub mod ord;

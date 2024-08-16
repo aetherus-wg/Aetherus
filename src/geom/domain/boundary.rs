@@ -1,5 +1,10 @@
 use crate::{
-    access, clone, fmt_report, geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace}, math::{Dir3, Point3, Vec3}, phys::{Photon, Reflectance}, sim::Attribute
+    access, clone, fmt_report, 
+    geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace}, 
+    math::{Dir3, Point3, Vec3}, 
+    phys::{Photon, Reflectance}, 
+    sim::Attribute,
+    ord::cartesian::{X, Y, Z},
 };
 use rand::rngs::ThreadRng;
 use std::fmt::{Display, Formatter};
@@ -7,14 +12,15 @@ use std::fmt::{Display, Formatter};
 /// Struct that represents a boundary.
 /// This will be used to determine how the boundary conditions behaves when it interacts
 /// with photon packets.
+#[derive(Clone)]
 pub struct Boundary {
-    bounding_box: Cube,
-    top: BoundaryCondition,
-    bottom: BoundaryCondition,
-    north: BoundaryCondition,
-    east: BoundaryCondition,
-    south: BoundaryCondition,
-    west: BoundaryCondition,
+    pub bounding_box: Cube,
+    pub top: BoundaryCondition,
+    pub bottom: BoundaryCondition,
+    pub north: BoundaryCondition,
+    pub east: BoundaryCondition,
+    pub south: BoundaryCondition,
+    pub west: BoundaryCondition,
 }
 
 impl Boundary {
@@ -224,6 +230,26 @@ impl Boundary {
 
         return facing_dir;
     }
+
+    /// If the given position is contained within the grid,
+    /// generate the index for the given position within the grid.
+    #[inline]
+    #[must_use]
+    pub fn gen_index(&self, p: &Point3, res: [usize; 3]) -> Option<[usize; 3]> {
+        self.contains(p).then(|| {
+            let mins = self.bounding_box.mins();
+            let maxs = self.bounding_box.maxs();
+
+            [
+                (((p.x() - mins.x()) / (maxs.x() - mins.x())) * res[X] as f64).floor()
+                    as usize,
+                (((p.y() - mins.y()) / (maxs.y() - mins.y())) * res[Y] as f64).floor()
+                    as usize,
+                (((p.z() - mins.z()) / (maxs.z() - mins.z())) * res[Z] as f64).floor()
+                    as usize,
+            ]
+        })
+    }
 }
 
 impl Display for Boundary {
@@ -295,7 +321,7 @@ impl Display for BoundaryDirection {
     }
 }
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub enum BoundaryCondition {
     /// Any photon packet that intersects with this boundary will be down-weighted
     /// and removed from the simulation.

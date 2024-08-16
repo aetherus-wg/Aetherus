@@ -4,8 +4,8 @@ use crate::{
     err::Error,
     fmt_report,
     math::{Point3, Vec3},
-    ord::{Link, Name, Set, cartesian::{X, Y}},
-    phys::{Reflectance, SpectrumBuilder},
+    ord::{cartesian::{X, Y}, Link, Name, Set},
+    phys::{ReflectanceBuilder, ReflectanceBuilderShim},
     sim::attribute::AttributeLinkerLinkerLinkerLinker,
     tools::{Binner, Range},
 };
@@ -28,11 +28,7 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     /// The first coefficient is diffuse albedo, the second is specular.
-    Reflector(
-        Option<SpectrumBuilder>,
-        Option<SpectrumBuilder>,
-        Option<f64>,
-    ),
+    Reflector(ReflectanceBuilderShim),
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(Name, bool),
@@ -60,27 +56,9 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
             Self::Ccd(id, _resolution, width, center, forward, binner) => {
                 Self::Inst::Ccd(id, _resolution, width, center, forward, binner)
             }
-            Self::Reflector(diff_ref, spec_ref, specularity) => {
-                let ref_model = if diff_ref.is_some() {
-                    if spec_ref.is_some() {
-                        // Check that the specularity of the reflector is defined.
-                        assert!(specularity.is_some());
-                        Reflectance::Composite {
-                            diffuse_refspec: diff_ref.unwrap().build()?,
-                            specular_refspec: spec_ref.unwrap().build()?,
-                            specularity: specularity.unwrap(),
-                        }
-                    } else {
-                        Reflectance::Lambertian {
-                            refspec: diff_ref.unwrap().build()?,
-                        }
-                    }
-                } else {
-                    Reflectance::Specular {
-                        refspec: spec_ref.unwrap().build()?,
-                    }
-                };
-
+            Self::Reflector(ref_sim) => {
+                let ref_build: ReflectanceBuilder = ref_sim.into();
+                let ref_model = ref_build.build()?;
                 Self::Inst::Reflector(ref_model)
             }
             Self::PhotonCollector(ref id, _kill_photons) => {
@@ -130,12 +108,12 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref diff_ref, ref spec_ref, ref specularity) => {
+            Self::Reflector(ref ref_shim) => {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(
                     fmt,
-                    if diff_ref.is_some() {
-                        format!("{}", diff_ref.as_ref().unwrap())
+                    if ref_shim.0.is_some() {
+                        format!("{}", ref_shim.0.as_ref().unwrap())
                     } else {
                         String::from("none")
                     },
@@ -143,8 +121,8 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 );
                 fmt_report!(
                     fmt,
-                    if spec_ref.is_some() {
-                        format!("{}", spec_ref.as_ref().unwrap())
+                    if ref_shim.1.is_some() {
+                        format!("{}", ref_shim.1.as_ref().unwrap())
                     } else {
                         String::from("none")
                     },
@@ -152,8 +130,8 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 );
                 fmt_report!(
                     fmt,
-                    if specularity.is_some() {
-                        format!("{}", specularity.as_ref().unwrap())
+                    if ref_shim.2.is_some() {
+                        format!("{}", ref_shim.2.as_ref().unwrap())
                     } else {
                         String::from("none")
                     },
