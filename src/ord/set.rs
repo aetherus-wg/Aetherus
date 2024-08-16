@@ -14,7 +14,7 @@ use std::{
 };
 
 /// Data map.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Set<T>(Map<Name, T>);
 
 impl<T> Set<T> {

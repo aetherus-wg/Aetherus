@@ -1,22 +1,19 @@
 //! Monte-Carlo radiative transfer simulation binary.
 //! Compute the radiative field for a given set of setup and light source.
 
-use ndarray::Array3;
 use std::{
     env::current_dir,
     path::{Path, PathBuf},
 };
 use aetherus::{
     args,
-    data::Histogram,
     fs::{File, Load, Save},
-    geom::{Grid, Tree},
-    img::{Colour, Image},
-    ord::{Build, Link, Register, Set, cartesian::{X, Y}},
+    geom::Tree,
+    ord::{Build, Link},
     report,
     sim::{
-        run, AttributeLinkerLinkerLinkerLinkerLinker as Attr, Engine, Input, Output, Parameters,
-        ParametersBuilderLoader, PhotonCollector,
+        run, Input, Parameters,
+        ParametersBuilderLoader,
     },
     util::{
         banner::{section, sub_section, title},
@@ -42,22 +39,24 @@ fn main() {
     report!(engine, "engine");
     let sett = params.sett;
     report!(sett, "settings");
-    let grid = params.grid;
-    report!(grid, "measurement grid");
+    let bound = params.boundary;
+    report!(bound, "boundary");
     let mats = params.mats;
     report!(mats, "materials");
 
-    sub_section(term_width, "Registration");
-    let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
-    let base_output = gen_base_output(
-        &engine,
-        &grid,
-        &spec_reg,
-        &img_reg,
-        &ccd_reg,
-        &phot_col_reg,
-        &params.attrs,
-    );
+    //sub_section(term_width, "Registration");
+    //let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
+    // let base_output = gen_base_output(
+    //     &engine,
+    //     &grid,
+    //     &spec_reg,
+    //     &img_reg,
+    //     &ccd_reg,
+    //     &phot_col_reg,
+    //     &params.attrs,
+    // );
+
+    let base_output = params.output.build();
 
     sub_section(term_width, "Linking");
     let lights = params
@@ -67,13 +66,13 @@ fn main() {
     report!(lights, "lights");
     let attrs = params
         .attrs
-        .link(phot_col_reg.set())
+        .link(base_output.reg.phot_cols_reg.set())
         .expect("Failed to link photon collectors to attributes.")
-        .link(ccd_reg.set())
+        .link(base_output.reg.ccd_reg.set())
         .expect("Failed to link ccds to attributes.")
-        .link(img_reg.set())
+        .link(base_output.reg.img_reg.set())
         .expect("Failed to link imagers to attributes.")
-        .link(spec_reg.set())
+        .link(base_output.reg.spec_reg.set())
         .expect("Failed to link spectrometers to attributes.")
         .link(&mats)
         .expect("Failed to link materials to attributes.");
@@ -83,6 +82,12 @@ fn main() {
         .link(&attrs)
         .expect("Failed to link attribute to surfaces.");
     report!(surfs, "surfaces");
+
+    /*
+     * Create a boundary for the simulation with boundary conditions. 
+     * For now we hard-code this to kill, but we can link this to configuration soon. 
+     * TODO: We probably want to implement the MPI adjacent rank transfer here too. 
+     */
 
     sub_section(term_width, "Growing");
     let tree = Tree::new(&params.tree, &surfs);
@@ -95,7 +100,7 @@ fn main() {
         .fold(base_output.clone(), |mut output, (light_idx, (light_id, light))| {
             section(term_width, &format!("Running for light {} ({} / {})", light_id, light_idx + 1, nlights));
             report!(light, light_id);
-            let input = Input::new(&spec_reg, &mats, &attrs, light, &tree, &grid, &sett);
+            let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, light, &tree, &sett, &bound);
 
             let data =
                 run::multi_thread(&engine, input, &base_output).expect("Failed to run MCRT.");
@@ -118,12 +123,12 @@ fn main() {
                 }
             }
 
-            output += &data;
+            output += data;
             output
         });
 
     section(term_width, "Saving");
-    report!(data, "data");
+    //report!(data, "data");
     data.save(&out_dir).expect("Failed to save output data.");
 
     section(term_width, "Finished");
@@ -171,120 +176,120 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     params
 }
 
-/// Generate the detector registers.
-fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register, Register) {
-    let mut spec_names = Vec::new();
-    let mut img_names = Vec::new();
-    let mut ccd_names = Vec::new();
-    let mut phot_col_names = Vec::new();
+// /// Generate the detector registers.
+// fn gen_detector_registers(attrs: &Set<Attr>) -> (Register, Register, Register, Register) {
+//     let mut spec_names = Vec::new();
+//     let mut img_names = Vec::new();
+//     let mut ccd_names = Vec::new();
+//     let mut phot_col_names = Vec::new();
 
-    for attr in attrs.map().values() {
-        match *attr {
-            Attr::Spectrometer(ref name, ..) => spec_names.push(name.clone()),
-            Attr::Imager(ref name, ..) => img_names.push(name.clone()),
-            Attr::Ccd(ref name, ..) => ccd_names.push(name.clone()),
-            Attr::PhotonCollector(ref name, ..) => phot_col_names.push(name.clone()),
-            _ => {}
-        }
-    }
+//     for attr in attrs.map().values() {
+//         match *attr {
+//             Attr::Spectrometer(ref name, ..) => spec_names.push(name.clone()),
+//             Attr::Imager(ref name, ..) => img_names.push(name.clone()),
+//             Attr::Ccd(ref name, ..) => ccd_names.push(name.clone()),
+//             Attr::PhotonCollector(ref name, ..) => phot_col_names.push(name.clone()),
+//             _ => {}
+//         }
+//     }
 
-    let spec_reg = Register::new(spec_names);
-    report!(spec_reg, "spectrometer register");
+//     let spec_reg = Register::new(spec_names);
+//     report!(spec_reg, "spectrometer register");
 
-    let img_reg = Register::new(img_names);
-    report!(img_reg, "imager register");
+//     let img_reg = Register::new(img_names);
+//     report!(img_reg, "imager register");
 
-    let ccd_reg = Register::new(ccd_names);
-    report!(ccd_reg, "ccd register");
+//     let ccd_reg = Register::new(ccd_names);
+//     report!(ccd_reg, "ccd register");
 
-    let phot_col_reg = Register::new(phot_col_names);
-    report!(phot_col_reg, "photon collector register");
+//     let phot_col_reg = Register::new(phot_col_names);
+//     report!(phot_col_reg, "photon collector register");
 
-    (spec_reg, img_reg, ccd_reg, phot_col_reg)
-}
+//     (spec_reg, img_reg, ccd_reg, phot_col_reg)
+// }
 
-/// Generate the base output instance.
-fn gen_base_output<'a>(
-    engine: &Engine,
-    grid: &Grid,
-    spec_reg: &'a Register,
-    img_reg: &'a Register,
-    ccd_reg: &'a Register,
-    phot_col_reg: &'a Register,
-    attrs: &Set<Attr>,
-) -> Output<'a> {
-    let res = *grid.res();
+// Generate the base output instance.
+// fn gen_base_output<'a>(
+//     engine: &Engine,
+//     grid: &Grid,
+//     spec_reg: &'a Register,
+//     img_reg: &'a Register,
+//     ccd_reg: &'a Register,
+//     phot_col_reg: &'a Register,
+//     attrs: &Set<Attr>,
+// ) -> Output<'a> {
+//     let res = *grid.res();
 
-    let mut specs = Vec::with_capacity(spec_reg.len());
-    for name in spec_reg.set().map().keys() {
-        for attr in attrs.values() {
-            if let Attr::Spectrometer(spec_name, [min, max], bins) = attr {
-                if name == spec_name {
-                    specs.push(Histogram::new(*min, *max, *bins));
-                    continue;
-                }
-            }
-        }
-    }
+//     let mut specs = Vec::with_capacity(spec_reg.len());
+//     for name in spec_reg.set().map().keys() {
+//         for attr in attrs.values() {
+//             if let Attr::Spectrometer(spec_name, [min, max], bins) = attr {
+//                 if name == spec_name {
+//                     specs.push(Histogram::new(*min, *max, *bins));
+//                     continue;
+//                 }
+//             }
+//         }
+//     }
 
-    let mut imgs = Vec::with_capacity(img_reg.len());
-    let background = Colour::new(0.0, 0.0, 0.0, 1.0);
-    for name in img_reg.set().map().keys() {
-        for attr in attrs.values() {
-            if let Attr::Imager(img_name, res, _width, _center, _forward) = attr {
-                if name == img_name {
-                    imgs.push(Image::new_blank(*res, background));
-                    continue;
-                }
-            }
-        }
-    }
+//     let mut imgs = Vec::with_capacity(img_reg.len());
+//     let background = Colour::new(0.0, 0.0, 0.0, 1.0);
+//     for name in img_reg.set().map().keys() {
+//         for attr in attrs.values() {
+//             if let Attr::Imager(img_name, res, _width, _center, _forward) = attr {
+//                 if name == img_name {
+//                     imgs.push(Image::new_blank(*res, background));
+//                     continue;
+//                 }
+//             }
+//         }
+//     }
 
-    let mut ccds = Vec::with_capacity(ccd_reg.len());
-    for name in ccd_reg.set().map().keys() {
-        for attr in attrs.values() {
-            if let Attr::Ccd(ccd_name, res, _width, _center, _forward, binner) = attr {
-                if name == ccd_name {
-                    ccds.push(Array3::zeros([res[X], res[Y], binner.bins() as usize]));
-                    continue;
-                }
-            }
-        }
-    }
+//     let mut ccds = Vec::with_capacity(ccd_reg.len());
+//     for name in ccd_reg.set().map().keys() {
+//         for attr in attrs.values() {
+//             if let Attr::Ccd(ccd_name, res, _width, _center, _forward, binner) = attr {
+//                 if name == ccd_name {
+//                     ccds.push(Array3::zeros([res[X], res[Y], binner.bins() as usize]));
+//                     continue;
+//                 }
+//             }
+//         }
+//     }
 
-    let mut photos = Vec::new();
-    if let Engine::Photo(frames, res) = engine {
-        photos.reserve(frames.len());
-        for _ in 0..frames.len() {
-            photos.push(Image::new_blank(*res, background));
-        }
-    }
+//     let mut photos = Vec::new();
+//     if let Engine::Photo(frames, res) = engine {
+//         photos.reserve(frames.len());
+//         for _ in 0..frames.len() {
+//             photos.push(Image::new_blank(*res, background));
+//         }
+//     }
 
-    let mut phot_cols: Vec<PhotonCollector> = Vec::new();
-    for name in phot_col_reg.set().map().keys() {
-        for attr in attrs.values() {
-            if let Attr::PhotonCollector(phot_col_id, kill_phot) = attr {
-                if name == phot_col_id {
-                    let mut photcol = PhotonCollector::new();
-                    photcol.kill_photon = *kill_phot;
-                    phot_cols.push(photcol);
-                    continue;
-                }
-            }
-        }
-    }
+//     let mut phot_cols: Vec<PhotonCollector> = Vec::new();
+//     for name in phot_col_reg.set().map().keys() {
+//         for attr in attrs.values() {
+//             if let Attr::PhotonCollector(phot_col_id, kill_phot) = attr {
+//                 if name == phot_col_id {
+//                     let mut photcol = PhotonCollector::new();
+//                     photcol.kill_photon = *kill_phot;
+//                     phot_cols.push(photcol);
+//                     continue;
+//                 }
+//             }
+//         }
+//     }
 
-    Output::new(
-        grid.boundary().clone(),
-        res,
-        spec_reg,
-        img_reg,
-        ccd_reg,
-        phot_col_reg,
-        specs,
-        imgs,
-        ccds,
-        photos,
-        phot_cols,
-    )
-}
+//     Output::new(
+//         grid.boundary().clone(),
+//         res,
+//         spec_reg,
+//         img_reg,
+//         ccd_reg,
+//         phot_col_reg,
+//         specs,
+//         imgs,
+//         ccds,
+//         photos,
+//         phot_cols,
+//     )
+// }

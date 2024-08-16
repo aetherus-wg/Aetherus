@@ -13,6 +13,7 @@ use crate::{
         cartesian::{X, Y, Z}
     },
     util::fmt::DataCube,
+    io::output::PhotonCollector,
 };
 use ndarray::Array3;
 use std::{
@@ -21,7 +22,6 @@ use std::{
     path::Path,
 };
 
-use super::PhotonCollector;
 
 /// MCRT output data.
 #[derive(Clone)]
@@ -33,7 +33,7 @@ pub struct Output<'a> {
 
     /// Emission power.
     pub emission: Array3<f64>,
-    /// Photo-energy.
+    /// Photon-energy.
     pub energy: Array3<f64>,
     /// Absorptions.
     pub absorptions: Array3<f64>,

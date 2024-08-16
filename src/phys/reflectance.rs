@@ -2,13 +2,11 @@ use crate::{
     core::Real,
     fmt_report,
     geom::{Hit, Ray},
-    phys::Spectrum,
+    phys::{Spectrum, Photon},
     sim::Attribute,
 };
 use rand::Rng;
 use std::{f64::consts::PI, fmt::Display};
-
-use super::Photon;
 
 /// A small utility function that checks that the provided spectrum is valid as a
 /// reflectance spectrum. This means that it should have values that are between 0.0
