@@ -102,6 +102,12 @@ pub fn surface(
         },
         Attribute::PhotonCollector(id) => {
             data.phot_cols[id].collect_photon(phot);
+        },
+        Attribute::AttributeChain(ref attrs) => {
+            for attr in attrs.iter() {
+                let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
+                surface(rng, &hit_proxy, phot, env, data)
+            }
         }
     }
 }

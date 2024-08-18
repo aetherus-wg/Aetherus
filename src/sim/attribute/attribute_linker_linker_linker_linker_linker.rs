@@ -15,6 +15,7 @@ use std::fmt::{Display, Formatter};
 /// Surface attribute setup.
 /// Handles detector linking.
 #[file]
+#[derive(Clone)]
 pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     /// Material interface, inside material name, outside material name.
     Interface(Name, Name),
@@ -32,6 +33,8 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(Name, bool),
+    /// A chain of attributes where are executed in order. 
+    AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinker>),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
@@ -65,6 +68,13 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
                 Self::Inst::PhotonCollector(*reg.get(&id).unwrap_or_else(|| {
                     panic!("Failed to link attribute-photon collector key : {}", id)
                 }))
+            },
+            Self::AttributeChain(attrs) => {
+                let linked_attrs: Result<Vec<_>, _> = attrs.iter()
+                    .map(|a| a.clone().link(&reg))
+                    .collect();
+
+                Self::Inst::AttributeChain(linked_attrs?)
             }
         })
     }
@@ -145,6 +155,39 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, kill_phot, "kill photons?");
                 Ok(())
             }
+            Self::AttributeChain(ref attrs) => {
+                writeln!(fmt, "Attribute Chain: ...")?;
+                for attr in attrs {
+                    attr.fmt(fmt)?;
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use json5;
+    use super::*;
+
+    /// Checks that we can deserialise an attribute chain from a JSON 5 input. 
+    /// This is necessary for getting it to run through the linker chain. 
+    #[test]
+    fn test_deserialise_attribute_chain() {
+        let desr_str = r#"
+        { AttributeChain: [
+            { PhotonCollector: ['pc', true]},
+            { Reflector: [null, {Tophat: [550e-9, 575e-9, 0.5]}, null]},
+        ]}
+        "#;
+
+        let attr: AttributeLinkerLinkerLinkerLinkerLinker  = json5::from_str(&desr_str).unwrap();
+        match attr {
+            AttributeLinkerLinkerLinkerLinkerLinker::AttributeChain(attrs) => {
+                assert_eq!(attrs.iter().count(), 2);
+            },
+            _ => panic!("Unable to deserialise AttributeChain. ")
         }
     }
 }

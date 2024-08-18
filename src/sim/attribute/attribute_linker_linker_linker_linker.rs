@@ -14,6 +14,7 @@ use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
 /// Handles detector linking.
+#[derive(Clone)]
 pub enum AttributeLinkerLinkerLinkerLinker {
     /// Material interface, inside material name, outside material name.
     Interface(Name, Name),
@@ -31,6 +32,8 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(usize),
+    /// A chain of attributes where are executed in order. 
+    AttributeChain(Vec<AttributeLinkerLinkerLinkerLinker>),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
@@ -61,6 +64,13 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
             ),
             Self::Reflector(reflect) => Self::Inst::Reflector(reflect),
             Self::PhotonCollector(id) => Self::Inst::PhotonCollector(id),
+            Self::AttributeChain(attrs) => {
+                let linked_attrs: Result<Vec<_>, _> = attrs.iter()
+                    .map(|a| a.clone().link(&reg))
+                    .collect();
+
+                Self::Inst::AttributeChain(linked_attrs?)
+            }
         })
     }
 }
@@ -111,6 +121,13 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
             Self::PhotonCollector(ref id) => {
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "id");
+                Ok(())
+            }
+            Self::AttributeChain(ref attrs) => {
+                writeln!(fmt, "Attribute Chain: ...")?;
+                for attr in attrs {
+                    attr.fmt(fmt)?;
+                }
                 Ok(())
             }
         }
