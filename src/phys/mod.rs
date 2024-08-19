@@ -7,6 +7,7 @@ pub mod material;
 pub mod photon;
 pub mod reflectance;
 pub mod spectrum;
+pub mod synphot;
 
 // Builders
 pub mod light_linker_builder;
