@@ -16,7 +16,7 @@ pub struct OutputPlaneBuilder {
 
 impl OutputPlaneBuilder {
     pub fn build(&self) -> OutputPlane {
-        OutputPlane::new(self.boundary.0, self.boundary.1, self.res)
+        OutputPlane::new(self.boundary.0, self.boundary.1, self.res, self.plane.clone())
     }
 }
 

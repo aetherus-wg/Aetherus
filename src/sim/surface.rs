@@ -108,6 +108,9 @@ pub fn surface(
                 let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
                 surface(rng, &hit_proxy, phot, env, data)
             }
+        },
+        Attribute::Rasterise(id, ref rasteriser) => {
+            rasteriser.rasterise(rng, phot, &mut data.plane[id]);
         }
     }
 }
