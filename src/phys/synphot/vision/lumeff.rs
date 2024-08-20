@@ -30,16 +30,16 @@ impl LuminousEfficacyFunction {
         // Load all of the lines into a vector of lines.
         let lines: Vec<_> = input
             .lines()
-            .filter(|line| !line.starts_with("//"))
             .collect();
 
         // As we know the number of rows, we can pre-allocate the rows vector.
         let mut lam = Vec::with_capacity(lines.len());
         let mut res = Vec::with_capacity(lines.len());
         // Now iterate the remaining lines, attempt to parse them and push them onto the rows vec.
-        for line in lines {
+        for line in lines.iter() {
             let row: Vec<f64> = line
                 .split(',')
+                .map(str::trim)
                 .map(str::parse)
                 .filter_map(Result::ok)
                 .collect();
