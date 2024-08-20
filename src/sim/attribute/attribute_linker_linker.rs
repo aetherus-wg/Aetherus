@@ -8,6 +8,7 @@ use crate::{
     phys::Reflectance,
     sim::attribute::AttributeLinker,
     tools::{Binner, Range},
+    io::output::Rasteriser,
 };
 use std::fmt::{Display, Formatter};
 
@@ -32,6 +33,8 @@ pub enum AttributeLinkerLinker {
     PhotonCollector(usize),
     /// A chain of attributes where are executed in order. 
     AttributeChain(Vec<AttributeLinkerLinker>),
+    /// An output into the output plane object. This rasterises the photon packet into plane. 
+    Rasterise(usize, Rasteriser),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinker {
@@ -62,6 +65,7 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinker {
 
                 Self::Inst::AttributeChain(linked_attrs?)
             }
+            Self::Rasterise(id, rast) => Self::Inst::Rasterise(id, rast),
         })
     }
 }
@@ -115,6 +119,12 @@ impl Display for AttributeLinkerLinker {
                 for attr in attrs {
                     attr.fmt(fmt)?;
                 }
+                Ok(())
+            }
+            Self::Rasterise(ref id, ref rast) => {
+                writeln!(fmt, "Rasterise: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, rast, "rasteriser");
                 Ok(())
             }
         }

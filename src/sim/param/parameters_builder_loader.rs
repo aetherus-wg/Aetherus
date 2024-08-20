@@ -2,7 +2,7 @@
 
 use crate::{
     err::Error, fs::{Load, Redirect}, geom::{boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinkerBuilderLoader, MaterialBuilder}, sim::{
-        AttributeLinkerLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings,
+        AttributeLinkerLinkerLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings,
     }
 };
 use arctk_attr::file;
@@ -20,7 +20,7 @@ pub struct ParametersBuilderLoader {
     /// Surfaces.
     surfs: Redirect<Set<SurfaceLinkerLoader>>,
     /// Attributes.
-    attrs: Redirect<Set<AttributeLinkerLinkerLinkerLinkerLinker>>,
+    attrs: Redirect<Set<AttributeLinkerLinkerLinkerLinkerLinkerLinker>>,
     /// Materials.
     mats: Redirect<Set<Redirect<MaterialBuilder>>>,
     /// Main light.

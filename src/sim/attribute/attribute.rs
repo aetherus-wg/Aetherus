@@ -24,6 +24,7 @@ pub enum Attribute<'a> {
     /// A chain of attributes, allowing us to perform multiple actions with a 
     /// photon packet for each interaction. We can chain attributes together here. 
     AttributeChain(Vec<Attribute<'a>>),
+    /// An output into the output plane object. This rasterises the photon packet into plane. 
     Rasterise(usize, Rasteriser),
 }
 
@@ -74,7 +75,8 @@ impl Display for Attribute<'_> {
             },
             Self::Rasterise(ref id, ref rast) => {
                 writeln!(fmt, "Rasterise: ...")?;
-                // TODO: Output Rasteriser. 
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, rast, "rasteriser");
                 Ok(())
             }
         }

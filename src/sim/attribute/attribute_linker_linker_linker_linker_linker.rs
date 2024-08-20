@@ -8,13 +8,13 @@ use crate::{
     phys::{ReflectanceBuilder, ReflectanceBuilderShim},
     sim::attribute::AttributeLinkerLinkerLinkerLinker,
     tools::{Binner, Range},
+    io::output::Rasteriser,
 };
 use arctk_attr::file;
 use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
 /// Handles detector linking.
-#[file]
 #[derive(Clone)]
 pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     /// Material interface, inside material name, outside material name.
@@ -35,6 +35,8 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     PhotonCollector(Name, bool),
     /// A chain of attributes where are executed in order. 
     AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinker>),
+    /// An output into the output plane object. This rasterises the photon packet into plane. 
+    Rasterise(usize, Rasteriser),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
@@ -76,6 +78,7 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
 
                 Self::Inst::AttributeChain(linked_attrs?)
             }
+            Self::Rasterise(id, rast) => Self::Inst::Rasterise(id, rast),
         })
     }
 }
@@ -162,32 +165,12 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 }
                 Ok(())
             }
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use json5;
-    use super::*;
-
-    /// Checks that we can deserialise an attribute chain from a JSON 5 input. 
-    /// This is necessary for getting it to run through the linker chain. 
-    #[test]
-    fn test_deserialise_attribute_chain() {
-        let desr_str = r#"
-        { AttributeChain: [
-            { PhotonCollector: ['pc', true]},
-            { Reflector: [null, {Tophat: [550e-9, 575e-9, 0.5]}, null]},
-        ]}
-        "#;
-
-        let attr: AttributeLinkerLinkerLinkerLinkerLinker  = json5::from_str(&desr_str).unwrap();
-        match attr {
-            AttributeLinkerLinkerLinkerLinkerLinker::AttributeChain(attrs) => {
-                assert_eq!(attrs.iter().count(), 2);
-            },
-            _ => panic!("Unable to deserialise AttributeChain. ")
+            Self::Rasterise(ref id, ref rast) => {
+                writeln!(fmt, "Rasterise: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, rast, "rasteriser");
+                Ok(())
+            }
         }
     }
 }

@@ -35,8 +35,8 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinkerLinker {
     PhotonCollector(Name, bool),
     /// A chain of attributes where are executed in order. 
     AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinkerLinker>),
-    /// An output
-    PlaneOutput(Name, ProbabilityBuilder, bool)
+    /// An output into the output plane object. This rasterises the photon packet into plane. 
+    Rasterise(Name, ProbabilityBuilder, bool)
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
@@ -74,7 +74,7 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
 
                 Self::Inst::AttributeChain(linked_attrs?)
             }
-            Self::PlaneOutput(ref id, ref prob_builder, ref kill_phot) => {
+            Self::Rasterise(ref id, ref prob_builder, ref kill_phot) => {
                 todo!()
             }
         })
@@ -163,8 +163,12 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
                 }
                 Ok(())
             }
-            Self::PlaneOutput(ref id, ref prob_builder, ref kill_phot) => {
-                todo!()
+            Self::Rasterise(ref id, ref prob_builder, ref kill_phot) => {
+                writeln!(fmt, "Rasterise: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, prob_builder, "transmission");
+                fmt_report!(fmt, kill_phot, "kill photons?");
+                Ok(())
             }
         }
     }
