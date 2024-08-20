@@ -1,13 +1,7 @@
 //! Attribute first-stage imager linker.
 
 use crate::{
-    err::Error,
-    fmt_report,
-    math::{Point3, Vec3, ProbabilityBuilder},
-    ord::{cartesian::{X, Y}, Link, Name, Set},
-    phys::ReflectanceBuilderShim,
-    sim::attribute::AttributeLinkerLinkerLinkerLinkerLinker,
-    tools::{Binner, Range},
+    err::Error, fmt_report, io::output::RasteriseBuilder, math::{trans3_builder, Point3, ProbabilityBuilder, Vec3}, ord::{cartesian::{X, Y}, Link, Name, Set}, phys::{synphot::TransmissionBuilder, ReflectanceBuilderShim}, sim::attribute::AttributeLinkerLinkerLinkerLinkerLinker, tools::{Binner, Range}
 };
 use arctk_attr::file;
 use std::fmt::{Display, Formatter};
@@ -36,7 +30,7 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinkerLinker {
     /// A chain of attributes where are executed in order. 
     AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinkerLinker>),
     /// An output into the output plane object. This rasterises the photon packet into plane. 
-    Rasterise(Name, ProbabilityBuilder, bool)
+    Rasterise(Name, RasteriseBuilder)
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
@@ -74,8 +68,10 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
 
                 Self::Inst::AttributeChain(linked_attrs?)
             }
-            Self::Rasterise(ref id, ref prob_builder, ref kill_phot) => {
-                todo!()
+            Self::Rasterise(ref id, ref rast_build) => {
+                let linked_id = *reg.get(&id)
+                    .unwrap_or_else(|| panic!("Failed to link attribute-rasterise key: {}", id));
+                Self::Inst::Rasterise(linked_id, rast_build.build())
             }
         })
     }
@@ -163,11 +159,10 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
                 }
                 Ok(())
             }
-            Self::Rasterise(ref id, ref prob_builder, ref kill_phot) => {
+            Self::Rasterise(ref id, ref rast_builder) => {
                 writeln!(fmt, "Rasterise: ...")?;
                 fmt_report!(fmt, id, "name");
-                fmt_report!(fmt, prob_builder, "transmission");
-                fmt_report!(fmt, kill_phot, "kill photons?");
+                fmt_report!(fmt, rast_builder, "rasteriser");
                 Ok(())
             }
         }
