@@ -2,7 +2,8 @@
 
 use crate::{
     err::Error, fs::{Load, Redirect}, geom::{boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinkerBuilderLoader, MaterialBuilder}, sim::{
-        AttributeLinkerLinkerLinkerLinkerLinkerLinker, EngineBuilderLoader, ParametersBuilder, Settings,
+        AttributeLinkerChainProxy, EngineBuilderLoader, ParametersBuilder, Settings,
+        attribute_chain_resolve_set,
     }
 };
 use arctk_attr::file;
@@ -20,7 +21,7 @@ pub struct ParametersBuilderLoader {
     /// Surfaces.
     surfs: Redirect<Set<SurfaceLinkerLoader>>,
     /// Attributes.
-    attrs: Redirect<Set<AttributeLinkerLinkerLinkerLinkerLinkerLinker>>,
+    attrs: Redirect<Set<AttributeLinkerChainProxy>>,
     /// Materials.
     mats: Redirect<Set<Redirect<MaterialBuilder>>>,
     /// Main light.
@@ -40,7 +41,7 @@ impl Load for ParametersBuilderLoader {
         let boundary = self.boundary.load(in_dir)?;
         let tree = self.tree.load(in_dir)?;
         let surfs = self.surfs.load(in_dir)?.load(in_dir)?;
-        let attrs = self.attrs.load(in_dir)?;
+        let attrs = attribute_chain_resolve_set(self.attrs.load(in_dir)?);
         let mats = self.mats.load(in_dir)?.load(in_dir)?;
         let lights = self.lights.load(in_dir)?.load(in_dir)?;
         let engine = self.engine.load(in_dir)?;
