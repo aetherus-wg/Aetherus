@@ -1,7 +1,7 @@
 //! Runtime parameters.
 
 use crate::{
-    fmt_report, geom::{Boundary, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinker, Material}, sim::{AttributeLinkerLinkerLinkerLinkerLinkerLinker, Engine, Settings}
+    fmt_report, geom::{Boundary, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinker, Material}, sim::{LinkerChainStart, Engine, Settings}
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -16,7 +16,7 @@ pub struct Parameters {
     /// Surfaces.
     pub surfs: Set<SurfaceLinker>,
     /// Attributes.
-    pub attrs: Set<AttributeLinkerLinkerLinkerLinkerLinkerLinker>,
+    pub attrs: Set<LinkerChainStart>,
     /// Materials.
     pub mats: Set<Material>,
     /// Main light.
@@ -37,7 +37,7 @@ impl Parameters {
         boundary: Boundary,
         tree: TreeSettings,
         surfs: Set<SurfaceLinker>,
-        attrs: Set<AttributeLinkerLinkerLinkerLinkerLinkerLinker>,
+        attrs: Set<LinkerChainStart>,
         mats: Set<Material>,
         lights: Set<LightLinker>,
         engine: Engine,

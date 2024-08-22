@@ -1,7 +1,7 @@
 //! Attribute first-stage imager linker.
 
 use crate::{
-    err::Error, fmt_report, io::output::RasteriseBuilder, math::{trans3_builder, Point3, ProbabilityBuilder, Vec3}, ord::{cartesian::{X, Y}, Link, Name, Set}, phys::{synphot::TransmissionBuilder, ReflectanceBuilderShim}, sim::attribute::AttributeLinkerLinkerLinkerLinkerLinker, tools::{Binner, Range}
+    err::Error, fmt_report, io::output::{RasteriseBuilder, AxisAlignedPlane}, math::{Point3, Vec3}, ord::{cartesian::{X, Y}, Link, Name, Set}, phys::ReflectanceBuilderShim, sim::attribute::AttributeLinkerLinkerLinkerLinkerLinker, tools::{Binner, Range}
 };
 use arctk_attr::file;
 use std::fmt::{Display, Formatter};
@@ -30,7 +30,9 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinkerLinker {
     /// A chain of attributes where are executed in order. 
     AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinkerLinker>),
     /// An output into the output plane object. This rasterises the photon packet into plane. 
-    Rasterise(Name, RasteriseBuilder)
+    Rasterise(Name, RasteriseBuilder),
+    /// Hyperspectral output - output into a volume output
+    Hyperspectral(usize, AxisAlignedPlane),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
@@ -72,7 +74,10 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
                 let linked_id = *reg.get(&id)
                     .unwrap_or_else(|| panic!("Failed to link attribute-rasterise key: {}", id));
                 Self::Inst::Rasterise(linked_id, rast_build.build())
-            }
+            },
+            Self::Hyperspectral(id, plane) => {
+                Self::Inst::Hyperspectral(id, plane)
+            },
         })
     }
 }
@@ -163,6 +168,12 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
                 writeln!(fmt, "Rasterise: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, rast_builder, "rasteriser");
+                Ok(())
+            }
+            Self::Hyperspectral(ref id, ref plane) => {
+                writeln!(fmt, "Hyperspectral: ...")?;
+                fmt_report!(fmt, id, "id");
+                fmt_report!(fmt, plane, "plane");
                 Ok(())
             }
         }

@@ -1,12 +1,7 @@
 //! Photon scattering function.
 
 use crate::{
-    geom::Hit,
-    img::Colour,
-    ord::cartesian::{X, Y},
-    phys::{Crossing, Local, Photon},
-    sim::Attribute,
-    io::output::Output,
+    geom::Hit, img::Colour, io::output::{Output, OutputParameter}, math::Point3, ord::cartesian::{X, Y}, phys::{Crossing, Local, Photon}, sim::Attribute
 };
 use rand::{rngs::ThreadRng, Rng};
 
@@ -111,6 +106,16 @@ pub fn surface(
         },
         Attribute::Rasterise(id, ref rasteriser) => {
             rasteriser.rasterise(rng, phot, &mut data.plane[id]);
+        },
+        Attribute::Hyperspectral(ref id, ref plane) => {
+            assert_eq!(*data.vol[*id].param(), OutputParameter::Hyperspectral, "Hyperspectral output target not set to 'hyperspectral' param. ");
+
+            let projected_xy = plane.project_onto_plane(phot.ray().pos());
+            let hp_loc = Point3::new(projected_xy.0, projected_xy.1, phot.wavelength());
+            match data.vol[*id].gen_index(&hp_loc) {
+                Some(index) => data.vol[*id].data_mut()[index] += phot.power() * phot.weight(),
+                None => {},
+            }
         }
     }
 }

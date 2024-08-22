@@ -1,6 +1,6 @@
 //! Optical attributes.
 
-use crate::{fmt_report, geom::Orient, io::output::Rasteriser, phys::{Material, Reflectance}, tools::Binner};
+use crate::{fmt_report, geom::Orient, io::output::{Rasteriser, AxisAlignedPlane}, phys::{Material, Reflectance}, tools::Binner};
 use std::fmt::{Display, Error, Formatter};
 
 /// Surface attributes.
@@ -26,6 +26,8 @@ pub enum Attribute<'a> {
     AttributeChain(Vec<Attribute<'a>>),
     /// An output into the output plane object. This rasterises the photon packet into plane. 
     Rasterise(usize, Rasteriser),
+    /// Hyperspectral output - output into a volume output
+    Hyperspectral(usize, AxisAlignedPlane),
 }
 
 impl Display for Attribute<'_> {
@@ -77,6 +79,12 @@ impl Display for Attribute<'_> {
                 writeln!(fmt, "Rasterise: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, rast, "rasteriser");
+                Ok(())
+            }
+            Self::Hyperspectral(ref id, ref plane) => {
+                writeln!(fmt, "Hyperspectral: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, plane, "plane");
                 Ok(())
             }
         }

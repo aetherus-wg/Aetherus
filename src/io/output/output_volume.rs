@@ -23,6 +23,7 @@ pub enum OutputParameter {
     Energy, 
     Absorption,
     Shift,
+    Hyperspectral,
 }
 
 impl std::fmt::Display for OutputParameter {
@@ -32,6 +33,7 @@ impl std::fmt::Display for OutputParameter {
             OutputParameter::Energy => "Energy",
             OutputParameter::Absorption => "Absorption",
             OutputParameter::Shift => "Shift",
+            OutputParameter::Hyperspectral => "Hyperspectral",
         };
         write!(f, "{}", param_str)
     }
