@@ -1,22 +1,21 @@
 //! Attribute first-stage imager linker.
 
 use crate::{
-    err::Error,
-    fmt_report,
-    geom::{Orient, Ray},
-    math::{Dir3, Point3, Vec3},
-    ord::{Link, Name, Set, cartesian::{X, Y}},
-    phys::Reflectance,
-    sim::attribute::AttributeLinkerLinkerLinker,
-    tools::{Binner, Range},
-    io::output::{Rasteriser, AxisAlignedPlane},
+    err::Error, fmt_report, 
+    io::output::{RasteriseBuilder, AxisAlignedPlane}, 
+    math::{Point3, Vec3}, ord::{cartesian::{X, Y}, Link, Name, Set}, 
+    phys::ReflectanceBuilderShim, 
+    sim::attribute::AttributeLinkerLinkerLinkerLinkerLinkerLinker, 
+    tools::{Binner, Range}
 };
+use arctk_attr::file;
 use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
 /// Handles detector linking.
+#[file]
 #[derive(Clone)]
-pub enum AttributeLinkerLinkerLinkerLinker {
+pub enum AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker {
     /// Material interface, inside material name, outside material name.
     Interface(Name, Name),
     /// Partially reflective mirror, reflection fraction.
@@ -29,20 +28,20 @@ pub enum AttributeLinkerLinkerLinkerLinker {
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     /// The first coefficient is diffuse albedo, the second is specular.
-    Reflector(Reflectance),
+    Reflector(ReflectanceBuilderShim),
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
-    PhotonCollector(usize),
+    PhotonCollector(Name, bool),
     /// A chain of attributes where are executed in order. 
-    AttributeChain(Vec<AttributeLinkerLinkerLinkerLinker>),
+    AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker>),
     /// An output into the output plane object. This rasterises the photon packet into plane. 
-    Rasterise(usize, Rasteriser),
+    Rasterise(Name, RasteriseBuilder),
     /// Hyperspectral output - output into a volume output
-    Hyperspectral(usize, AxisAlignedPlane),
+    Hyperspectral(Name, AxisAlignedPlane),
 }
 
-impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
-    type Inst = AttributeLinkerLinkerLinker;
+impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker {
+    type Inst = AttributeLinkerLinkerLinkerLinkerLinkerLinker;
 
     #[inline]
     fn requires(&self) -> Vec<Name> {
@@ -60,15 +59,15 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
             Self::Imager(id, resolution, width, center, forward) => {
                 Self::Inst::Imager(id, resolution, width, center, forward)
             }
-            Self::Ccd(id, _resolution, width, center, forward, binner) => Self::Inst::Ccd(
-                *reg.get(&id)
-                    .unwrap_or_else(|| panic!("Failed to link attribute-ccd key: {}", id)),
-                width,
-                Orient::new(Ray::new(center, Dir3::from(forward))),
-                binner,
-            ),
-            Self::Reflector(reflect) => Self::Inst::Reflector(reflect),
-            Self::PhotonCollector(id) => Self::Inst::PhotonCollector(id),
+            Self::Ccd(id, _resolution, width, center, forward, binner) => {
+                Self::Inst::Ccd(id, _resolution, width, center, forward, binner)
+            }
+            Self::Reflector(ref_shim) => {
+                Self::Inst::Reflector(ref_shim)
+            }
+            Self::PhotonCollector(id, _kill_photons) => {
+                Self::Inst::PhotonCollector(id, _kill_photons)
+            },
             Self::AttributeChain(attrs) => {
                 let linked_attrs: Result<Vec<_>, _> = attrs.iter()
                     .map(|a| a.clone().link(&reg))
@@ -76,13 +75,17 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinker {
 
                 Self::Inst::AttributeChain(linked_attrs?)
             }
-            Self::Rasterise(id, rast) => Self::Inst::Rasterise(id, rast),
-            Self::Hyperspectral(id, plane) => Self::Inst::Hyperspectral(id, plane),
+            Self::Rasterise(id, rast_build) => Self::Inst::Rasterise(id, rast_build),
+            Self::Hyperspectral(name, plane) => {
+                let id = reg.get(&name)
+                    .expect(format!("Failed to like attribute-volume key: {}", name).as_str());
+                Self::Inst::Hyperspectral(*id, plane)
+            }
         })
     }
 }
 
-impl Display for AttributeLinkerLinkerLinkerLinker {
+impl Display for AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         match *self {
@@ -120,14 +123,41 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref reflectance) => {
+            Self::Reflector(ref ref_shim) => {
                 writeln!(fmt, "Reflector: ...")?;
-                fmt_report!(fmt, reflectance, "reflectance");
+                fmt_report!(
+                    fmt,
+                    if ref_shim.0.is_some() {
+                        format!("{}", ref_shim.0.as_ref().unwrap())
+                    } else {
+                        String::from("none")
+                    },
+                    "diffuse reflectance"
+                );
+                fmt_report!(
+                    fmt,
+                    if ref_shim.1.is_some() {
+                        format!("{}", ref_shim.1.as_ref().unwrap())
+                    } else {
+                        String::from("none")
+                    },
+                    "specular reflectance"
+                );
+                fmt_report!(
+                    fmt,
+                    if ref_shim.2.is_some() {
+                        format!("{}", ref_shim.2.as_ref().unwrap())
+                    } else {
+                        String::from("none")
+                    },
+                    "specularity"
+                );
                 Ok(())
             }
-            Self::PhotonCollector(ref id) => {
+            Self::PhotonCollector(ref id, ref kill_phot) => {
                 writeln!(fmt, "Photon Collector: ...")?;
-                fmt_report!(fmt, id, "id");
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, kill_phot, "kill photons?");
                 Ok(())
             }
             Self::AttributeChain(ref attrs) => {
@@ -137,10 +167,10 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 }
                 Ok(())
             }
-            Self::Rasterise(ref id, ref rast) => {
+            Self::Rasterise(ref id, ref rast_builder) => {
                 writeln!(fmt, "Rasterise: ...")?;
                 fmt_report!(fmt, id, "name");
-                fmt_report!(fmt, rast, "rasteriser");
+                fmt_report!(fmt, rast_builder, "rasteriser");
                 Ok(())
             }
             Self::Hyperspectral(ref id, ref plane) => {
@@ -149,6 +179,32 @@ impl Display for AttributeLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, plane, "plane");
                 Ok(())
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use json5;
+    use super::*;
+
+    /// Checks that we can deserialise an attribute chain from a JSON 5 input. 
+    /// This is necessary for getting it to run through the linker chain. 
+    #[test]
+    fn test_deserialise_attribute_chain() {
+        let desr_str = r#"
+        { AttributeChain: [
+            { PhotonCollector: ['pc', true]},
+            { Reflector: [null, {Tophat: [550e-9, 575e-9, 0.5]}, null]},
+        ]}
+        "#;
+
+        let attr: AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker  = json5::from_str(&desr_str).unwrap();
+        match attr {
+            AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker::AttributeChain(attrs) => {
+                assert_eq!(attrs.iter().count(), 2);
+            },
+            _ => panic!("Unable to deserialise AttributeChain. ")
         }
     }
 }

@@ -1,7 +1,7 @@
 //! Buildable parameters.
 
 use crate::{
-    fmt_report, geom::{BoundaryBuilder, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::{Build, Set}, phys::{LightLinkerBuilder, MaterialBuilder}, sim::{AttributeLinkerLinkerLinkerLinkerLinkerLinker, EngineBuilder, Parameters, Settings}
+    fmt_report, geom::{BoundaryBuilder, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::{Build, Set}, phys::{LightLinkerBuilder, MaterialBuilder}, sim::{LinkerChainStart, EngineBuilder, Parameters, Settings}
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -16,7 +16,7 @@ pub struct ParametersBuilder {
     /// Surfaces.
     surfs: Set<SurfaceLinker>,
     /// Attributes.
-    attrs: Set<AttributeLinkerLinkerLinkerLinkerLinkerLinker>,
+    attrs: Set<LinkerChainStart>,
     /// Materials.
     mats: Set<MaterialBuilder>,
     /// Main light.
@@ -37,7 +37,7 @@ impl ParametersBuilder {
         boundary: BoundaryBuilder,
         tree: TreeSettings,
         surfs: Set<SurfaceLinker>,
-        attrs: Set<AttributeLinkerLinkerLinkerLinkerLinkerLinker>,
+        attrs: Set<LinkerChainStart>,
         mats: Set<MaterialBuilder>,
         lights: Set<LightLinkerBuilder>,
         engine: EngineBuilder,

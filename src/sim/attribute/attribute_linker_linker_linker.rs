@@ -9,7 +9,7 @@ use crate::{
     phys::Reflectance,
     sim::attribute::AttributeLinkerLinker,
     tools::{Binner, Range},
-    io::output::Rasteriser,
+    io::output::{Rasteriser, AxisAlignedPlane},
 };
 use std::fmt::{Display, Formatter};
 
@@ -36,6 +36,9 @@ pub enum AttributeLinkerLinkerLinker {
     AttributeChain(Vec<AttributeLinkerLinkerLinker>),
     /// An output into the output plane object. This rasterises the photon packet into plane. 
     Rasterise(usize, Rasteriser),
+    /// Hyperspectral output - output into a volume output
+    Hyperspectral(usize, AxisAlignedPlane),
+    
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinker {
@@ -71,6 +74,7 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinker {
                 Self::Inst::AttributeChain(linked_attrs?)
             }
             Self::Rasterise(id, rast) => Self::Inst::Rasterise(id, rast),
+            Self::Hyperspectral(id, plane) => Self::Inst::Hyperspectral(id, plane),
         })
     }
 }
@@ -132,6 +136,12 @@ impl Display for AttributeLinkerLinkerLinker {
                 writeln!(fmt, "Rasterise: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, rast, "rasteriser");
+                Ok(())
+            }
+            Self::Hyperspectral(ref id, ref plane) => {
+                writeln!(fmt, "Hyperspectral: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, plane, "plane");
                 Ok(())
             }
         }

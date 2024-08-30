@@ -1,7 +1,7 @@
 use arctk_attr::file;
-use crate::{ord::Set, sim::AttributeLinkerLinkerLinkerLinkerLinkerLinker};
+use crate::{ord::Set, sim::AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker};
 
-type LinkerChainStart = AttributeLinkerLinkerLinkerLinkerLinkerLinker;
+pub type LinkerChainStart = AttributeLinkerLinkerLinkerLinkerLinkerLinkerLinker;
 
 /// This is the jumping on point for the attribute chain. 
 /// This enum serves a dual purpose. It simultaneously acts as as a convenient
