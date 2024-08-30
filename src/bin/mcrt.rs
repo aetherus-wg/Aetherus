@@ -66,6 +66,8 @@ fn main() {
     report!(lights, "lights");
     let attrs = params
         .attrs
+        .link(base_output.reg.plane_reg.set())
+        .expect("Failed to link plane output to attributes. ")
         .link(base_output.reg.phot_cols_reg.set())
         .expect("Failed to link photon collectors to attributes.")
         .link(base_output.reg.ccd_reg.set())

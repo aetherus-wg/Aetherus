@@ -1,6 +1,6 @@
 //! Optical attributes.
 
-use crate::{fmt_report, geom::Orient, phys::Material, phys::Reflectance, tools::Binner};
+use crate::{fmt_report, geom::Orient, io::output::Rasteriser, phys::{Material, Reflectance}, tools::Binner};
 use std::fmt::{Display, Error, Formatter};
 
 /// Surface attributes.
@@ -24,6 +24,8 @@ pub enum Attribute<'a> {
     /// A chain of attributes, allowing us to perform multiple actions with a 
     /// photon packet for each interaction. We can chain attributes together here. 
     AttributeChain(Vec<Attribute<'a>>),
+    /// An output into the output plane object. This rasterises the photon packet into plane. 
+    Rasterise(usize, Rasteriser),
 }
 
 impl Display for Attribute<'_> {
@@ -71,6 +73,12 @@ impl Display for Attribute<'_> {
                 }
                 Ok(())
             },
+            Self::Rasterise(ref id, ref rast) => {
+                writeln!(fmt, "Rasterise: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, rast, "rasteriser");
+                Ok(())
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ use std::fmt::{Display, Error, Formatter};
 
 /// Probability distribution builders.
 #[file]
+#[derive(Clone)]
 pub enum ProbabilityBuilder {
     /// Point.
     Point(f64),

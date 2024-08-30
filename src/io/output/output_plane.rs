@@ -47,10 +47,11 @@ pub struct OutputPlane {
     maxs: Point2,
     res: [usize; 2],
     data: Array2<f64>,
+    plane: AxisAlignedPlane
 }
 
 impl OutputPlane {
-    pub fn new(mins: Point2, maxs: Point2, res: [usize; 2]) -> Self {
+    pub fn new(mins: Point2, maxs: Point2, res: [usize; 2], plane: AxisAlignedPlane) -> Self {
         debug_assert!(res[X] > 0);
         debug_assert!(res[Y] > 0);
         
@@ -58,7 +59,8 @@ impl OutputPlane {
             mins, 
             maxs,
             res,
-            data: Array2::zeros(res)
+            data: Array2::zeros(res),
+            plane
         }
     }
 
@@ -111,6 +113,9 @@ impl OutputPlane {
         Some(&mut self.data[[i, j]])
     }
 
+    pub fn project(&self, p: &Point3) -> (f64, f64) {
+        self.plane.project_onto_plane(p)
+    }
 }
 
 impl AddAssign<&Self> for OutputPlane {
@@ -137,7 +142,8 @@ mod tests {
         let mins = Point2::new(0.0, 0.0);
         let maxs = Point2::new(10.0, 10.0);
         let res = [100, 100];
-        let output_plane = OutputPlane::new(mins, maxs, res);
+        let plane = AxisAlignedPlane::XY;
+        let output_plane = OutputPlane::new(mins, maxs, res, plane);
         
         // Check that the data array is correctly allocated with the specified resolution
         assert_eq!(output_plane.data.shape(), &[100, 100]);
@@ -150,7 +156,8 @@ mod tests {
         let mins = Point2::new(0.0, 0.0);
         let maxs = Point2::new(10.0, 10.0);
         let res = [100, 100];
-        let output_plane = OutputPlane::new(mins, maxs, res);
+        let plane = AxisAlignedPlane::XY;
+        let output_plane = OutputPlane::new(mins, maxs, res, plane);
 
         let expected_area = 100.0;
         let actual_area = output_plane.area();
@@ -163,7 +170,8 @@ mod tests {
         let mins = Point2::new(0.0, 0.0);
         let maxs = Point2::new(10.0, 5.0);
         let res = [100, 100];
-        let output_plane = OutputPlane::new(mins, maxs, res);
+        let plane = AxisAlignedPlane::XY;
+        let output_plane = OutputPlane::new(mins, maxs, res, plane);
 
         // Check the result based on the dimensions. 
         assert_eq!(output_plane.dx(), 0.1);
@@ -176,7 +184,8 @@ mod tests {
         let mins = Point2::new(0.0, 0.0);
         let maxs = Point2::new(10.0, 10.0);
         let res = [100, 100];
-        let output_plane = OutputPlane::new( mins, maxs, res);
+        let plane = AxisAlignedPlane::XY;
+        let output_plane = OutputPlane::new( mins, maxs, res, plane);
         let expected_pix_area = 0.01;
         let actual_pix_area = output_plane.pix_area();
         assert_eq!(actual_pix_area, expected_pix_area);
@@ -187,7 +196,8 @@ mod tests {
         let mins = Point2::new(0.0, 0.0);
         let maxs = Point2::new(10.0, 10.0);
         let res = [100, 100];
-        let output_plane = OutputPlane::new(mins, maxs, res);
+        let plane = AxisAlignedPlane::XY;
+        let output_plane = OutputPlane::new(mins, maxs, res, plane);
 
         // Check the pixel indices
         assert_eq!(output_plane.index_for_coord(5.0, 5.0), Some((50, 50)));
@@ -202,7 +212,8 @@ mod tests {
         let mins = Point2::new(0.0, 0.0);
         let maxs = Point2::new(10.0, 10.0);
         let res = [100, 100];
-        let output_plane = OutputPlane::new(mins, maxs, res);
+        let plane = AxisAlignedPlane::XY;
+        let output_plane = OutputPlane::new(mins, maxs, res, plane);
 
         // Test coordinates outside of the grid
         assert_eq!(output_plane.index_for_coord(-1.0, 5.0), None);
@@ -217,7 +228,8 @@ mod tests {
         let mins = Point2::new(0.0, 0.0);
         let maxs = Point2::new(10.0, 10.0);
         let res = [100, 100];
-        let mut output_plane = OutputPlane::new(mins, maxs, res);
+        let plane = AxisAlignedPlane::XY;
+        let mut output_plane = OutputPlane::new(mins, maxs, res, plane);
 
         // Set initial values
         *output_plane.at_mut(5.0, 5.0).unwrap() = 1.0;

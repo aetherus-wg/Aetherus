@@ -16,7 +16,7 @@ pub struct OutputPlaneBuilder {
 
 impl OutputPlaneBuilder {
     pub fn build(&self) -> OutputPlane {
-        OutputPlane::new(self.boundary.0, self.boundary.1, self.res)
+        OutputPlane::new(self.boundary.0, self.boundary.1, self.res, self.plane.clone())
     }
 }
 
@@ -45,14 +45,14 @@ impl Display for OutputPlaneBuilder {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, "...", "boundary");
-        fmt_report!(fmt, format!("[{}, {}", self.boundary.0.x(), self.boundary.0.y()), "mins");
-        fmt_report!(fmt, format!("[{}, {}", self.boundary.0.x(), self.boundary.0.y()), "maxs");
+        fmt_report!(fmt, format!("[{}, {}]", self.boundary.0.x(), self.boundary.0.y()), "mins");
+        fmt_report!(fmt, format!("[{}, {}]", self.boundary.1.x(), self.boundary.1.y()), "maxs");
         fmt_report!(
             fmt,
             &format!("[{} x {}]", self.res[X], self.res[Y]),
             "resolution"
         );
-        fmt_report!(fmt, self.plane, "parameter");
+        fmt_report!(fmt, self.plane, "plane");
         Ok(())
     }
 }

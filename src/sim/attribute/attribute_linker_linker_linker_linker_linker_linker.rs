@@ -1,22 +1,16 @@
 //! Attribute first-stage imager linker.
 
 use crate::{
-    err::Error,
-    fmt_report,
-    math::{Point3, Vec3},
-    ord::{cartesian::{X, Y}, Link, Name, Set},
-    phys::{ReflectanceBuilder, ReflectanceBuilderShim},
-    sim::attribute::AttributeLinkerLinkerLinkerLinker,
-    tools::{Binner, Range},
-    io::output::Rasteriser,
+    err::Error, fmt_report, io::output::RasteriseBuilder, math::{trans3_builder, Point3, ProbabilityBuilder, Vec3}, ord::{cartesian::{X, Y}, Link, Name, Set}, phys::{synphot::TransmissionBuilder, ReflectanceBuilderShim}, sim::attribute::AttributeLinkerLinkerLinkerLinkerLinker, tools::{Binner, Range}
 };
 use arctk_attr::file;
 use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
 /// Handles detector linking.
+#[file]
 #[derive(Clone)]
-pub enum AttributeLinkerLinkerLinkerLinkerLinker {
+pub enum AttributeLinkerLinkerLinkerLinkerLinkerLinker {
     /// Material interface, inside material name, outside material name.
     Interface(Name, Name),
     /// Partially reflective mirror, reflection fraction.
@@ -34,13 +28,13 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(Name, bool),
     /// A chain of attributes where are executed in order. 
-    AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinker>),
+    AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinkerLinker>),
     /// An output into the output plane object. This rasterises the photon packet into plane. 
-    Rasterise(usize, Rasteriser),
+    Rasterise(Name, RasteriseBuilder)
 }
 
-impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
-    type Inst = AttributeLinkerLinkerLinkerLinker;
+impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
+    type Inst = AttributeLinkerLinkerLinkerLinkerLinker;
 
     #[inline]
     fn requires(&self) -> Vec<Name> {
@@ -61,15 +55,11 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
             Self::Ccd(id, _resolution, width, center, forward, binner) => {
                 Self::Inst::Ccd(id, _resolution, width, center, forward, binner)
             }
-            Self::Reflector(ref_sim) => {
-                let ref_build: ReflectanceBuilder = ref_sim.into();
-                let ref_model = ref_build.build()?;
-                Self::Inst::Reflector(ref_model)
+            Self::Reflector(ref_shim) => {
+                Self::Inst::Reflector(ref_shim)
             }
-            Self::PhotonCollector(ref id, _kill_photons) => {
-                Self::Inst::PhotonCollector(*reg.get(&id).unwrap_or_else(|| {
-                    panic!("Failed to link attribute-photon collector key : {}", id)
-                }))
+            Self::PhotonCollector(id, _kill_photons) => {
+                Self::Inst::PhotonCollector(id, _kill_photons)
             },
             Self::AttributeChain(attrs) => {
                 let linked_attrs: Result<Vec<_>, _> = attrs.iter()
@@ -78,12 +68,16 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
 
                 Self::Inst::AttributeChain(linked_attrs?)
             }
-            Self::Rasterise(id, rast) => Self::Inst::Rasterise(id, rast),
+            Self::Rasterise(ref id, ref rast_build) => {
+                let linked_id = *reg.get(&id)
+                    .unwrap_or_else(|| panic!("Failed to link attribute-rasterise key: {}", id));
+                Self::Inst::Rasterise(linked_id, rast_build.build())
+            }
         })
     }
 }
 
-impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
+impl Display for AttributeLinkerLinkerLinkerLinkerLinkerLinker {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         match *self {
@@ -165,12 +159,38 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 }
                 Ok(())
             }
-            Self::Rasterise(ref id, ref rast) => {
+            Self::Rasterise(ref id, ref rast_builder) => {
                 writeln!(fmt, "Rasterise: ...")?;
                 fmt_report!(fmt, id, "name");
-                fmt_report!(fmt, rast, "rasteriser");
+                fmt_report!(fmt, rast_builder, "rasteriser");
                 Ok(())
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use json5;
+    use super::*;
+
+    /// Checks that we can deserialise an attribute chain from a JSON 5 input. 
+    /// This is necessary for getting it to run through the linker chain. 
+    #[test]
+    fn test_deserialise_attribute_chain() {
+        let desr_str = r#"
+        { AttributeChain: [
+            { PhotonCollector: ['pc', true]},
+            { Reflector: [null, {Tophat: [550e-9, 575e-9, 0.5]}, null]},
+        ]}
+        "#;
+
+        let attr: AttributeLinkerLinkerLinkerLinkerLinkerLinker  = json5::from_str(&desr_str).unwrap();
+        match attr {
+            AttributeLinkerLinkerLinkerLinkerLinkerLinker::AttributeChain(attrs) => {
+                assert_eq!(attrs.iter().count(), 2);
+            },
+            _ => panic!("Unable to deserialise AttributeChain. ")
         }
     }
 }
