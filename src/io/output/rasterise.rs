@@ -6,8 +6,12 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Rasteriser {
+    /// Rasterises the illuminance of the photons fed to the rasteriser using 
+    /// a provided transmission function. 
     Illuminance(Transmission),
-    CorrelatedColourTemperature,
+    /// Counts the number of photon packets that trigger the rasteriser by summing
+    /// their weights. 
+    PhotonCount,
 }
 
 impl Rasteriser {
@@ -25,8 +29,12 @@ impl Rasteriser {
                     } 
                 };
             }
-            Self::CorrelatedColourTemperature => {
-                todo!()
+            Self::PhotonCount => {
+                let xy = plane.project(phot.ray().pos());
+                match plane.at_mut(xy.0, xy.1) {
+                    Some(pix) => *pix += phot.weight(),
+                    None => panic!("Photon count rasterisation outside raster"),
+                }   
             }
         }
     }
@@ -40,8 +48,8 @@ impl Display for Rasteriser {
                 writeln!(fmt, "Illuminance: ")?;
                 fmt_report!(fmt, trans, "transmission function")
             }
-            Self::CorrelatedColourTemperature => {
-                writeln!(fmt, "CorrelatedColourTemperature: ")?;
+            Self::PhotonCount => {
+                writeln!(fmt, "PhotonCount: ...")?;
             }
         }
         Ok(())

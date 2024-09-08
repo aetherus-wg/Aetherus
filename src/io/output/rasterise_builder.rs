@@ -10,14 +10,14 @@ use super::Rasteriser;
 #[derive(Clone)]
 pub enum RasteriseBuilder {
     Illuminance(TransmissionBuilder),
-    CorrelatedColourTemperature,
+    PhotonCount,
 }
 
 impl RasteriseBuilder {
     pub fn build(&self) -> Rasteriser {
         match self {
             Self::Illuminance(ref tb) => Rasteriser::Illuminance(tb.build()),
-            Self::CorrelatedColourTemperature => todo!(),
+            Self::PhotonCount => Rasteriser::PhotonCount,
         }
     }
 }
@@ -29,9 +29,8 @@ impl Display for RasteriseBuilder {
                 writeln!(fmt, "Illuminance: ...")?;
                 fmt_report!(fmt, tb, "transmission")
             },
-            Self::CorrelatedColourTemperature => {
-                writeln!(fmt, "Correlated Colour Temperature: ...")?;
-
+            Self::PhotonCount => {
+                writeln!(fmt, "Count: ...")?;
             }
         }
         Ok(())
