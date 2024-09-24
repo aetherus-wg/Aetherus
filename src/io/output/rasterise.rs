@@ -23,8 +23,9 @@ impl Rasteriser {
 
                 if should_transmit {
                     let xy = plane.project(phot.ray().pos());
+                    let area = plane.pix_area();
                     match plane.at_mut(xy.0, xy.1) {
-                        Some(pix) => *pix += phot.weight() * phot.power(),
+                        Some(pix) => *pix += phot.weight() * phot.power() / area,
                         None => panic!("Illuminance rasterisation outside raster"),
                     } 
                 };
