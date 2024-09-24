@@ -112,8 +112,10 @@ pub fn surface(
 
             let projected_xy = plane.project_onto_plane(phot.ray().pos());
             let hp_loc = Point3::new(projected_xy.0, projected_xy.1, phot.wavelength());
+            let projected_area = plane.projected_pix_area(&data.vol[*id]);
+            let spec_binsize = plane.hyperspectral_bin_size(&data.vol[*id]);
             match data.vol[*id].gen_index(&hp_loc) {
-                Some(index) => data.vol[*id].data_mut()[index] += phot.power() * phot.weight(),
+                Some(index) => data.vol[*id].data_mut()[index] += phot.power() * phot.weight() / (projected_area * spec_binsize),
                 None => {},
             }
         }

@@ -6,7 +6,8 @@ use std::fmt;
 use crate::{
     fs::Save,
     math::{Point2, Point3},
-    ord::cartesian::{X, Y}
+    ord::cartesian::{X, Y, Z},
+    io::output::OutputVolume,
 };
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +36,19 @@ impl AxisAlignedPlane {
             Self::XY => (p.x(), p.y()),
             Self::XZ => (p.x(), p.z()),
             Self::YZ => (p.y(), p.z()),
+        }
+    }
+
+    /// Calculates the pixel area of the projected 2D plane from a given volume. 
+    pub fn projected_pix_area(&self, v: &OutputVolume) -> f64 {
+        v.voxel_volume() / self.hyperspectral_bin_size(v)
+    }
+
+    pub fn hyperspectral_bin_size(&self, v: &OutputVolume) -> f64 {
+        match *self {
+            Self::XY => v.boundary().widths()[Z] / v.res()[Z] as f64,
+            Self::XZ => v.boundary().widths()[Y] / v.res()[Y] as f64,
+            Self::YZ => v.boundary().widths()[X] / v.res()[X] as f64,
         }
     }
 }
@@ -135,6 +149,7 @@ impl Save for OutputPlane {
 
 #[cfg(test)]
 mod tests {
+    use crate::geom::Cube;
     use super::*;
 
     #[test]
@@ -240,5 +255,20 @@ mod tests {
         assert_eq!(output_plane.at(5.0, 5.0), Some(&1.0));
         assert_eq!(output_plane.at(7.0, 7.0), Some(&2.0));
         assert_eq!(output_plane.at(9.0, 9.0), Some(&3.0));
+    }
+
+    #[test]
+    fn test_projected_pix_area() {
+        let mins = Point3::new(0., 0., 0.);
+        let maxs = Point3::new(3., 2., 1.);
+        let output_volume = OutputVolume::new(
+            Cube::new(mins, maxs), 
+            [10, 10, 10], 
+            crate::io::output::OutputParameter::Hyperspectral,
+        );
+
+        assert_eq!(AxisAlignedPlane::XY.projected_pix_area(&output_volume), 0.06);
+        assert_eq!(AxisAlignedPlane::XZ.projected_pix_area(&output_volume), 0.03);
+        assert_eq!(AxisAlignedPlane::YZ.projected_pix_area(&output_volume), 0.02);
     }
 }
