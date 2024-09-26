@@ -1,10 +1,11 @@
 //! Loadable parameters.
 
 use crate::{
-    err::Error, fs::{Load, Redirect}, geom::{boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinkerBuilderLoader, MaterialBuilder}, sim::{
+    err::Error, fs::{Load, Redirect}, geom::{boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings}, io::output::OutputConfig, phys::{LightLinkerBuilderLoader, MaterialBuilder}, sim::{
         AttributeLinkerChainProxy, EngineBuilderLoader, ParametersBuilder, Settings,
         attribute_chain_resolve_set,
-    }
+    },
+    ord::{MultiSet, Set},
 };
 use arctk_attr::file;
 use std::path::Path;
@@ -19,13 +20,13 @@ pub struct ParametersBuilderLoader {
     /// Tree settings.
     tree: Redirect<TreeSettings>,
     /// Surfaces.
-    surfs: Redirect<Set<SurfaceLinkerLoader>>,
+    surfs: MultiSet<SurfaceLinkerLoader>,
     /// Attributes.
-    attrs: Redirect<Set<AttributeLinkerChainProxy>>,
+    attrs: MultiSet<AttributeLinkerChainProxy>,
     /// Materials.
-    mats: Redirect<Set<Redirect<MaterialBuilder>>>,
+    mats: MultiSet<Redirect<MaterialBuilder>>,
     /// Main light.
-    lights: Redirect<Set<LightLinkerBuilderLoader>>,
+    lights: MultiSet<LightLinkerBuilderLoader>,
     /// Engine selection.
     engine: EngineBuilderLoader,
     /// Output
