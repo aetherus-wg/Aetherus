@@ -10,7 +10,9 @@ use crate::{
 };
 use serde::{Serialize, Deserialize};
 
-/// Is intended to allow us to load combinations of 
+/// Is intended to allow us to load an array of Redirects from different files, both
+/// inline (Here), and in different files (There). With this, multiple files can
+/// be included for any of the parameters for which this is used. 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum MultiSet<T> {
