@@ -106,28 +106,8 @@ fn main() {
             report!(light, light_id);
             let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, light, &tree, &sett, &bound);
 
-            let data =
-                run::multi_thread(&engine, input, &base_output).expect("Failed to run MCRT.");
+            output = run::multi_thread(&engine, input, &output).expect("Failed to run MCRT.");
 
-            // In the case that we are outputting the files for each individual light, we can output it here with a simple setting.
-            if let Some(output_individual) = sett.output_individual_lights() {
-                if output_individual {
-                    let indiv_outpath = out_dir.join(&light_id.as_string());
-                    if !indiv_outpath.exists() {
-                        // Create the directory for the output if it does not already exist.
-                        std::fs::create_dir(&indiv_outpath).expect(&format!(
-                            "Unable to create output directory for light '{}'",
-                            light_id
-                        ));
-                    }
-                    data.save(&indiv_outpath).expect(&format!(
-                        "Failed to save output data for light '{}'",
-                        light_id
-                    ));
-                }
-            }
-
-            output += data;
             output
         });
 
