@@ -22,6 +22,7 @@ impl ProgressBar {
         pb.set_style(
             indicatif::ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{bar:40.green/red}] [{pos}/{len}] {percent}% ({eta}) {msg}")
+            .expect("Unable to unwrap progress bar. ")
             .progress_chars("\\/")
         );
         pb.set_message(msg);

@@ -27,7 +27,7 @@ assert_approx_eq = "1.1.*"
 colored = "2.0.*"
 dimensioned = "0.7.*"
 hex = "0.4.*"
-indicatif = "0.16.*"
+indicatif = "0.17.*"
 lazy_static = "1.4.*"
 nalgebra = { version = "0.31.*", features = ["serde-serialize"] }
 ndarray = { version = "0.15.*", features = ["rayon", "serde-1"] }
