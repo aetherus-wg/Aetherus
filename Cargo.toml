@@ -1,5 +1,5 @@
 [package]
-name = "Aetherus"
+name = "aetherus"
 version = "0.2.0"
 authors = ["Freddy Wordingham <f.wordingham@exeter.ac.uk>", "Sam Morrell <s.a.f.morrell@exeter.ac.uk>"]
 edition = "2018"
@@ -14,6 +14,8 @@ exclude = ["docs/", "input/", "output/"]
 
 [features]
 default = []
+mpi = ["dep:mpi", "dep:memoffset"]
+pyo3 = ['dep:pyo3']
 
 [dependencies]
 # ARCTK Dependencies
@@ -25,7 +27,7 @@ assert_approx_eq = "1.1.*"
 colored = "2.0.*"
 dimensioned = "0.7.*"
 hex = "0.4.*"
-indicatif = "0.16.*"
+indicatif = "0.17.*"
 lazy_static = "1.4.*"
 nalgebra = { version = "0.31.*", features = ["serde-serialize"] }
 ndarray = { version = "0.15.*", features = ["rayon", "serde-1"] }
@@ -49,7 +51,14 @@ lidrs = "0.2.*"
 
 # Formats for the File I/O Library. 
 json5 = "0.4.*"
-netcdf = "0.8.1"
+netcdf = "^0.8.1"
+
+# Optional MPI dependencies
+mpi = { version = "0.7.0", optional = true }
+memoffset = { version = "0.9.0", optional = true }
+
+# Python modules
+pyo3 = { version = "0.21.1", features = ["extension-module"], optional = true }
 
 [dev-dependencies]
 tempfile = "3.2.*"
@@ -65,3 +74,8 @@ rustdoc-args = [ "--html-in-header", "./src/docs-header.html" ]
 
 [[bin]]
 name = "mcrt"
+
+[[bin]]
+name = "mpi_tests"
+path = "src/bin/tests/mpi_tests.rs"
+required-features = ["mpi"]

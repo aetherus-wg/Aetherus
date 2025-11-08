@@ -2,7 +2,7 @@
 //! This module contains the complementary SI prefixes for the units in core::dim::si;
 //! Some examples of their use:
 //! ```rust
-//! # use Aetherus::core::dim::{si::*, prefix::*};
+//! # use aetherus::core::dim::{si::*, prefix::*};
 //! let equatorial_radius_of_earth = 6_378. * KILO * Meter;
 //! let equatorial_radius_of_earth = 6_378. * KILO * Meter;
 //! ```

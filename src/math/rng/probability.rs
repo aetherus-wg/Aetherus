@@ -26,7 +26,7 @@ use std::{
 /// - `Probability::ConstantSpline`: Sample from a CDF whose value is determined by a `Formula`.
 /// - `Probability::LinearSpline`: Sample from a PDF where an arbitrary dataset is represented by (N - 1) linear splines.
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Probability {
     /// Point.
     Point {
@@ -422,7 +422,7 @@ impl Display for Probability {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::Probability;
     use assert_approx_eq::assert_approx_eq;
     use ndarray::Array1;

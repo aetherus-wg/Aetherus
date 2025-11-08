@@ -9,10 +9,12 @@ use crate::{
     phys::Reflectance,
     sim::attribute::Attribute,
     tools::Binner,
+    io::output::{Rasteriser, AxisAlignedPlane},
 };
 use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
+#[derive(Clone)]
 pub enum AttributeLinker {
     /// Material interface, inside material name, outside material name.
     Interface(Name, Name),
@@ -29,6 +31,12 @@ pub enum AttributeLinker {
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(usize),
+    /// A chain of attributes where are executed in order. 
+    AttributeChain(Vec<AttributeLinker>),
+    /// An output into the output plane object. This rasterises the photon packet into plane. 
+    Rasterise(usize, Rasteriser),
+    /// Hyperspectral output - output into a volume output
+    Hyperspectral(usize, AxisAlignedPlane),
 }
 
 impl<'a> Link<'a, Material> for AttributeLinker {
@@ -43,7 +51,10 @@ impl<'a> Link<'a, Material> for AttributeLinker {
             | Self::Imager(..)
             | Self::Ccd(..)
             | Self::Reflector(..)
-            | Self::PhotonCollector(..) => {
+            | Self::PhotonCollector(..) 
+            | Self::AttributeChain(..) 
+            | Self::Rasterise(..)
+            | Self::Hyperspectral(..) => {
                 vec![]
             }
         }
@@ -66,6 +77,15 @@ impl<'a> Link<'a, Material> for AttributeLinker {
             Self::Ccd(id, width, orient, binner) => Self::Inst::Ccd(id, width, orient, binner),
             Self::Reflector(reflectance) => Self::Inst::Reflector(reflectance),
             Self::PhotonCollector(id) => Self::Inst::PhotonCollector(id),
+            Self::AttributeChain(attrs) => {
+                let linked_attrs: Result<Vec<_>, _> = attrs.iter()
+                    .map(|a| a.clone().link(&mats))
+                    .collect();
+
+                Self::Inst::AttributeChain(linked_attrs?)
+            }
+            Self::Rasterise(id, rast) => Self::Inst::Rasterise(id, rast),
+            Self::Hyperspectral(id, plane) => Self::Inst::Hyperspectral(id, plane),
         })
     }
 }
@@ -106,6 +126,25 @@ impl Display for AttributeLinker {
             Self::PhotonCollector(ref id) => {
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "name");
+                Ok(())
+            }
+            Self::AttributeChain(ref attrs) => {
+                writeln!(fmt, "Attribute Chain: ...")?;
+                for attr in attrs {
+                    attr.fmt(fmt)?;
+                }
+                Ok(())
+            }
+            Self::Rasterise(ref id, ref rast) => {
+                writeln!(fmt, "Rasterise: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, rast, "rasteriser");
+                Ok(())
+            }
+            Self::Hyperspectral(ref id, ref plane) => {
+                writeln!(fmt, "Hyperspectral: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, plane, "plane");
                 Ok(())
             }
         }

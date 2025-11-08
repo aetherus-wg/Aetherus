@@ -3,7 +3,7 @@
 use crate::{
     access,
     img::Colour,
-    ord::{X, Y},
+    ord::cartesian::{X, Y},
 };
 use ndarray::Array2;
 use std::ops::AddAssign;

@@ -4,17 +4,17 @@ use crate::{
     err::Error,
     fmt_report,
     math::{Point3, Vec3},
-    ord::{Link, Name, Set, X, Y},
-    phys::{Reflectance, SpectrumBuilder},
+    ord::{cartesian::{X, Y}, Link, Name, Set},
+    phys::{ReflectanceBuilder, ReflectanceBuilderShim},
     sim::attribute::AttributeLinkerLinkerLinkerLinker,
     tools::{Binner, Range},
+    io::output::{Rasteriser, AxisAlignedPlane},
 };
-use arctk_attr::file;
 use std::fmt::{Display, Formatter};
 
 /// Surface attribute setup.
 /// Handles detector linking.
-#[file]
+#[derive(Clone)]
 pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     /// Material interface, inside material name, outside material name.
     Interface(Name, Name),
@@ -28,14 +28,16 @@ pub enum AttributeLinkerLinkerLinkerLinkerLinker {
     Ccd(Name, [usize; 2], f64, Point3, Vec3, Binner),
     /// A purely reflecting material, with a provided reflectance model.
     /// The first coefficient is diffuse albedo, the second is specular.
-    Reflector(
-        Option<SpectrumBuilder>,
-        Option<SpectrumBuilder>,
-        Option<f64>,
-    ),
+    Reflector(ReflectanceBuilderShim),
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(Name, bool),
+    /// A chain of attributes where are executed in order. 
+    AttributeChain(Vec<AttributeLinkerLinkerLinkerLinkerLinker>),
+    /// An output into the output plane object. This rasterises the photon packet into plane. 
+    Rasterise(usize, Rasteriser),
+    /// Hyperspectral output - output into a volume output
+    Hyperspectral(usize, AxisAlignedPlane),
 }
 
 impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
@@ -60,34 +62,25 @@ impl<'a> Link<'a, usize> for AttributeLinkerLinkerLinkerLinkerLinker {
             Self::Ccd(id, _resolution, width, center, forward, binner) => {
                 Self::Inst::Ccd(id, _resolution, width, center, forward, binner)
             }
-            Self::Reflector(diff_ref, spec_ref, specularity) => {
-                let ref_model = if diff_ref.is_some() {
-                    if spec_ref.is_some() {
-                        // Check that the specularity of the reflector is defined.
-                        assert!(specularity.is_some());
-                        Reflectance::Composite {
-                            diffuse_refspec: diff_ref.unwrap().build()?,
-                            specular_refspec: spec_ref.unwrap().build()?,
-                            specularity: specularity.unwrap(),
-                        }
-                    } else {
-                        Reflectance::Lambertian {
-                            refspec: diff_ref.unwrap().build()?,
-                        }
-                    }
-                } else {
-                    Reflectance::Specular {
-                        refspec: spec_ref.unwrap().build()?,
-                    }
-                };
-
+            Self::Reflector(ref_sim) => {
+                let ref_build: ReflectanceBuilder = ref_sim.into();
+                let ref_model = ref_build.build()?;
                 Self::Inst::Reflector(ref_model)
             }
             Self::PhotonCollector(ref id, _kill_photons) => {
                 Self::Inst::PhotonCollector(*reg.get(&id).unwrap_or_else(|| {
                     panic!("Failed to link attribute-photon collector key : {}", id)
                 }))
+            },
+            Self::AttributeChain(attrs) => {
+                let linked_attrs: Result<Vec<_>, _> = attrs.iter()
+                    .map(|a| a.clone().link(&reg))
+                    .collect();
+
+                Self::Inst::AttributeChain(linked_attrs?)
             }
+            Self::Rasterise(id, rast) => Self::Inst::Rasterise(id, rast),
+            Self::Hyperspectral(id, plane) => Self::Inst::Hyperspectral(id, plane),
         })
     }
 }
@@ -130,12 +123,12 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 fmt_report!(fmt, binner, "binner");
                 Ok(())
             }
-            Self::Reflector(ref diff_ref, ref spec_ref, ref specularity) => {
+            Self::Reflector(ref ref_shim) => {
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(
                     fmt,
-                    if diff_ref.is_some() {
-                        format!("{}", diff_ref.as_ref().unwrap())
+                    if ref_shim.0.is_some() {
+                        format!("{}", ref_shim.0.as_ref().unwrap())
                     } else {
                         String::from("none")
                     },
@@ -143,8 +136,8 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 );
                 fmt_report!(
                     fmt,
-                    if spec_ref.is_some() {
-                        format!("{}", spec_ref.as_ref().unwrap())
+                    if ref_shim.1.is_some() {
+                        format!("{}", ref_shim.1.as_ref().unwrap())
                     } else {
                         String::from("none")
                     },
@@ -152,8 +145,8 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 );
                 fmt_report!(
                     fmt,
-                    if specularity.is_some() {
-                        format!("{}", specularity.as_ref().unwrap())
+                    if ref_shim.2.is_some() {
+                        format!("{}", ref_shim.2.as_ref().unwrap())
                     } else {
                         String::from("none")
                     },
@@ -165,6 +158,25 @@ impl Display for AttributeLinkerLinkerLinkerLinkerLinker {
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, kill_phot, "kill photons?");
+                Ok(())
+            }
+            Self::AttributeChain(ref attrs) => {
+                writeln!(fmt, "Attribute Chain: ...")?;
+                for attr in attrs {
+                    attr.fmt(fmt)?;
+                }
+                Ok(())
+            }
+            Self::Rasterise(ref id, ref rast) => {
+                writeln!(fmt, "Rasterise: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, rast, "rasteriser");
+                Ok(())
+            },
+            Self::Hyperspectral(ref id, ref plane) => {
+                writeln!(fmt, "Hyperspectral: ...")?;
+                fmt_report!(fmt, id, "name");
+                fmt_report!(fmt, plane, "plane");
                 Ok(())
             }
         }

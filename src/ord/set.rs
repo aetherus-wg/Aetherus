@@ -8,13 +8,11 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::btree_map::{IntoIter, Values},
-    fmt::{Display, Formatter},
-    path::Path,
+    collections::btree_map::{IntoIter, Values}, fmt::{Display, Formatter}, ops::Add, path::Path
 };
 
 /// Data map.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Set<T>(Map<Name, T>);
 
 impl<T> Set<T> {
@@ -25,6 +23,11 @@ impl<T> Set<T> {
         // debug_assert!(!map.is_empty());
 
         Self(map)
+    }
+
+    /// Creates a new empty set.
+    pub fn empty() -> Self {
+        Self::new(Map::new())
     }
 
     /// Construct an instance from a vector of pairs.
@@ -43,6 +46,15 @@ impl<T> Set<T> {
         }
 
         Ok(Self::new(map))
+    }
+
+    #[inline]
+    pub fn combine(self, rhs: Self) -> Result<Self, Error> {
+        let combined_pairs = self
+            .into_iter()
+            .chain(rhs.into_iter())
+            .collect();
+        Self::from_pairs(combined_pairs)
     }
 
     /// Find if the number of entries is zero.

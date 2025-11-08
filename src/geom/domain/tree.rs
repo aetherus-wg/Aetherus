@@ -389,8 +389,7 @@ mod tests {
     use std::collections::BTreeMap;
     use crate::{
         ord::{Name, Set},
-        math::{Point3},
-        geom::{Triangle, SmoothTriangle, Surface, Mesh, Cube},
+        geom::{Triangle, SmoothTriangle, Surface, Mesh},
     };
     use assert_approx_eq::assert_approx_eq;
 

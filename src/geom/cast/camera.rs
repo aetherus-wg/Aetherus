@@ -4,7 +4,7 @@ use crate::{
     access, clone, fmt_report,
     geom::{Orient, Ray},
     math::{Point3, Rot3, Vec3},
-    ord::{X, Y},
+    ord::cartesian::{X, Y},
 };
 use std::fmt::{Display, Error, Formatter};
 

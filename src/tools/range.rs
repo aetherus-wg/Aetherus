@@ -114,7 +114,7 @@ mod tests {
         let min = 1.0;
         let max = 0.0;
 
-        Range::new(min, max);
+        let _ = Range::new(min, max);
     }
 
     #[test]

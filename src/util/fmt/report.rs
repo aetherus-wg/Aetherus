@@ -47,7 +47,7 @@ macro_rules! fmt_report {
         writeln!($fmt, "{:>32} : {}", stringify!($expression), $expression)?;
     };
     ($fmt: expr, $expression: expr, $desc: expr) => {
-        writeln!($fmt, "{:>32} : {}", $desc, $expression)?;
+        writeln!($fmt, "{:>32} : {}", $desc, $expression)?
     };
     ($fmt: expr, $expression: expr, $desc: expr, $units: expr) => {
         writeln!($fmt, "{:>32} : {} [{}]", $desc, $expression, $units)?;

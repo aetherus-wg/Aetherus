@@ -4,7 +4,7 @@ use crate::{
     fmt_report,
     geom::{Camera, Orient},
     math::{Point3, Vec3},
-    ord::{Build, X, Y},
+    ord::{Build, cartesian::{X, Y}},
 };
 use arctk_attr::file;
 use std::fmt::{Display, Error, Formatter};

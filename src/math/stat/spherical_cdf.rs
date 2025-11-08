@@ -87,8 +87,8 @@ impl SphericalCdf {
     /// Samples the CDF and returns a tuple containing the azimuthal and polar angles in radians.
     /// These angles are randomly chosen based on the underlying CDF.
     pub fn sample<R: Rng>(&self, rng: &mut R) -> (Real, Real) {
-        let mut azim_draw = 0.0;
-        let mut polar_draw= 0.0;
+        let mut azim_draw;
+        let polar_draw;
 
         loop {
             // First, draw the azimuthal angle from the azimuthal CDF and apply the offset to map back into an appropriate system.
@@ -223,7 +223,7 @@ impl From<PhotometricWeb> for SphericalCdf {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::SphericalCdf;
     use crate::data::Average;
     use assert_approx_eq::assert_approx_eq;

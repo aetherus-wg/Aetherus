@@ -2,19 +2,36 @@
 
 use crate::{
     phys::{Local, Photon},
-    sim::Output,
+    io::output::{Output, OutputParameter},
 };
 use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 
 /// Move the photon forward and record the flight.
 #[inline]
-pub fn travel(data: &mut Output, phot: &mut Photon, env: &Local, index: [usize; 3], dist: f64) {
+pub fn travel(data: &mut Output, phot: &mut Photon, env: &Local, dist: f64) {
     debug_assert!(dist > 0.0);
 
+    // Energy Density. 
     let weight_power_dist = phot.weight() * phot.power() * dist;
-    data.energy[index] += weight_power_dist * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM;
-    data.absorptions[index] += weight_power_dist * env.abs_coeff();
-    data.shifts[index] += weight_power_dist * env.shift_coeff();
+    for vol in data.get_volumes_for_param_mut(OutputParameter::Energy) {
+        if let Some(index) = vol.gen_index(phot.ray().pos()) {
+            vol.data_mut()[index] += weight_power_dist * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM;
+        }
+    }
+
+    // Absorption. 
+    for vol in data.get_volumes_for_param_mut(OutputParameter::Absorption) {
+        if let Some(index) = vol.gen_index(phot.ray().pos()) {
+            vol.data_mut()[index] += weight_power_dist * env.abs_coeff();
+        }
+    }
+
+    // Shifts. 
+    for vol in data.get_volumes_for_param_mut(OutputParameter::Shift) {
+        if let Some(index) = vol.gen_index(phot.ray().pos()) {
+            vol.data_mut()[index] += weight_power_dist * env.shift_coeff();
+        }
+    }
 
     phot.ray_mut().travel(dist);
 }

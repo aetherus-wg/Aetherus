@@ -4,7 +4,7 @@
 /// You can use this to macro generate both a getter and a setter.
 /// To automatically implement a getter, use it like so:
 /// ```rust
-/// # use Aetherus::access;
+/// # use aetherus::access;
 /// pub struct DocStruct {
 ///     str_prop: String,   
 /// }
@@ -20,7 +20,7 @@
 /// returns a mutable reference to the variable. To do this, the above code can
 /// be augmented as below
 /// ```rust
-/// # use Aetherus::access;
+/// # use aetherus::access;
 /// pub struct DocStruct {
 ///     str_prop: String,
 /// }
