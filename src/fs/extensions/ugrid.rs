@@ -25,13 +25,13 @@ pub fn mesh_from_ugrid(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
     let mut verts: Vec<Point3> = Vec::with_capacity(n_verts);
 
     let node_x = &file.variable("Mesh_node_x").ok_or("Missing variable 'Mesh_node_x'.")?;
-    let px = node_x.values_arr::<f64, _>(..).unwrap();
+    let px = node_x.get::<f64, _>(..).unwrap();
 
     let node_y = &file.variable("Mesh_node_y").ok_or("Missing variable 'Mesh_node_y'.")?;
-    let py = node_y.values_arr::<f64, _>(..).unwrap();
+    let py = node_y.get::<f64, _>(..).unwrap();
 
     let node_z = &file.variable("Mesh_node_z").ok_or("Missing variable 'Mesh_node_z'.")?;
-    let pz = node_z.values_arr::<f64, _>(..).unwrap();
+    let pz = node_z.get::<f64, _>(..).unwrap();
 
     for i in 0..n_verts {
         verts.push(Point3::new(px[i], py[i], pz[i]));
@@ -42,9 +42,9 @@ pub fn mesh_from_ugrid(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
     let normals_var = &file.variable("normal_vectors").ok_or("Missing variable 'normal_vectors'.")?;
 
     for n in 0..n_faces {
-        norms.push(Dir3::new(normals_var.value::<f64, _>([n, 0])?,
-                             normals_var.value::<f64, _>([n, 1])?,
-                             normals_var.value::<f64, _>([n, 2])?));
+        norms.push(Dir3::new(normals_var.get_value::<f64, _>([n, 0])?,
+                             normals_var.get_value::<f64, _>([n, 1])?,
+                             normals_var.get_value::<f64, _>([n, 2])?));
     }
 
     // Read mesh faces
@@ -52,9 +52,9 @@ pub fn mesh_from_ugrid(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
     let faces_var = &file.variable("Mesh_face_nodes").ok_or("Missing variable 'Mesh_face_nodes'.")?;
 
     for n in 0..n_faces {
-        faces.push((((faces_var.value::<u32, _>([n, 0])?-1).try_into().unwrap(),
-                     (faces_var.value::<u32, _>([n, 1])?-1).try_into().unwrap(),
-                     (faces_var.value::<u32, _>([n, 2])?-1).try_into().unwrap()),
+        faces.push((((faces_var.get_value::<u32, _>([n, 0])?-1).try_into().unwrap(),
+                     (faces_var.get_value::<u32, _>([n, 1])?-1).try_into().unwrap(),
+                     (faces_var.get_value::<u32, _>([n, 2])?-1).try_into().unwrap()),
                     (n, n, n)));
     }
 
