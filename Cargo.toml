@@ -49,9 +49,9 @@ terminal_size = "0.2.*"
 cubic-splines = "0.2.0"
 lidrs = "0.2.*"
 
-# Formats for the File I/O Library. 
+# Formats for the File I/O Library.
 json5 = "0.4.*"
-netcdf = "^0.8.1"
+netcdf = "^0.10.5"
 
 # Optional MPI dependencies
 mpi = { version = "0.7.0", optional = true }

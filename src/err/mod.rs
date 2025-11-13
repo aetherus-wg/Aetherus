@@ -29,7 +29,7 @@ pub enum Error {
     /// Min/max error.
     MinMax(ndarray_stats::errors::MinMaxError),
     /// NetCDF io error.
-    NetCdf(netcdf::error::Error),
+    NetCdf(netcdf::Error),
     /// Lidrs Error.
     Lidrs(lidrs::err::Error),
 }
@@ -68,7 +68,7 @@ impl_from_for_err!(Self::ReadJson, json5::Error);
 impl_from_for_err!(Self::WriteJson, serde_json::Error);
 impl_from_for_err!(Self::InvalidShape, ndarray::ShapeError);
 impl_from_for_err!(Self::MinMax, ndarray_stats::errors::MinMaxError);
-impl_from_for_err!(Self::NetCdf, netcdf::error::Error);
+impl_from_for_err!(Self::NetCdf, netcdf::Error);
 impl_from_for_err!(Self::WritePng, png::EncodingError);
 impl_from_for_err!(Self::Lidrs, lidrs::err::Error);
 
