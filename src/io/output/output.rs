@@ -1,10 +1,10 @@
 use crate::{
-    fmt_report, 
+    fmt_report,
     fs::Save,
-    data::Histogram, 
-    img::Image, 
+    data::Histogram,
+    img::Image,
     err::Error,
-    io::output::{OutputPlane, OutputRegistry, OutputVolume, PhotonCollector}, phys::Photon, 
+    io::output::{OutputPlane, OutputRegistry, OutputVolume, PhotonCollector}, phys::Photon,
 };
 use std::{
     ops::AddAssign,
@@ -19,13 +19,13 @@ use super::OutputParameter;
 pub struct Output {
     /// Output volumes.
     pub vol: Vec<OutputVolume>,
-    /// Output planes. 
+    /// Output planes.
     pub plane: Vec<OutputPlane>,
-    /// Photon Collectors. 
+    /// Photon Collectors.
     pub phot_cols: Vec<PhotonCollector>,
     /// Spectra.
     pub specs: Vec<Histogram>,
-    /// Image data. 
+    /// Image data.
     pub imgs: Vec<Image>,
     /// CCD Data.
     pub ccds: Vec<Array3<f64>>,
@@ -33,16 +33,16 @@ pub struct Output {
     pub photos: Vec<Image>,
 
     /// Contains the mapping between index and name for
-    /// each of the output types. 
+    /// each of the output types.
     pub reg: OutputRegistry,
 }
 
 impl Output {
     /// This function polls each of the output volumes in the output object to
-    /// find the closest voxel distance based on the position of the current 
-    /// photon packet. This will then return the shortest distance to the 
+    /// find the closest voxel distance based on the position of the current
+    /// photon packet. This will then return the shortest distance to the
     /// the current voxel boundary. There may be a case where there is no voxel
-    /// in the path of travel of the packet, in that case return `None`. 
+    /// in the path of travel of the packet, in that case return `None`.
     pub fn voxel_dist(&self, phot: &Photon) -> f64 {
         let dists: Vec<f64> = self.vol.iter()
             .map(|grid| { grid.voxel_dist(phot) })

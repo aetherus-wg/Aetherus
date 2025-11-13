@@ -55,10 +55,10 @@ fn main() {
 
 fn get_air_material() -> Material {
     Material::new(
-        Formula::Constant { c: 1.0 }, 
-        Formula::Constant { c: 1.0e-6 }, 
-        None, 
-        None, 
+        Formula::Constant { c: 1.0 },
+        Formula::Constant { c: 1.0e-6 },
+        None,
+        None,
         Formula::Constant { c: 0.1 }
     )
 }

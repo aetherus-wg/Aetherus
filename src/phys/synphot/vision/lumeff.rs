@@ -2,14 +2,14 @@ use crate::{math::Probability, phys::synphot::Transmission};
 use ndarray::Array1;
 
 /**
- * Luminous Efficacy Functions. 
- * 
+ * Luminous Efficacy Functions.
+ *
  * This module contains the photopic luminosity function (PLF) for human vision.
  * The PLF is a function of wavelength, and is defined in the range 360-830 nm.
  * The prescriptions that this function contains are:
- * - **vl1924.csv**: CIE (1924) photopic luminosity function. 
- * - **vlje.csv**: Judd (1951) modified CIE 2-deg photopic luminosity function. 
- * - **vljve.csv**: Judd-Vos (1978) modified CIE 2-deg photopic luminosity function. 
+ * - **vl1924.csv**: CIE (1924) photopic luminosity function.
+ * - **vlje.csv**: Judd (1951) modified CIE 2-deg photopic luminosity function.
+ * - **vljve.csv**: Judd-Vos (1978) modified CIE 2-deg photopic luminosity function.
  */
 const SCVLE: &str = include_str!("scvle.csv");
 const VL1924E: &str = include_str!("vl1924e.csv");
