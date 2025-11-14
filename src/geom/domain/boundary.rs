@@ -1,8 +1,8 @@
 use crate::{
-    access, clone, fmt_report, 
-    geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace}, 
-    math::{Dir3, Point3, Vec3}, 
-    phys::{Photon, Reflectance}, 
+    access, clone, fmt_report,
+    geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace},
+    math::{Dir3, Point3, Vec3},
+    phys::{Photon, Reflectance},
     sim::Attribute,
     ord::cartesian::{X, Y, Z},
 };
@@ -169,15 +169,15 @@ impl Boundary {
         }
     }
 
-    pub fn dist_boundary(&self, ray: &Ray) -> Option<BoundaryHit> {
+    pub fn dist_boundary(&self, ray: &Ray) -> Option<BoundaryHit<'_>> {
         if let Some((dist, _side)) = self.bounding_box.dist_side(ray) {
             // Now we have to find the boundary that the ray is going to hit.
             // We can do this by finding the max absolutel component value of the
             // vector. Then, find the dir
             let dir = self.boundary_direction(&ray).expect("Ray outside of boundary. ");
             return Some(BoundaryHit::new(
-                self.condition_for_boundary(&dir), 
-                dist, 
+                self.condition_for_boundary(&dir),
+                dist,
                 dir,
             ))
         }
@@ -212,7 +212,7 @@ impl Boundary {
             BoundaryDirection::West,
             BoundaryDirection::East,
         ];
-        
+
         let min_point = Point3::new(self.bounding_box().mins()[0], self.bounding_box().mins()[1], self.bounding_box().mins()[2]);
         let max_point = Point3::new(self.bounding_box().maxs()[0], self.bounding_box().maxs()[1], self.bounding_box().maxs()[2]);
         let mut facing_dir = None;
@@ -220,7 +220,7 @@ impl Boundary {
             if let Some(point) = ray_plane_intersection(&ray, if i % 2 == 0 { min_point } else { max_point }, dir.normal_vector()) {
                 if point.x() >= min_point.x() - TOLLERANCE  && point.x() <= max_point.x() + TOLLERANCE &&
                    point.y() >= min_point.y() - TOLLERANCE  && point.y() <= max_point.y() + TOLLERANCE &&
-                   point.z() >= min_point.z() - TOLLERANCE && point.z() <= max_point.z() + TOLLERANCE 
+                   point.z() >= min_point.z() - TOLLERANCE && point.z() <= max_point.z() + TOLLERANCE
                 {
                     facing_dir = Some(dir.clone());
                     break;
@@ -391,7 +391,7 @@ impl<'a> BoundaryHit<'a> {
         }
     }
 
-    pub fn get_hit(&self) -> Hit<'_, Attribute> {
+    pub fn get_hit(&self) -> Hit<'_, Attribute<'_>> {
         Hit::new(
             &Attribute::Mirror(0.0),
             self.dist(),
@@ -563,7 +563,7 @@ mod tests {
             south: BoundaryCondition::Periodic(0.0),
             west: BoundaryCondition::Periodic(0.0),
         };
-        
+
         let incoming_ray = Ray::new(Point3::new(0.5, 0.5, 0.5), Dir3::new(1.0, 0.0, 0.0));
         let b = boundary.boundary_direction(&incoming_ray);
         assert_eq!(b, Some(BoundaryDirection::East));
@@ -602,7 +602,7 @@ mod tests {
             south: BoundaryCondition::Periodic(0.0),
             west: BoundaryCondition::Periodic(0.0),
         };
-        
+
         let incoming_ray = Ray::new(Point3::new(1.0, 0.5, 0.5), Dir3::new(1.0, 0.0, 0.0));
         let b = boundary.boundary_direction(&incoming_ray);
         assert_eq!(b, Some(BoundaryDirection::East));

@@ -277,7 +277,7 @@ impl<'a, T> Tree<'a, T> {
     /// Scan for what a given Ray, known to be within the cell, would observe.
     #[inline]
     #[must_use]
-    fn leaf_scan(&self, ray: &Ray, bump_dist: f64) -> Scan<T> {
+    fn leaf_scan(&self, ray: &Ray, bump_dist: f64) -> Scan<'_, T> {
         debug_assert!(self.boundary().contains(ray.pos()));
         debug_assert!(bump_dist > 0.0);
 
@@ -322,7 +322,7 @@ impl<'a, T> Tree<'a, T> {
     /// The maximum distance provided does not guarantee that any hit retrieved is less than the given distance.
     #[inline]
     #[must_use]
-    pub fn scan(&self, mut ray: Ray, bump_dist: f64, max_dist: f64) -> Option<Hit<T>> {
+    pub fn scan(&self, mut ray: Ray, bump_dist: f64, max_dist: f64) -> Option<Hit<'_, T>> {
         debug_assert!(bump_dist > 0.0);
         debug_assert!(max_dist > 0.0);
 
@@ -396,7 +396,7 @@ mod tests {
     fn make_test_surfs() -> BTreeMap<Name, Surface<'static, Attribute<'static>>> {
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let mut surfs_map = BTreeMap::new();
-        // Make a single upward facing triangle for the surface. 
+        // Make a single upward facing triangle for the surface.
         let first_triangle_mesh = Mesh::new(vec![ SmoothTriangle::new(
             Triangle::new([
                 Point3::new(0.0, 0.0, 0.0),
@@ -407,7 +407,7 @@ mod tests {
         )]);
         surfs_map.insert(Name::new("test_surf1"), Surface::new(first_triangle_mesh, &Attribute::Mirror(0.5)));
 
-        // Make a single upward facing triangle for the surface. 
+        // Make a single upward facing triangle for the surface.
         let second_triangle_mesh = Mesh::new(vec![ SmoothTriangle::new(
             Triangle::new([
                 Point3::new(1.0, 1.0, 1.0),
@@ -423,7 +423,7 @@ mod tests {
 
     /// This is an overly simple test to check that the tree is constructed correctly.
     /// I would like to do a more rigorous test with much tree refinement.
-    /// However, I'm not entirely sure of a good analytical case at the moment. 
+    /// However, I'm not entirely sure of a good analytical case at the moment.
     #[test]
     fn test_basic_tree_init
     () {
@@ -436,7 +436,7 @@ mod tests {
         let tree: Tree<'_, Attribute<'_>> = Tree::new(&tree_settings, &surfs);
 
         // Check that the boundary for the tree is correct.
-        // The factor of two is because the padding is applied at both sides of each voxel in the tree. 
+        // The factor of two is because the padding is applied at both sides of each voxel in the tree.
         let (mins, maxs) = tree.boundary().mins_maxs();
         assert_approx_eq!(mins.x(), -2.0 * padding);
         assert_approx_eq!(mins.y(), -2.0 * padding);
@@ -445,7 +445,7 @@ mod tests {
         assert_approx_eq!(maxs.y(), 2.0 + 2.0 * padding);
         assert_approx_eq!(maxs.z(), 1.0 + 2.0 * padding);
 
-        // Make sure that we only have a single level of refinement. 
+        // Make sure that we only have a single level of refinement.
         assert_eq!(tree.num_cells(), 9);
 
         // Make sure that we have 8 leaves (one layer).

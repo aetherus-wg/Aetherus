@@ -5,7 +5,7 @@ use crate::{
         AttributeLinkerChainProxy, EngineBuilderLoader, ParametersBuilder, Settings,
         attribute_chain_resolve_set,
     },
-    ord::{MultiSet, Set},
+    ord::MultiSet,
 };
 use arctk_attr::file;
 use std::path::Path;
@@ -15,7 +15,7 @@ use std::path::Path;
 pub struct ParametersBuilderLoader {
     /// Simulation specific settings.
     sett: Redirect<Settings>,
-    // Boundary conditions. 
+    // Boundary conditions.
     boundary: Redirect<BoundaryBuilder>,
     /// Tree settings.
     tree: Redirect<TreeSettings>,

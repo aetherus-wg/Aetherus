@@ -83,7 +83,7 @@ impl<T> Set<T> {
     /// Iterate over the values.
     #[inline]
     #[must_use]
-    pub fn values(&self) -> Values<Name, T> {
+    pub fn values(&self) -> Values<'_, Name, T> {
         self.0.values()
     }
 
