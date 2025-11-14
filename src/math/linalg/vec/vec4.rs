@@ -82,7 +82,6 @@ impl Vec4 {
 
 impl From<Vector4<Real>> for Vec4 {
     #[inline]
-    #[must_use]
     fn from(v: Vector4<Real>) -> Self {
         Self { data: v }
     }
@@ -92,7 +91,6 @@ impl Neg for Vec4 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn neg(self) -> Self {
         Self::from(-self.data)
     }
@@ -102,7 +100,6 @@ impl Add for Vec4 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Self) -> Self {
         Self::from(self.data + rhs.data)
     }
@@ -112,7 +109,6 @@ impl Sub for Vec4 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Self) -> Self {
         Self::from(self.data - rhs.data)
     }
@@ -122,7 +118,6 @@ impl Mul<Real> for Vec4 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Real) -> Self {
         Self::from(self.data * rhs)
     }
@@ -132,7 +127,6 @@ impl Div<Real> for Vec4 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn div(self, rhs: Real) -> Self {
         Self::from(self.data / rhs)
     }
@@ -170,7 +164,6 @@ impl Mul for Vec4 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Self) -> Self::Output {
         self.data.dot(&rhs.data)
     }
@@ -180,7 +173,6 @@ impl Index<usize> for Vec4 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn index(&self, i: usize) -> &Self::Output {
         match i {
             0 => &self.data.x,
@@ -194,7 +186,6 @@ impl Index<usize> for Vec4 {
 
 impl IndexMut<usize> for Vec4 {
     #[inline]
-    #[must_use]
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         match i {
             0 => &mut self.data.x,

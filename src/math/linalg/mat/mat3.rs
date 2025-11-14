@@ -124,7 +124,6 @@ impl Mat3 {
 
 impl From<Matrix3<Real>> for Mat3 {
     #[inline]
-    #[must_use]
     fn from(d: Matrix3<Real>) -> Self {
         Self { data: d }
     }

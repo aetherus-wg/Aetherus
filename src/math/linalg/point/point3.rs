@@ -105,7 +105,6 @@ impl Point3 {
 
 impl From<P3<Real>> for Point3 {
     #[inline]
-    #[must_use]
     fn from(v: P3<Real>) -> Self {
         Self { data: v }
     }
@@ -113,7 +112,6 @@ impl From<P3<Real>> for Point3 {
 
 impl From<Vector3<Real>> for Point3 {
     #[inline]
-    #[must_use]
     fn from(v: Vector3<Real>) -> Self {
         Self { data: v.into() }
     }
@@ -123,7 +121,6 @@ impl Neg for Point3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn neg(self) -> Self {
         Self::from(-self.data)
     }
@@ -133,7 +130,6 @@ impl Add<Point3> for Point3 {
     type Output = Point3;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Self) -> Point3 {
         Self::new(
             self.data.x + rhs.data.x,
@@ -147,7 +143,6 @@ impl Add<Vec3> for Point3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Vec3) -> Self {
         Self::from(self.data + rhs.data())
     }
@@ -157,7 +152,6 @@ impl Add<&Vec3> for &Point3 {
     type Output = Point3;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: &Vec3) -> Point3 {
         *self + *rhs
     }
@@ -167,7 +161,6 @@ impl Add<&Vec3> for Point3 {
     type Output = Point3;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: &Vec3) -> Point3 {
         self + *rhs
     }
@@ -177,7 +170,6 @@ impl Add<Real> for Point3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Real) -> Self {
         Self::new(self.data.x + rhs, self.data.y + rhs, self.data.z + rhs)
     }
@@ -187,7 +179,6 @@ impl Sub<Point3> for Point3 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Self) -> Vec3 {
         Vec3::from(self.data - rhs.data)
     }
@@ -197,7 +188,6 @@ impl Sub<&Point3> for Point3 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: &Self) -> Vec3 {
         Vec3::from(self - *rhs)
     }
@@ -207,7 +197,6 @@ impl Sub<Point3> for &Point3 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Point3) -> Vec3 {
         Vec3::from(*self - rhs)
     }
@@ -217,7 +206,6 @@ impl Sub<&Point3> for &Point3 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: &Point3) -> Vec3 {
         Vec3::from(*self - *rhs)
     }
@@ -227,7 +215,6 @@ impl Sub<Vec3> for Point3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Vec3) -> Self {
         Self::from(self.data - rhs.data())
     }
@@ -237,7 +224,6 @@ impl Sub<&Vec3> for Point3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: &Vec3) -> Self {
         Self::from(self.data - rhs.data())
     }
@@ -247,7 +233,6 @@ impl Sub<Vec3> for &Point3 {
     type Output = Point3;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Vec3) -> Point3 {
         Point3::from(*self - rhs)
     }
@@ -257,7 +242,6 @@ impl Sub<&Vec3> for &Point3 {
     type Output = Point3;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: &Vec3) -> Point3 {
         Point3::from(*self - *rhs)
     }
@@ -267,7 +251,6 @@ impl Mul<Real> for Point3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Real) -> Self {
         Self::from(self.data * rhs)
     }
@@ -277,7 +260,6 @@ impl Mul<Point3> for Real {
     type Output = Point3;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Point3) -> Point3 {
         Point3::from(self * rhs.data())
     }
@@ -287,7 +269,6 @@ impl Div<Real> for Point3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn div(self, rhs: Real) -> Self {
         Self::from(self.data / rhs)
     }
@@ -325,7 +306,6 @@ impl Index<usize> for Point3 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn index(&self, i: usize) -> &Self::Output {
         match i {
             0 => &self.data.x,
@@ -338,7 +318,6 @@ impl Index<usize> for Point3 {
 
 impl IndexMut<usize> for Point3 {
     #[inline]
-    #[must_use]
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         match i {
             0 => &mut self.data.x,
@@ -412,25 +391,25 @@ mod tests {
         assert_approx_eq!(ans.y(), -11.0);
         assert_approx_eq!(ans.z(), 1.0);
 
-        // Test the borrowed version. 
+        // Test the borrowed version.
         let ans = point + &vec;
         assert_approx_eq!(ans.x(), 6.0);
         assert_approx_eq!(ans.y(), -11.0);
         assert_approx_eq!(ans.z(), 1.0);
-        // Test the borrowed version. 
+        // Test the borrowed version.
         let ans = &point + &vec;
         assert_approx_eq!(ans.x(), 6.0);
         assert_approx_eq!(ans.y(), -11.0);
         assert_approx_eq!(ans.z(), 1.0);
 
-        // Now try adding a point as well. 
+        // Now try adding a point as well.
         let point2 = Point3::new(5.0, -7.0, -11.0);
         let ans = point + point2;
         assert_approx_eq!(ans.x(), 6.0);
         assert_approx_eq!(ans.y(), -11.0);
         assert_approx_eq!(ans.z(), 1.0);
 
-        // Finally, try adding a real number (offset for all components). 
+        // Finally, try adding a real number (offset for all components).
         let ans = point + 5.0;
         assert_approx_eq!(ans.x(), 6.0);
         assert_approx_eq!(ans.y(), 1.0);

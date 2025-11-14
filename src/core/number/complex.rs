@@ -21,7 +21,6 @@ impl Mul for Complex {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Self) -> Self {
         Self {
             re: self.re.mul_add(rhs.re, -self.im * rhs.im),
@@ -43,7 +42,7 @@ mod tests {
 
     #[test]
     fn test_complex_mul() {
-        // Complex multiplication follows the pattern of 
+        // Complex multiplication follows the pattern of
         // xy = (a + ib)(c + id)
         //    = (ac - bd) + i(ad + bc)
         let a = 2.0;
@@ -52,7 +51,7 @@ mod tests {
         let d = 4.0;
         let x = Complex{ re: a, im: b};
         let y = Complex{ re: c, im: d};
-        
+
         assert_eq!(x * y, Complex{re:(a * c - b * d), im: (a * d + b * c)});
     }
 
