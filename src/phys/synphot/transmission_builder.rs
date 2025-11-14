@@ -1,5 +1,5 @@
 use crate::{
-    math::{Probability, ProbabilityBuilder},
+    math::ProbabilityBuilder,
     phys::synphot::Transmission,
 };
 use std::fmt::{Display, Formatter};
@@ -18,7 +18,7 @@ pub enum TransmissionBuilder {
 impl TransmissionBuilder {
     pub fn build(&self) -> Transmission {
         match &self {
-            Self::Probability(ref prob_build) => {
+            Self::Probability(ref _prob_build) => {
                 todo!()
             },
             Self::Photopic => LuminousEfficacyFunction::JuddVos.get(),
@@ -30,7 +30,7 @@ impl TransmissionBuilder {
 impl Display for TransmissionBuilder {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Probability(ref pb) => {
+            Self::Probability(ref _pb) => {
                 todo!()
             },
             Self::Photopic => {
