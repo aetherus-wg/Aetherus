@@ -119,7 +119,6 @@ impl Dir3 {
 
 impl From<Vec3> for Dir3 {
     #[inline]
-    #[must_use]
     fn from(d: Vec3) -> Self {
         Self {
             data: Unit::new_normalize(d.data()),
@@ -129,7 +128,6 @@ impl From<Vec3> for Dir3 {
 
 impl From<Vector3<Real>> for Dir3 {
     #[inline]
-    #[must_use]
     fn from(d: Vector3<Real>) -> Self {
         Self {
             data: Unit::new_normalize(d),
@@ -139,7 +137,6 @@ impl From<Vector3<Real>> for Dir3 {
 
 impl From<Unit<Vector3<Real>>> for Dir3 {
     #[inline]
-    #[must_use]
     fn from(d: Unit<Vector3<Real>>) -> Self {
         Self { data: d }
     }
@@ -149,7 +146,6 @@ impl Mul<f64> for Dir3 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: f64) -> Vec3 {
         return Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs);
     }
@@ -159,7 +155,6 @@ impl Mul<Dir3> for f64 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Dir3) -> Vec3 {
         Vec3::new(
             rhs.data().x * self,
@@ -173,7 +168,6 @@ impl Mul<&Dir3> for f64 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: &Dir3) -> Vec3 {
         Vec3::new(
             rhs.data().x * self,
@@ -188,7 +182,6 @@ impl Neg for Dir3 {
 
     /// Negation implementation for Dir3.
     #[inline]
-    #[must_use]
     fn neg(self) -> Self::Output {
         return Self::new(-self.x(), -self.y(), -self.z());
     }
@@ -198,7 +191,6 @@ impl Add<Dir3> for Dir3 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Dir3) -> Self::Output {
         Vec3::new(
             self.data.x + rhs.data.x,
@@ -212,7 +204,6 @@ impl Add<Vec3> for Dir3 {
     type Output = Vec3;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Vec3) -> Self::Output {
         Vec3::new(
             self.data.x + rhs.data().x,
@@ -224,7 +215,6 @@ impl Add<Vec3> for Dir3 {
 
 impl PartialOrd for Dir3 {
     #[inline]
-    #[must_use]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.data.partial_cmp(&other.data)
     }

@@ -8,7 +8,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::btree_map::{IntoIter, Values}, fmt::{Display, Formatter}, ops::Add, path::Path
+    collections::btree_map::{IntoIter, Values}, fmt::{Display, Formatter}, path::Path
 };
 
 /// Data map.
@@ -150,7 +150,6 @@ impl<T: Build> Build for Set<T> {
     type Inst = Set<T::Inst>;
 
     #[allow(clippy::expect_used)]
-    #[must_use]
     #[inline]
     fn build(self) -> Self::Inst {
         let mut list = Vec::with_capacity(self.0.len());
@@ -165,7 +164,6 @@ impl<T: Build> Build for Set<T> {
 impl<'a, T, S: Link<'a, T>> Link<'a, T> for Set<S> {
     type Inst = Set<S::Inst>;
 
-    #[must_use]
     #[inline]
     fn requires(&self) -> Vec<Name> {
         self.0

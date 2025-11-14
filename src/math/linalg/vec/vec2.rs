@@ -58,7 +58,6 @@ impl Vec2 {
 
 impl From<Vector2<Real>> for Vec2 {
     #[inline]
-    #[must_use]
     fn from(v: Vector2<Real>) -> Self {
         Self { data: v }
     }
@@ -68,7 +67,6 @@ impl Neg for Vec2 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn neg(self) -> Self {
         Self::from(-self.data)
     }
@@ -78,7 +76,6 @@ impl Add for Vec2 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Self) -> Self {
         Self::from(self.data + rhs.data)
     }
@@ -88,7 +85,6 @@ impl Sub for Vec2 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Self) -> Self {
         Self::from(self.data - rhs.data)
     }
@@ -98,7 +94,6 @@ impl Mul<Real> for Vec2 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Real) -> Self {
         Self::from(self.data * rhs)
     }
@@ -108,7 +103,6 @@ impl Div<Real> for Vec2 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn div(self, rhs: Real) -> Self {
         Self::from(self.data / rhs)
     }
@@ -146,7 +140,6 @@ impl Mul for Vec2 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Self) -> Self::Output {
         self.data.dot(&rhs.data)
     }
@@ -156,7 +149,6 @@ impl BitXor for Vec2 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn bitxor(self, rhs: Self) -> Self::Output {
         (self.data.x * rhs.data.y) - (self.data.y * rhs.data.x)
     }
@@ -166,7 +158,6 @@ impl Index<usize> for Vec2 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn index(&self, i: usize) -> &Self::Output {
         match i {
             0 => &self.data.x,
@@ -178,7 +169,6 @@ impl Index<usize> for Vec2 {
 
 impl IndexMut<usize> for Vec2 {
     #[inline]
-    #[must_use]
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         match i {
             0 => &mut self.data.x,

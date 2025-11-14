@@ -20,7 +20,6 @@ pub trait Emit {
 /// higher level ray-tracing code.
 impl Emit for Point3 {
     #[inline]
-    #[must_use]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let theta = rng.gen_range(0.0..(2.0 * PI));
         let z = rng.gen_range(-1.0..1.0);

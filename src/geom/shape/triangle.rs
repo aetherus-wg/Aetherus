@@ -136,7 +136,6 @@ impl Triangle {
 
 impl Collide for Triangle {
     #[inline]
-    #[must_use]
     fn overlap(&self, cube: &Cube) -> bool {
         let c = cube.centre();
         let e = cube.half_widths();
@@ -233,13 +232,11 @@ impl Collide for Triangle {
 
 impl Trace for Triangle {
     #[inline]
-    #[must_use]
     fn hit(&self, ray: &Ray) -> bool {
         self.intersection_coors(ray).is_some()
     }
 
     #[inline]
-    #[must_use]
     fn dist(&self, ray: &Ray) -> Option<f64> {
         if let Some((dist, _coors)) = self.intersection_coors(ray) {
             return Some(dist);
@@ -249,7 +246,6 @@ impl Trace for Triangle {
     }
 
     #[inline]
-    #[must_use]
     fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
         self.dist(ray).map(|dist| {
             let side = Side::new(ray.dir(), self.plane_norm);
@@ -271,7 +267,6 @@ impl Transformable for Triangle {
 
 impl Emit for Triangle {
     #[inline]
-    #[must_use]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let mut u = rng.gen::<f64>();
         let mut v = rng.gen::<f64>();
@@ -445,7 +440,7 @@ mod tests {
         );
         assert!(!tri.hit(&ray));
 
-        // Ray is facing into the triangle. It will hit. 
+        // Ray is facing into the triangle. It will hit.
         let ray = crate::geom::Ray::new(
             Point3::new(0.25, 0.25, 1.0),
             crate::math::Dir3::new(0.0, 0.0, -1.0),

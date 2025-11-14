@@ -33,7 +33,6 @@ impl<'a> Link<'a, usize> for ArrayLinker {
 
     /// Get a list of all required resource keys.
     #[inline]
-    #[must_use]
     fn requires(&self) -> Vec<Name> {
         let mut names = Vec::with_capacity(self.0.len());
         for &(ref name, ref _x) in &self.0 {

@@ -131,7 +131,6 @@ impl Vec3 {
 
 impl From<Vector3<Real>> for Vec3 {
     #[inline]
-    #[must_use]
     fn from(v: Vector3<Real>) -> Self {
         Self { data: v }
     }
@@ -139,7 +138,6 @@ impl From<Vector3<Real>> for Vec3 {
 
 impl From<Dir3> for Vec3 {
     #[inline]
-    #[must_use]
     fn from(dir: Dir3) -> Self {
         Self { data: *dir.data() }
     }
@@ -149,7 +147,6 @@ impl Neg for Vec3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn neg(self) -> Self {
         Self::from(-self.data)
     }
@@ -159,7 +156,6 @@ impl Add for Vec3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn add(self, rhs: Self) -> Self {
         Self::from(self.data + rhs.data)
     }
@@ -169,7 +165,6 @@ impl Sub for Vec3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Self) -> Self {
         Self::from(self.data - rhs.data)
     }
@@ -179,7 +174,6 @@ impl Mul<Real> for Vec3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Real) -> Self {
         Self::from(self.data * rhs)
     }
@@ -189,7 +183,6 @@ impl Div<Real> for Vec3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn div(self, rhs: Real) -> Self {
         Self::from(self.data / rhs)
     }
@@ -227,7 +220,6 @@ impl Mul for Vec3 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn mul(self, rhs: Self) -> Self::Output {
         self.data.dot(&rhs.data)
     }
@@ -237,7 +229,6 @@ impl BitXor for Vec3 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn bitxor(self, rhs: Self) -> Self {
         Self::new(
             (self.data.y * rhs.data.z) - (self.data.z * rhs.data.y),
@@ -264,7 +255,6 @@ impl Index<usize> for Vec3 {
     type Output = Real;
 
     #[inline]
-    #[must_use]
     fn index(&self, i: usize) -> &Self::Output {
         match i {
             0 => &self.data.x,
@@ -277,7 +267,6 @@ impl Index<usize> for Vec3 {
 
 impl IndexMut<usize> for Vec3 {
     #[inline]
-    #[must_use]
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         match i {
             0 => &mut self.data.x,

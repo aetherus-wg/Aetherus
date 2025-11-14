@@ -90,7 +90,6 @@ impl Analyze for Array2<f64> {
     type Inst = DataSquare;
 
     #[inline]
-    #[must_use]
     fn display(&self) -> Self::Inst {
         Self::Inst::new(self)
     }

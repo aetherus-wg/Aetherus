@@ -53,7 +53,6 @@ impl Dir4 {
 
 impl From<Unit<Vector4<Real>>> for Dir4 {
     #[inline]
-    #[must_use]
     fn from(d: Unit<Vector4<Real>>) -> Self {
         Self { data: d }
     }

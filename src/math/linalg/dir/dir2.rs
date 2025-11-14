@@ -48,7 +48,6 @@ impl Dir2 {
 
 impl From<Unit<Vector2<Real>>> for Dir2 {
     #[inline]
-    #[must_use]
     fn from(d: Unit<Vector2<Real>>) -> Self {
         Self { data: d }
     }
@@ -59,7 +58,6 @@ impl Neg for Dir2 {
 
     /// Negation implementation for Dir2.
     #[inline]
-    #[must_use]
     fn neg(self) -> Self::Output {
         return Self::new(-self.x(), -self.y());
     }
@@ -69,7 +67,6 @@ impl Sub<Dir2> for Dir2 {
     type Output = Self;
 
     #[inline]
-    #[must_use]
     fn sub(self, rhs: Dir2) -> Self::Output {
         Self::new(self.x() - rhs.x(), self.y() - rhs.y())
     }
@@ -77,7 +74,6 @@ impl Sub<Dir2> for Dir2 {
 
 impl PartialEq for Dir2 {
     #[inline]
-    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
     }

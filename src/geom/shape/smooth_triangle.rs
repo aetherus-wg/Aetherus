@@ -42,7 +42,6 @@ impl SmoothTriangle {
 
 impl Collide for SmoothTriangle {
     #[inline]
-    #[must_use]
     fn overlap(&self, cube: &Cube) -> bool {
         self.tri.overlap(cube)
     }
@@ -50,19 +49,16 @@ impl Collide for SmoothTriangle {
 
 impl Trace for SmoothTriangle {
     #[inline]
-    #[must_use]
     fn hit(&self, ray: &Ray) -> bool {
         self.tri.hit(ray)
     }
 
     #[inline]
-    #[must_use]
     fn dist(&self, ray: &Ray) -> Option<f64> {
         self.tri.dist(ray)
     }
 
     #[inline]
-    #[must_use]
     fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
         if let Some((dist, [u, v, w])) = self.tri.intersection_coors(ray) {
             Some((
@@ -93,7 +89,6 @@ impl Transformable for SmoothTriangle {
 
 impl Emit for SmoothTriangle {
     #[inline]
-    #[must_use]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let mut u = rng.gen::<f64>();
         let mut v = rng.gen::<f64>();

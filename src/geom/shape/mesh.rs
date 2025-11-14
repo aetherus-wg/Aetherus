@@ -84,7 +84,6 @@ impl Mesh {
 
 impl Collide for Mesh {
     #[inline]
-    #[must_use]
     fn overlap(&self, cube: &Cube) -> bool {
         if !self.boundary.overlap(cube) {
             return false;
@@ -113,7 +112,6 @@ impl Transformable for Mesh {
 
 impl Emit for Mesh {
     #[inline]
-    #[must_use]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let r = rng.gen_range(0.0..self.area);
         let mut total_area = 0.0;
@@ -130,7 +128,6 @@ impl Emit for Mesh {
 
 impl Trace for Mesh {
     #[inline]
-    #[must_use]
     fn hit(&self, ray: &Ray) -> bool {
         if !self.boundary.hit(ray) {
             return false;
@@ -140,7 +137,6 @@ impl Trace for Mesh {
     }
 
     #[inline]
-    #[must_use]
     fn dist(&self, ray: &Ray) -> Option<f64> {
         if !self.boundary.hit(ray) {
             return None;
@@ -153,7 +149,6 @@ impl Trace for Mesh {
     }
 
     #[inline]
-    #[must_use]
     fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
         if !self.boundary.hit(ray) {
             return None;
