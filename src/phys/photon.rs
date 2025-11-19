@@ -23,6 +23,8 @@ pub struct Photon {
     wavelength: f64,
     /// Power (J/s).
     power: f64,
+    // Time (s) from beginning of photon generation => time of flight
+    tof: f64,
 }
 
 impl Photon {
@@ -30,6 +32,7 @@ impl Photon {
     clone!(weight, weight_mut: f64);
     clone!(wavelength, wavelength_mut: f64);
     clone!(power: f64);
+    clone!(tof, tof_mut: f64);
 
     /// Construct a new instance.
     #[inline]
@@ -43,6 +46,7 @@ impl Photon {
             weight: 1.0,
             wavelength,
             power,
+            tof: 0.0,
         }
     }
 
