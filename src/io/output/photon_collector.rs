@@ -46,6 +46,7 @@ impl Save for PhotonCollector {
                 "wavelength",
                 "power",
                 "weight",
+                "tof",
             ];
             write!(file, "{}", headings[0])?;
             for heading in headings.iter().skip(1) {
@@ -60,7 +61,7 @@ impl Save for PhotonCollector {
             for phot in self.photons.iter() {
                 writeln!(
                     file,
-                    "{},{},{},{},{},{},{},{},{}",
+                    "{},{},{},{},{},{},{},{},{},{}",
                     phot.ray().pos().x(),
                     phot.ray().pos().y(),
                     phot.ray().pos().z(),
@@ -70,6 +71,7 @@ impl Save for PhotonCollector {
                     phot.wavelength(),
                     phot.power(),
                     phot.weight(),
+                    phot.tof(),
                 )?;
                 pb.tick();
             }
@@ -124,7 +126,7 @@ mod tests {
     #[test]
     fn test_clone_photon_collector() {
         let mut col = PhotonCollector::new();
-        // This time we will get it to kill the photon when we collect it. 
+        // This time we will get it to kill the photon when we collect it.
         col.kill_photon = true;
         let pos = Point3::new(0.0, 0.0, 0.0);
         let dir = Dir3::new(1.0, 0.0, 0.0);
@@ -140,7 +142,7 @@ mod tests {
         assert_eq!(cloned.photons[0].wavelength(), 5.0E-7);
         assert_eq!(cloned.photons[0].power(), 1.0);
 
-        // Check that the photon was indeed killed. 
+        // Check that the photon was indeed killed.
         assert_eq!(test_phot.weight(), 0.0);
     }
 
@@ -152,7 +154,7 @@ mod tests {
         let dir = Dir3::new(1.0, 0.0, 0.0);
         let mut test_phot = Photon::new(Ray::new(pos.clone(), dir.clone()), 5.0E-7, 1.0);
 
-        // Now collect the photon and check that everything was conserved during the clone. 
+        // Now collect the photon and check that everything was conserved during the clone.
         col1.collect_photon(&mut test_phot);
         col2.collect_photon(&mut test_phot);
         col1 += &col2;
