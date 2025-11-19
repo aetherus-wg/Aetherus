@@ -100,12 +100,12 @@ impl Boundary {
                 self.set_ray_to_opposite_boundary(&mut phot.ray_mut(), hit.direction(), padding);
             }
             #[cfg(feature = "mpi")]
-            BoundaryCondition::Periodic(padding) => {
+            BoundaryCondition::Periodic(_padding) => {
                 // Handle this variant in the case of MPI.
                 unimplemented!()
             }
             #[cfg(feature = "mpi")]
-            BoundaryCondition::MpiRank => {
+            BoundaryCondition::MpiRank(_rank) => {
                 // Handle MpiRank variant
             }
         };
@@ -361,7 +361,7 @@ impl Display for BoundaryCondition {
             #[cfg(feature = "mpi")]
             Self::MpiRank(rank) => {
                 writeln!(fmt, "MPI Rank Transfer: ...")?;
-                fmt_report!(fmt, padding, "destination rank");
+                fmt_report!(fmt, rank, "destination rank");
                 Ok(())
             }
         }
