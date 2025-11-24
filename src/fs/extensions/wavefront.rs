@@ -9,76 +9,63 @@ use std::{
     io::{BufRead, BufReader},
     path::Path,
 };
+use obj::Obj;
 
-pub fn mesh_from_obj(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
-    let vertex_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
-        .lines()
-        .map(Result::unwrap)
-        .filter(|line| line.starts_with("v "))
-        .collect();
+pub fn mesh_from_objfile(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
+    let objs = Obj::load(path)?;
+    // obj.load_mtls()?
 
-    let mut verts = Vec::with_capacity(vertex_lines.len());
-    for line in vertex_lines {
-        let mut words = line.split_whitespace();
-        words.next();
+    let verts = objs.data.position.iter()
+        .map(|vs| {
+            let vs: Vec<f64> = vs.iter().map(|v| *v as f64).collect();
+            Point3::new(vs[0], vs[1], vs[2])
+        })
+        .collect::<Vec<_>>();
 
-        let px = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
-        let py = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
-        let pz = words.next().ok_or("Missing vertex word.")?.parse::<f64>()?;
+    let norms = objs.data.normal.iter()
+        .map(|vs| {
+            let vs: Vec<f64> = vs.iter().map(|v| *v as f64).collect();
+            Dir3::new(vs[0], vs[1], vs[2])
+        })
+        .collect::<Vec<_>>();
 
-        verts.push(Point3::new(px, py, pz));
-    }
+    let mut objs_faces =
+        objs
+        .data
+        .objects
+        .iter()
+        .map(|obj|
+            // NOTE: Don't support multiple groups per object
+            obj.groups
+                .iter()
+                .flat_map(|group|
+                    group.polys.iter().map(|poly| {
+                        if poly.0.len() != 3 {
+                            return Err("Only triangular faces are supported.");
+                            // TODO: Could easily convert a quadrilaterl into 2 triangles, hence supporting
+                            // more export options for OBJ files
+                        }
 
-    let normal_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
-        .lines()
-        .map(Result::unwrap)
-        .filter(|line| line.starts_with("vn "))
-        .collect();
+                        let v_idx: Vec<_> = poly.0.iter()
+                            .map(|idx_tuple| idx_tuple.0)
+                            .collect();
+                        //let t_idx = poly.0.map(|idx_tuple| idx_tuple.1);
+                        let n_idx: Vec<_> = poly.0.iter()
+                            .map(|idx_tuple| idx_tuple.2.ok_or("Missing normal index."))
+                            .collect::<Result<Vec<_>, _>>()?;
+                        Ok(((v_idx[0], v_idx[1], v_idx[2]), (n_idx[0], n_idx[1], n_idx[2])))
+                    })
+                )
+                .collect::<Result<Vec<_>, _>>()
+        );
 
-    let mut norms = Vec::with_capacity(normal_lines.len());
-    for line in normal_lines {
-        let mut words = line.split_whitespace();
-        words.next();
-
-        let nx = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
-        let ny = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
-        let nz = words.next().ok_or("Missing normal word.")?.parse::<f64>()?;
-
-        norms.push(Dir3::new(nx, ny, nz));
-    }
-
-    let face_lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)
-        .lines()
-        .map(Result::unwrap)
-        .filter(|line| line.starts_with("f "))
-        .collect();
-
-    let mut faces = Vec::with_capacity(face_lines.len());
-    for line in face_lines {
-        let line = line.replace("//", " ");
-        let mut words = line.split_whitespace();
-        words.next();
-
-        let fx = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
-        let nx = words
-            .next()
-            .ok_or("Missing normal word.")?
-            .parse::<usize>()?
-            - 1;
-        let fy = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
-        let ny = words
-            .next()
-            .ok_or("Missing normal word.")?
-            .parse::<usize>()?
-            - 1;
-        let fz = words.next().ok_or("Missing face word.")?.parse::<usize>()? - 1;
-        let nz = words
-            .next()
-            .ok_or("Missing normal word.")?
-            .parse::<usize>()?
-            - 1;
-
-        faces.push(((fx, fy, fz), (nx, ny, nz)));
+    let faces = objs_faces.next().ok_or("No objects found in OBJ file.")??;
+    if objs_faces.next().is_some() {
+        return Err(
+            obj::ObjError::Io(
+                std::io::Error::new(std::io::ErrorKind::InvalidData,
+                    "Only one object per file is supported at the moment")
+        ).into());
     }
 
     let mut tris = Vec::with_capacity(faces.len());
@@ -95,14 +82,14 @@ pub fn mesh_from_obj(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::mesh_from_obj;
+    use super::mesh_from_objfile;
     use crate::{
         geom::SmoothTriangle,
         math::{Dir3, Point3}};
     use std::path::Path;
 
     #[test]
-    fn test_mesh_from_obj() {
+    fn test_mesh_from_objfile() {
 
         // Create correct comparison data
         let tris_kgo = [SmoothTriangle::new_from_verts(
@@ -115,7 +102,7 @@ mod tests {
                             )];
 
         let test_data_path = Path::new("./tests/data/square.obj");
-        let mesh_tris = mesh_from_obj(test_data_path).unwrap();
+        let mesh_tris = mesh_from_objfile(test_data_path).unwrap();
 
         assert!(mesh_tris==tris_kgo);
 
