@@ -176,7 +176,7 @@ impl File for Mesh {
     #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         if path.extension().unwrap() == "obj" {
-            let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
+            let mesh_tris = mesh_from_objfile(path).unwrap_or_else(|_| {
                 panic!("Unable to read mesh from wavefront file: {}", path.display())
             });
 

@@ -32,6 +32,8 @@ pub enum Error {
     NetCdf(netcdf::Error),
     /// Lidrs Error.
     Lidrs(lidrs::err::Error),
+    // Obj loading
+    ObjLoad(obj::ObjError),
 }
 
 macro_rules! impl_from_for_err {
@@ -71,6 +73,7 @@ impl_from_for_err!(Self::MinMax, ndarray_stats::errors::MinMaxError);
 impl_from_for_err!(Self::NetCdf, netcdf::Error);
 impl_from_for_err!(Self::WritePng, png::EncodingError);
 impl_from_for_err!(Self::Lidrs, lidrs::err::Error);
+impl_from_for_err!(Self::ObjLoad, obj::ObjError);
 
 impl Debug for Error {
     #[inline]
@@ -93,6 +96,7 @@ impl Debug for Error {
                 Self::MinMax { .. } => "MinMax",
                 Self::NetCdf { .. } => "NetCDF IO",
                 Self::Lidrs { .. } => "Lidrs",
+                Self::ObjLoad{ .. } => "Obj file load",
             },
             match *self {
                 Self::Text { 0: ref err } => format!("{:?}", err),
@@ -109,6 +113,7 @@ impl Debug for Error {
                 Self::MinMax { 0: ref err } => format!("{:?}", err),
                 Self::NetCdf { 0: ref err } => format!("{:?}", err),
                 Self::Lidrs { 0: ref err } => format!("{:?}", err),
+                Self::ObjLoad { 0: ref err} => format!("{:?}", err),
             }
         )
     }
