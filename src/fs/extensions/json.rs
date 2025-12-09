@@ -6,6 +6,7 @@
 use crate::err::Error;
 use serde::Deserialize;
 use std::{fs::read_to_string, path::Path};
+use anyhow::Context;
 
 /// Deserialise the type in json format.
 /// # Errors
@@ -15,8 +16,9 @@ pub fn from_json<T>(path: &Path) -> Result<T, Error>
 where
     for<'de> T: Deserialize<'de>,
 {
-    let s = read_to_string(path)?;
-    Ok(json5::from_str(&s)?)
+    let s = read_to_string(path).context(format!("Failed reading from {}", path))?;
+    let parsed_json = json5::from_str(&s);
+    Ok(parsed_json?)
 }
 
 /// Deserialise the type in json format.

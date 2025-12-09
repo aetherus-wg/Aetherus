@@ -88,9 +88,9 @@ fn main() {
     report!(surfs, "surfaces");
 
     /*
-     * Create a boundary for the simulation with boundary conditions. 
-     * For now we hard-code this to kill, but we can link this to configuration soon. 
-     * TODO: We probably want to implement the MPI adjacent rank transfer here too. 
+     * Create a boundary for the simulation with boundary conditions.
+     * For now we hard-code this to kill, but we can link this to configuration soon.
+     * TODO: We probably want to implement the MPI adjacent rank transfer here too.
      */
 
     sub_section(term_width, "Growing");

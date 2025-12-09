@@ -11,6 +11,8 @@ use std::{
     collections::btree_map::{IntoIter, Values}, fmt::{Display, Formatter}, path::Path
 };
 
+use anyhow::Context;
+
 /// Data map.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Set<T>(Map<Name, T>);
@@ -125,7 +127,7 @@ where
 {
     #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
-        from_json(path)
+        Ok(from_json(path).context(format!("Loading Set from file {}", path))?)
     }
 }
 
@@ -133,7 +135,6 @@ where
 impl<T: Load> Load for Set<T> {
     type Inst = Set<T::Inst>;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         let mut map = Map::new();
 
@@ -150,7 +151,6 @@ impl<T: Build> Build for Set<T> {
     type Inst = Set<T::Inst>;
 
     #[allow(clippy::expect_used)]
-    #[inline]
     fn build(self) -> Self::Inst {
         let mut list = Vec::with_capacity(self.0.len());
         for (name, val) in self.0 {
