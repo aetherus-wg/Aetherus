@@ -1,8 +1,8 @@
 //! Standard photon-lifetime engine function.
 
 use crate::{
-    io::output::{self, Output}, 
-    phys::Photon, 
+    io::output::{self, Output},
+    phys::Photon,
     sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
 };
 use rand::{rngs::ThreadRng, Rng};
@@ -12,7 +12,7 @@ use rand::{rngs::ThreadRng, Rng};
 #[inline]
 pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, mut phot: Photon) {
 
-    // Add to the emission variables in which the photon is present. 
+    // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(output::OutputParameter::Emission) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
             vol.data_mut()[index] += phot.power() * phot.weight();
@@ -29,10 +29,12 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
     // Initialisation.
     let mat = input.light.mat();
     let mut env = mat.sample_environment(phot.wavelength());
+    // scat_dist persists across voxels propagation, in order to preserve scattering statistics
+    let mut scat_dist = None;
 
     // Main event loop.
     let mut num_loops = 0;
-    // It could be that this is preventing our photon packets from interacting with the boundary. 
+    // It could be that this is preventing our photon packets from interacting with the boundary.
     //while let Some((index, voxel)) = input.grid.gen_index_voxel(phot.ray().pos()) {
     while input.bound.contains(phot.ray().pos()) {
 
@@ -54,30 +56,45 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
 
         // Interaction distances.
         let voxel_dist = data.voxel_dist(&phot);
-        let scat_dist = -(rng.gen::<f64>()).ln() / env.inter_coeff();
+        if scat_dist.is_none() {
+            scat_dist = Some(-(rng.gen::<f64>()).ln() / env.inter_coeff());
+        }
         let surf_hit = input
             .tree
-            .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist));
-        let boundary_hit = input.bound.dist_boundary(phot.ray()).expect("Photon not contained in boundary. ");
+            .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist.unwrap()));
+        let boundary_hit = input.bound.dist_boundary(phot.ray())
+            .expect("Photon not contained in boundary.");
+
 
         // Event handling.
-        match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, dist + bump_dist),
+        match Event::new(voxel_dist, scat_dist.unwrap(), surf_hit, boundary_hit, bump_dist) {
+            Event::Voxel(dist) => {
+                travel(&mut data, &mut phot, &env, dist + bump_dist);
+                // Update scat_dist for the frame of the new position
+                scat_dist = Some(scat_dist.unwrap() - dist - bump_dist);
+                assert!(scat_dist.unwrap() > 0.0);
+            },
             Event::Scattering(dist) => {
                 travel(&mut data, &mut phot, &env,dist);
                 scatter(&mut rng, &mut phot, &env);
+                // Reset scat_dist for the new scattering event
+                scat_dist = None;
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env,hit.dist());
+                travel(&mut data, &mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
-                travel(&mut data, &mut phot, &env,bump_dist);
+                travel(&mut data, &mut phot, &env, bump_dist);
+                // WARN: Is the surface interaction also affecting the scattering statistics like
+                // voxels did?
+                scat_dist = None;
             },
             Event::Boundary(boundary_hit) => {
                 travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
-                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
+                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
                     travel(&mut data, &mut phot, &env, bump_dist);
+                    scat_dist = Some(scat_dist.unwrap() - boundary_hit.dist()- bump_dist);
                 }
             }
         }
