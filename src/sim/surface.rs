@@ -96,6 +96,9 @@ pub fn surface(
             None => phot.kill(),
         },
         Attribute::PhotonCollector(id) => {
+            if hit.side().is_inside() {
+                return;
+            }
             data.phot_cols[id].collect_photon(phot);
         },
         Attribute::AttributeChain(ref attrs) => {
