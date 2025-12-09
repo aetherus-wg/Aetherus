@@ -163,6 +163,8 @@ impl Cube {
     #[inline]
     #[must_use]
     fn intersections(&self, ray: &Ray) -> (f64, f64) {
+        // TODO: Precompute 1/ray.dir() as it's used at every Voxel transition and f64 div
+        // takes much longer thatn f64 mul
         let t_0: Vec<_> = self
             .mins
             .iter()
@@ -270,7 +272,7 @@ impl Trace for Cube {
     fn dist(&self, ray: &Ray) -> Option<f64> {
         let (t_min, t_max) = self.intersections(ray);
 
-        if t_max <= 0.0 || t_min > t_max {
+        if t_max < 0.0 || t_min > t_max {
             return None;
         }
 
