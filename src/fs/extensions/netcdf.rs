@@ -5,7 +5,7 @@ use crate::{
     fs::{File, Save},
     ord::cartesian::{X, Y, Z},
 };
-use ndarray::{Array2, Array3, ArrayView2, ArrayView3};
+use ndarray::{Array2, Array3, ArrayView2, ArrayView3, s};
 use netcdf::NcTypeDescriptor;
 use std::path::Path;
 
@@ -43,7 +43,6 @@ impl<T: NcTypeDescriptor + Copy> File for Array3<T> {
 }
 
 impl<T: NcTypeDescriptor> Save for Array2<T> {
-    #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -56,14 +55,13 @@ impl<T: NcTypeDescriptor> Save for Array2<T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
 impl<T: NcTypeDescriptor> Save for ArrayView2<'_, T> {
-    #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -76,14 +74,13 @@ impl<T: NcTypeDescriptor> Save for ArrayView2<'_, T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
-impl<T: NcTypeDescriptor> Save for Array3<T> {
-    #[inline]
+impl<T: NcTypeDescriptor + std::fmt::Display> Save for Array3<T> {
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -98,14 +95,13 @@ impl<T: NcTypeDescriptor> Save for Array3<T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
 impl<T: NcTypeDescriptor> Save for ArrayView3<'_, T> {
-    #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -120,7 +116,7 @@ impl<T: NcTypeDescriptor> Save for ArrayView3<'_, T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
