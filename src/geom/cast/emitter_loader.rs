@@ -20,6 +20,8 @@ use std::{
 pub enum EmitterLoader {
     /// Single beam.
     Beam(Point3, Dir3),
+    /// Gaussian beam
+    Gaussian(Point3, Dir3, f64),
     /// Point list.
     Points(PathBuf),
     /// Weighted point list.
@@ -39,6 +41,7 @@ impl Load for EmitterLoader {
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Beam(pos, dir) => Self::Inst::new_beam(Ray::new(pos, dir)),
+            Self::Gaussian(pos, dir, std_dev) => Self::Inst::new_gaussian(Ray::new(pos, dir), std_dev),
             Self::Points(points_path) => {
                 let table = Table::new_from_file(&in_dir.join(points_path))?;
                 let points = table
@@ -81,12 +84,13 @@ impl Display for EmitterLoader {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         let kind = match *self {
-            Self::Beam { .. } => "Beam",
-            Self::Points { .. } => "Points",
+            Self::Beam { .. }           => "Beam",
+            Self::Gaussian { .. }       => "Gaussian",
+            Self::Points { .. }         => "Points",
             Self::WeightedPoints { .. } => "WeightedPoints",
-            Self::Surface { .. } => "Surface",
-            Self::Volume { .. } => "Volume",
-            Self::NonIsotropic { .. } => "NonIsotropic",
+            Self::Surface { .. }        => "Surface",
+            Self::Volume { .. }         => "Volume",
+            Self::NonIsotropic { .. }   => "NonIsotropic",
         };
         write!(fmt, "{}", kind)
     }

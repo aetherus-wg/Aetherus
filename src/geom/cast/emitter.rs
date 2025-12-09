@@ -1,8 +1,9 @@
 //! Optical material.
 
 use crate::{
+    core::Real,
     geom::{Emit, Grid, Mesh, Ray},
-    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf, Trans3},
+    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf, Trans3, rng::Probability},
     tools::linear_to_three_dim,
 };
 use ndarray::Array3;
@@ -17,6 +18,8 @@ use std::{
 pub enum Emitter {
     /// Single beam.
     Beam(Ray),
+    /// Gaussian beam (Ray, Divergence Half-Angle)
+    Gaussian(Ray, f64),
     /// Points.
     Points(Vec<Point3>),
     /// Weighted points.
@@ -27,6 +30,8 @@ pub enum Emitter {
     Volume(Array3<f64>, Grid),
     /// Non-isotropic point source.
     NonIsotropic(SphericalCdf, Trans3),
+    /// Set of emitters
+    Set(Vec<Emitter>),
 }
 
 impl Emitter {
@@ -36,6 +41,12 @@ impl Emitter {
     pub const fn new_beam(ray: Ray) -> Self {
         Self::Beam(ray)
     }
+
+    /// Construct a new gaussian beam, given Ray and divergence half angle (theta)
+    pub fn new_gaussian(ray: Ray, theta: f64) -> Self {
+        Self::Gaussian(ray, theta)
+    }
+
 
     /// Construct a new points instance.
     #[inline]
@@ -89,11 +100,33 @@ impl Emitter {
     }
 
     /// Emit a new ray.
-    #[inline]
     #[must_use]
     pub fn emit<R: Rng>(&self, rng: &mut R) -> Ray {
         match *self {
             Self::Beam(ref ray) => ray.clone(),
+            Self::Gaussian(ref ray, div_half_angle) => {
+                // 1. given local frame ray.dir is z axis, need to derive (x,y) directions in the
+                //    local frame. The actual choice doesn't matter, as far as it always yields the
+                //    same result, given that we assume the gaussian beam to be symteric around the
+                //    ray direction axis.
+                //    Obs: It seems that the Ray.rotate(theta, phi) already takes that into
+                //    account. Might however be more efficient if we pre-compute and provide local
+                //    frame for the beam.
+                // 2. Sample (theta, phi)
+                // 3. Rotate ray.dir by (theta, phi) in the local frame.
+
+                let theta = if div_half_angle <= 0.2 {
+                    // Small angle approx for better perf
+                    Probability::new_gaussian(0.0, div_half_angle).sample(rng)
+                } else {
+                    let sin_theta = Probability::new_gaussian(0.0, (div_half_angle as Real).sin()).sample(rng);
+                    (sin_theta as Real).abs().asin()
+                };
+                let phi = rng.gen_range(0.0..2.0 * PI);
+                let mut beam_ray = ray.clone();
+                beam_ray.rotate(theta, phi);
+                beam_ray
+            }
             Self::Points(ref ps) => {
                 Ray::new(ps[rng.gen_range(0..ps.len())], rand_isotropic_dir(rng))
             }
@@ -140,20 +173,22 @@ impl Emitter {
                     dir.into(),
                 )
             }
+            Self::Set(_) => todo!(),
         }
     }
 }
 
 impl Display for Emitter {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         let kind = match *self {
             Self::Beam { .. } => "Beam",
+            Self::Gaussian { .. } => "Gaussian",
             Self::Points { .. } => "Points",
             Self::WeightedPoints { .. } => "WeightedPoints",
             Self::Surface { .. } => "Surface",
             Self::Volume { .. } => "Volume",
             Self::NonIsotropic { .. } => "Non-isotropic",
+            Self::Set { .. } => "Set of emitters",
         };
         write!(fmt, "{}", kind)
     }
@@ -165,7 +200,7 @@ mod tests {
     use rand;
     use assert_approx_eq::assert_approx_eq;
     use crate::{
-        geom::{Ray, Mesh, SmoothTriangle, Triangle}, 
+        geom::{Ray, Mesh, SmoothTriangle, Triangle},
         data::Average,
         math::{Point3, Dir3},
     };
@@ -175,6 +210,17 @@ mod tests {
         let mut rng = rand::thread_rng();
         let emit_ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
         let emitter = Emitter::new_beam(emit_ray.clone());
+
+        let emitted_ray = emitter.emit(&mut rng);
+        assert_eq!(emitted_ray.dir(), emit_ray.dir());
+        assert_eq!(emitted_ray.pos(), emit_ray.pos());
+    }
+
+    #[test]
+    fn test_gaussian_emitter() {
+        let mut rng = rand::thread_rng();
+        let emit_ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
+        let emitter = Emitter::new_gaussian(emit_ray.clone(), 0.1);
 
         let emitted_ray = emitter.emit(&mut rng);
         assert_eq!(emitted_ray.dir(), emit_ray.dir());
@@ -199,7 +245,7 @@ mod tests {
         }
 
         // In the case that the emission is isotropic, this should even out to be about zero.
-        // I'm testing this to within 1% here. 
+        // I'm testing this to within 1% here.
         assert_approx_eq!(ave_x.ave(), 0.0, 0.01);
         assert_approx_eq!(ave_y.ave(), 0.0, 0.01);
         assert_approx_eq!(ave_z.ave(), 0.0, 0.01);
@@ -220,7 +266,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         for _ in 0..100_000 {
             let emitted_ray = emitter.emit(&mut rng);
-            
+
             ave_x += emitted_ray.pos().x();
             ave_y += emitted_ray.pos().y();
             ave_z += emitted_ray.pos().z();
@@ -235,7 +281,7 @@ mod tests {
         assert_eq!(ave_z.ave(), 0.0);
 
         // In the case that the emission is isotropic, this should even out to be about zero.
-        // I'm testing this to within 1% here. 
+        // I'm testing this to within 1% here.
         assert_approx_eq!(ave_dir_x.ave(), 0.0, 0.01);
         assert_approx_eq!(ave_dir_y.ave(), 0.0, 0.01);
         assert_approx_eq!(ave_dir_z.ave(), 0.0, 0.01);
@@ -246,7 +292,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let norm = Dir3::new(0.0, 0.0, 1.0);
 
-        // Make a single upward facing triangle to emit from. 
+        // Make a single upward facing triangle to emit from.
         let triangles = vec![ SmoothTriangle::new(
             Triangle::new([
                 Point3::new(0.0, 0.0, 0.0),
