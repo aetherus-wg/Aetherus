@@ -4,7 +4,7 @@ use crate::geom::{BoundaryHit, Hit};
 
 /// Event determination enumeration.
 #[derive(PartialEq, Debug)]
-pub enum Event<'a, T> 
+pub enum Event<'a, T>
 {
     /// Voxel boundary collision.
     Voxel(f64),
@@ -33,23 +33,28 @@ impl<'a, T> Event<'a, T> {
         debug_assert!(bump_dist > 0.0);
 
         // Logically, if there is any geometry, it should be within the octree
-        // which is contained within the boundary. 
+        // which is contained within the boundary.
         if let Some(hit) = surf_hit {
-            if voxel_dist < (hit.dist() + bump_dist) {
+            if (voxel_dist + bump_dist) < hit.dist() {
                 if scat_dist < (voxel_dist + bump_dist) {
                     return Self::Scattering(scat_dist);
                 }
                 return Self::Voxel(voxel_dist);
             }
 
-            if scat_dist < (hit.dist() + bump_dist) {
+            if (scat_dist + bump_dist) < hit.dist() {
                 return Self::Scattering(scat_dist);
             }
             return Self::Surface(hit);
         }
 
-        if boundary_hit.dist() <= (voxel_dist + bump_dist) {
+        if boundary_hit.dist() <= (voxel_dist + bump_dist) && boundary_hit.dist()<scat_dist {
             return Self::Boundary(boundary_hit);
+        }
+
+        // WARN: Potentially skipping a voxel, which can alter the results for OutputVolume
+        if scat_dist < (voxel_dist + bump_dist) {
+            return Self::Scattering(scat_dist);
         }
 
         Self::Voxel(voxel_dist)
@@ -65,7 +70,7 @@ mod tests {
     };
     use super::*;
 
-    /// In this scenario, the surface hit is the closest event. 
+    /// In this scenario, the surface hit is the closest event.
     #[test]
     fn test_new_surface_hit() {
         let surf_hit = Some(Hit::new(&Attribute::Mirror(0.5), 1.0, Side::Outside(Dir3::new(1.0, 0.0, 0.0))));
@@ -104,4 +109,7 @@ mod tests {
         let event: Event<'_, Attribute<'_>> = Event::new(2.0, 1.0, None, bhit.clone(), 0.5);
         assert_eq!(event, Event::Boundary(bhit));
     }
+
+    // TODO: Add test to check surfaces are given priority for when voxels faces coincide with
+    // surfaces, or when bump_dist might cause photons to pass through the surface undetected
 }
