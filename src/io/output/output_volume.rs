@@ -93,6 +93,16 @@ impl OutputVolume {
         self.boundary.contains(p)
     }
 
+    #[inline]
+    #[must_use]
+    fn gen_index_axis(min: f64, max: f64, res: usize, coord: f64) -> usize {
+        if coord == max {
+            res - 1
+        } else {
+            (((coord - min) / (max - min)) * res as f64).floor() as usize
+        }
+    }
+
     /// If the given position is contained within the grid,
     /// generate the index for the given position within the grid.
     #[inline]
@@ -103,12 +113,9 @@ impl OutputVolume {
             let maxs = self.boundary.maxs();
 
             [
-                (((p.x() - mins.x()) / (maxs.x() - mins.x())) * self.res[X] as f64).floor()
-                    as usize,
-                (((p.y() - mins.y()) / (maxs.y() - mins.y())) * self.res[Y] as f64).floor()
-                    as usize,
-                (((p.z() - mins.z()) / (maxs.z() - mins.z())) * self.res[Z] as f64).floor()
-                    as usize,
+                Self::gen_index_axis(mins.x(), maxs.x(), self.res[X], p.x()),
+                Self::gen_index_axis(mins.y(), maxs.y(), self.res[Y], p.y()),
+                Self::gen_index_axis(mins.z(), maxs.z(), self.res[Z], p.z()),
             ]
         })
     }
