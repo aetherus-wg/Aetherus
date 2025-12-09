@@ -10,6 +10,8 @@ use crate::{
 use arctk_attr::file;
 use std::path::Path;
 
+use anyhow::Context;
+
 /// Loadable runtime parameters.
 #[file]
 pub struct ParametersBuilderLoader {
@@ -36,17 +38,20 @@ pub struct ParametersBuilderLoader {
 impl Load for ParametersBuilderLoader {
     type Inst = ParametersBuilder;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
-        let sett = self.sett.load(in_dir)?;
+        let sett     = self.sett.load(in_dir)?;
         let boundary = self.boundary.load(in_dir)?;
-        let tree = self.tree.load(in_dir)?;
-        let surfs = self.surfs.load(in_dir)?.load(in_dir)?;
-        let attrs = attribute_chain_resolve_set(self.attrs.load(in_dir)?);
-        let mats = self.mats.load(in_dir)?.load(in_dir)?;
-        let lights = self.lights.load(in_dir)?.load(in_dir)?;
-        let engine = self.engine.load(in_dir)?;
-        let output = self.output.load(in_dir)?;
+        let tree     = self.tree.load(in_dir)?;
+        let surfs    = self.surfs.load(in_dir)?.load(in_dir)?;
+        let attrs    = attribute_chain_resolve_set(
+            self.attrs.load(in_dir)?
+            );
+        let mats     = self.mats.load(in_dir)?
+            .load(in_dir)?;
+        let lights   = self.lights.load(in_dir)?
+            .load(in_dir)?;
+        let engine   = self.engine.load(in_dir)?;
+        let output   = self.output.load(in_dir)?;
 
         Ok(Self::Inst::new(
             sett, boundary, tree, surfs, attrs, mats, lights, engine, output,
