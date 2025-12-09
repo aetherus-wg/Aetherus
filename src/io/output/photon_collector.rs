@@ -1,7 +1,7 @@
 use crate::{err::Error, fmt_report, fs::Save, phys::Photon, tools::ProgressBar};
 use std::{fmt::Display, fs::File, io::Write, ops::AddAssign, path::Path};
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct PhotonCollector {
     /// The vector of collected photons.
     pub photons: Vec<Photon>,
@@ -71,7 +71,7 @@ impl Save for PhotonCollector {
                     phot.wavelength(),
                     phot.power(),
                     phot.weight(),
-                    phot.tof(),
+                    phot.tof().unwrap_or(0.0),
                 )?;
                 pb.tick();
             }

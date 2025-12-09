@@ -13,7 +13,7 @@ use mpi::{
 use memoffset::offset_of;
 
 /// Photon.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Photon {
     /// Ray of travel.
     ray: Ray,
@@ -24,7 +24,7 @@ pub struct Photon {
     /// Power (J/s).
     power: f64,
     // Time (s) from beginning of photon generation => time of flight
-    tof: f64,
+    tof: Option<f64>,
 }
 
 impl Photon {
@@ -32,7 +32,7 @@ impl Photon {
     clone!(weight, weight_mut: f64);
     clone!(wavelength, wavelength_mut: f64);
     clone!(power: f64);
-    clone!(tof, tof_mut: f64);
+    clone!(tof, tof_mut: Option<f64>);
 
     /// Construct a new instance.
     #[inline]
@@ -46,7 +46,14 @@ impl Photon {
             weight: 1.0,
             wavelength,
             power,
-            tof: 0.0,
+            tof: None,
+        }
+    }
+
+    pub fn with_time(self) -> Self {
+        Self {
+            tof: Some(0.0),
+            ..self
         }
     }
 
