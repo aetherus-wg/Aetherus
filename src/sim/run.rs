@@ -65,7 +65,10 @@ fn thread<'a>(
         b
     } {
         for _ in start..end {
-            let phot = input.light.emit(&mut rng, phot_energy);
+            let mut phot = input.light.emit(&mut rng, phot_energy);
+            if input.sett.time_resolved() == Some(true) {
+                phot = phot.with_time();
+            }
             engine.run(&input, &mut output, &mut rng, phot);
         }
     }
