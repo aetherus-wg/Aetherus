@@ -4,7 +4,7 @@ use crate::{
     access, clone, fmt_report,
     err::Error,
     geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Trace, Transformable},
-    fs::{File, mesh_from_obj, mesh_from_ugrid},
+    fs::{File, mesh_from_objfile, mesh_from_ugrid},
     math::Trans3,
     ord::{ALPHA, cartesian::X},
 };
@@ -13,6 +13,7 @@ use std::{
     fmt::{Display, Formatter},
     path::Path
 };
+use anyhow::Context;
 
 /// Boundary padding.
 const PADDING: f64 = 1e-6;
@@ -173,12 +174,10 @@ impl Display for Mesh {
 }
 
 impl File for Mesh {
-    #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         if path.extension().unwrap() == "obj" {
-            let mesh_tris = mesh_from_objfile(path).unwrap_or_else(|_| {
-                panic!("Unable to read mesh from wavefront file: {}", path.display())
-            });
+            let mesh_tris = mesh_from_objfile(path)
+                .context(format!("Unable to read mesh from wavefront file: {}", path.display()))?;
 
             Ok(Self::new(mesh_tris))
 
