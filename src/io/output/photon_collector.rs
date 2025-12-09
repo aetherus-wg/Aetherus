@@ -74,7 +74,7 @@ impl Save for PhotonCollector {
                     phot.wavelength(),
                     phot.power(),
                     phot.weight(),
-                    phot.tof(),
+                    phot.tof().unwrap_or(0.0),
                 )?;
                 pb.tick();
             }

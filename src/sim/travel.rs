@@ -17,7 +17,12 @@ pub fn travel(phot: &mut Photon, env: &Local, dist: f64) {
     }
 
     // Update time of flight.
-    // TODO: Precompute (1 / SPEED_OF_LIGHT_IN_VACUUM) and use MUL
-    // instead of DIV operation, for better performance. Benchmark first!
-    *phot.tof_mut() += dist * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM;
+    match phot.tof() {
+        // TODO: Precompute (1 / SPEED_OF_LIGHT_IN_VACUUM) and use MUL
+        // instead of DIV operation, for better performance. Benchmark first!
+        Some(tof) => {
+            *phot.tof_mut() = Some(tof + dist * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM);
+        },
+        None => (),
+    };
 }
