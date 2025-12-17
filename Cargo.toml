@@ -64,6 +64,7 @@ anyhow = "1.0.100"
 thiserror = "2.0.17"
 log = "0.4.29"
 rand_distr = "0.6.0"
+aetherus-events = { git = "https://github.com/crisbour/aetherus-events", tag="0.1.0", version = "0.1.0" }
 
 [dev-dependencies]
 tempfile = "3.2.*"
