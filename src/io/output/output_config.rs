@@ -7,8 +7,8 @@ use serde::Serialize;
 use arctk_attr::file;
 use crate::{
     fmt_report,
-    data::HistogramBuilder, 
-    img::ImageBuilder, 
+    data::HistogramBuilder,
+    img::ImageBuilder,
     io::output::{OutputPlaneBuilder, OutputVolumeBuilder, PhotonCollectorBuilder, Output},
     ord::Name};
 
@@ -31,14 +31,14 @@ impl OutputConfig {
 
     pub fn build(&self) -> Output {
         let reg = OutputRegistry::new_from_config(self);
-        // Volume output. 
+        // Volume output.
         let vol = match &self.volumes {
             Some(vols) => {
                 vols.iter().map(|(_key, conf)| {
                     conf.build()
                 })
                 .collect()
-            }, 
+            },
             None => vec![]
         };
 
@@ -48,7 +48,7 @@ impl OutputConfig {
                     conf.build()
                 })
                 .collect()
-            }, 
+            },
             None => vec![]
         };
 
@@ -58,7 +58,7 @@ impl OutputConfig {
                     conf.build()
                 })
                 .collect()
-            }, 
+            },
             None => vec![]
         };
 
@@ -68,7 +68,7 @@ impl OutputConfig {
                     conf.build()
                 })
                 .collect()
-            }, 
+            },
             None => vec![]
         };
 
@@ -78,7 +78,7 @@ impl OutputConfig {
                     conf.build()
                 })
                 .collect()
-            }, 
+            },
             None => vec![]
         };
 
@@ -88,7 +88,7 @@ impl OutputConfig {
                     conf.build()
                 })
                 .collect()
-            }, 
+            },
             None => vec![]
         };
 
@@ -98,7 +98,7 @@ impl OutputConfig {
                     conf.build()
                 })
                 .collect()
-            }, 
+            },
             None => vec![]
         };
 
@@ -238,7 +238,7 @@ impl fmt::Display for OutputConfig {
             },
             None => fmt_report!(fmt, "none", "photos")
         }
-        
+
         Ok(())
     }
 }
@@ -282,11 +282,11 @@ mod tests {
             }
         }
         "#;
-        
-        // Deserialise from the provided string above. 
+
+        // Deserialise from the provided string above.
         let conf: OutputConfig = json5::from_str(conf_str).unwrap();
-        
-        // Check that all outputs make it through. 
+
+        // Check that all outputs make it through.
         assert_eq!(conf.n_volumes(), 2);
         assert_eq!(conf.n_planes(), 1);
         assert_eq!(conf.n_photon_collectors(), 2);
@@ -329,10 +329,10 @@ mod tests {
             }
         }
         "#;
-        // Deserialise from the provided string above. 
+        // Deserialise from the provided string above.
         let conf: OutputConfig = json5::from_str(conf_str).unwrap();
         let _out = conf.build();
 
-        // TODO: Implement some tests for the output object here. 
+        // TODO: Implement some tests for the output object here.
     }
 }

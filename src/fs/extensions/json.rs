@@ -16,7 +16,7 @@ pub fn from_json<T>(path: &Path) -> Result<T, Error>
 where
     for<'de> T: Deserialize<'de>,
 {
-    let s = read_to_string(path).context(format!("Failed reading from {}", path))?;
+    let s = read_to_string(path).context(format!("Failed reading from {}", path.display()))?;
     let parsed_json = json5::from_str(&s);
     Ok(parsed_json?)
 }
