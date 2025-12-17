@@ -47,6 +47,7 @@ impl Save for PhotonCollector {
                 "power",
                 "weight",
                 "tof",
+                "uid",
             ];
             write!(file, "{}", headings[0])?;
             for heading in headings.iter().skip(1) {
@@ -61,7 +62,7 @@ impl Save for PhotonCollector {
             for phot in self.photons.iter() {
                 writeln!(
                     file,
-                    "{},{},{},{},{},{},{},{},{},{}",
+                    "{},{},{},{},{},{},{},{},{},{},{:08X}",
                     phot.ray().pos().x(),
                     phot.ray().pos().y(),
                     phot.ray().pos().z(),
@@ -72,6 +73,7 @@ impl Save for PhotonCollector {
                     phot.power(),
                     phot.weight(),
                     phot.tof().unwrap_or(0.0),
+                    phot.uid().encode(),
                 )?;
                 pb.tick();
             }

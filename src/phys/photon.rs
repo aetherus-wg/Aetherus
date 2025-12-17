@@ -1,6 +1,8 @@
 //! Photon particle.
 use crate::{access, clone, geom::Ray};
 
+use aetherus_events::ledger::Uid;
+
 #[cfg(feature = "mpi")]
 use crate::math::{Dir3, Point3};
 #[cfg(feature = "mpi")]
@@ -23,8 +25,12 @@ pub struct Photon {
     wavelength: f64,
     /// Power (J/s).
     power: f64,
-    // Time (s) from beginning of photon generation => time of flight
+    /// Time (s) from beginning of photon generation => time of flight
+    // FIXME: Use NaN boxing instead of Option<f64> for more compact storage =>
+    // less pressure on cache: https://craftspider.github.io/2024/09/shorts-boxing/
     tof: Option<f64>,
+    /// Unique ID for Event logging
+    uid: Uid,
 }
 
 impl Photon {
@@ -33,6 +39,7 @@ impl Photon {
     clone!(wavelength, wavelength_mut: f64);
     clone!(power: f64);
     clone!(tof, tof_mut: Option<f64>);
+    clone!(uid, uid_mut: Uid);
 
     /// Construct a new instance.
     #[inline]
@@ -47,6 +54,7 @@ impl Photon {
             wavelength,
             power,
             tof: None,
+            uid: Uid::new(0, 0),
         }
     }
 
@@ -77,6 +85,8 @@ pub struct PhotonBuf {
     pub wavelength: f64,
     /// Power (J/s).
     pub power: f64,
+    /// Time of flight (s)
+    pub tof: f64,
 }
 
 #[cfg(feature = "mpi")]
@@ -92,6 +102,8 @@ impl PhotonBuf {
             weight: photon.weight(),
             wavelength: photon.wavelength(),
             power: photon.power(),
+            tof: tof.tof().unwrap_or(f64::NAN),
+            uid: photon.uid(),
         }
     }
 
@@ -101,7 +113,15 @@ impl PhotonBuf {
         let ray = Ray::new(
             Point3::new(self.ray_pos[0], self.ray_pos[1], self.ray_pos[2]),
             Dir3::new(self.ray_dir[0], self.ray_dir[1], self.ray_dir[2]));
-        return Photon::new(ray, self.wavelength, self.power);
+
+        let mut phot = Photon::new(ray, self.wavelength, self.power);
+
+        match self.tof {
+            f64::NAN => {},
+            value => *phot.tof_mut() = Some(value),
+        }
+
+        phot
     }
 
 }
@@ -111,17 +131,19 @@ unsafe impl Equivalence for PhotonBuf {
     type Out = UserDatatype;
     fn equivalent_datatype() -> Self::Out {
         UserDatatype::structured(
-            &[1, 1, 1, 1, 1],
+            &[1, 1, 1, 1, 1, 1],
             &[
                 offset_of!(PhotonBuf, ray_pos) as Address,
                 offset_of!(PhotonBuf, ray_dir) as Address,
                 offset_of!(PhotonBuf, weight) as Address,
                 offset_of!(PhotonBuf, wavelength) as Address,
                 offset_of!(PhotonBuf, power) as Address,
+                offset_of!(PhotonBuf, tof) as Address,
             ],
             &[
                 UncommittedUserDatatype::contiguous(3, &f64::equivalent_datatype()).as_ref(),
                 UncommittedUserDatatype::contiguous(3, &f64::equivalent_datatype()).as_ref(),
+                f64::equivalent_datatype().into(),
                 f64::equivalent_datatype().into(),
                 f64::equivalent_datatype().into(),
                 f64::equivalent_datatype().into(),
@@ -152,7 +174,8 @@ mod tests {
     #[cfg(feature = "mpi")]
     fn buf_init_test() {
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 1.0, 1.0));
-        let phot = Photon::new(ray, 500.0, 10.0);
+        let mut phot = Photon::new(ray, 500.0, 10.0);
+        phot.tof_mut() = Some(1.0e-9);
 
         let phot_buf  = PhotonBuf::new(&phot);
         // Check that we get the correct
@@ -161,6 +184,7 @@ mod tests {
         assert_eq!(phot_buf.weight, 1.0);
         assert_eq!(phot_buf.wavelength, 500.0);
         assert_eq!(phot_buf.power, 10.0);
+        assert_eq!(phot_buf.tof(), 1.0e-9);
     }
 
     /// Check that arrays destruct correctly
@@ -178,6 +202,7 @@ mod tests {
         assert_eq!(phot.weight(), phot_return.weight());
         assert_eq!(phot.wavelength(), phot_return.wavelength());
         assert_eq!(phot.power(), phot_return.power());
+        assert_eq!(phot.tof(), phot_return.tof());
     }
 
 }

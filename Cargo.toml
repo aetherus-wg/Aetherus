@@ -62,6 +62,7 @@ pyo3 = { version = "0.21.1", features = ["extension-module"], optional = true }
 obj = "0.10.2"
 anyhow = "1.0.100"
 thiserror = "2.0.17"
+aetherus-events = { git = "https://github.com/crisbour/aetherus-events", version = "0.1.0" }
 
 [dev-dependencies]
 tempfile = "3.2.*"

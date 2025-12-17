@@ -23,6 +23,8 @@ pub struct Settings {
     roulette_barrels: u64,
     /// Keep track of photon time-of-flight
     time_resolved: Option<bool>,
+    /// Unique IDs tracked
+    uid_tracked: Option<bool>,
     /// Whether or not to output each night.
     output_individual_lights: Option<bool>,
 }
@@ -37,6 +39,7 @@ impl Settings {
     clone!(roulette_barrels: u64);
     clone!(time_resolved: Option<bool>);
     clone!(output_individual_lights: Option<bool>);
+    clone!(uid_tracked: Option<bool>);
 
     /// Construct a new instance.
     #[inline]
@@ -50,6 +53,7 @@ impl Settings {
         min_weight: f64,
         roulette_barrels: u64,
         time_resolved: Option<bool>,
+        uid_tracked: Option<bool>,
         output_individual_lights: Option<bool>,
     ) -> Self {
         debug_assert!(num_threads.is_none() || num_threads.unwrap() >= 1);
@@ -68,6 +72,7 @@ impl Settings {
             min_weight,
             roulette_barrels,
             time_resolved,
+            uid_tracked,
             output_individual_lights,
         }
     }
@@ -89,6 +94,9 @@ impl Display for Settings {
         fmt_report!(fmt, self.roulette_barrels, "roulette barrels");
         if let Some(time_resolved) = self.time_resolved {
             fmt_report!(fmt, time_resolved, "time resolved");
+        }
+        if let Some(uid_tracked) = self.uid_tracked {
+            fmt_report!(fmt, uid_tracked, "unique IDs for photons are tracked");
         }
         if let Some(output_individual_lights) = self.output_individual_lights {
             fmt_report!(fmt, output_individual_lights, "output individual lights");
