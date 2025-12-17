@@ -127,7 +127,7 @@ where
 {
     #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
-        Ok(from_json(path).context(format!("Loading Set from file {}", path))?)
+        Ok(from_json(path).context(format!("Loading Set from file {}", path.display()))?)
     }
 }
 
