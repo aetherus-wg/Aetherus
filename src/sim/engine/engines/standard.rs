@@ -3,14 +3,17 @@
 use crate::{
     io::output::{self, Output},
     phys::Photon,
-    sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
+    sim::{scatter::scatter, surface::surface, travel::travel, Attribute, Event, Input},
 };
 use rand::{rngs::ThreadRng, Rng};
+use std::sync::{Arc, Mutex};
+
+use aetherus_events::ledger::Ledger;
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
 #[inline]
-pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, mut phot: Photon) {
+pub fn standard(input: &Input, mut data: &mut Output, ledger: &Arc<Mutex<Ledger>>, mut rng: &mut ThreadRng, mut phot: Photon) {
 
     // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(output::OutputParameter::Emission) {
@@ -77,6 +80,21 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
             Event::Scattering(dist) => {
                 travel(&mut data, &mut phot, &env,dist);
                 scatter(&mut rng, &mut phot, &env);
+                // WARN: Accessing Ledger from many threads will slow down the simulation
+                // considerably. Consider using an async design, encapsulating `uid` in work token
+                // and computed value, transforming insert into a send on an mpsc channel
+                // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
+                if input.sett.uid_tracked() == Some(true) {
+                    *phot.uid_mut() = ledger
+                        .lock()
+                        .expect("Can't lock Ledger")
+                        .insert(phot.uid(), {
+                            use aetherus_events::{EventId, mcrt::{MCRT, Material, Elastic, ScatterDir}};
+                            EventId::new_mcrt(
+                                MCRT::Material(Material::Elastic(Elastic::HenyeyGreenstein(ScatterDir::Any))),
+                                0)
+                    });
+                }
                 // Reset scat_dist for the new scattering event
                 scat_dist = None;
             }
@@ -84,8 +102,38 @@ pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, m
                 travel(&mut data, &mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
                 travel(&mut data, &mut phot, &env, bump_dist);
-                // WARN: Is the surface interaction also affecting the scattering statistics like
-                // voxels did?
+                // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
+                if input.sett.uid_tracked() == Some(true) {
+                    match *hit.tag() {
+                        Attribute::Interface(_,_) => {
+                            *phot.uid_mut() = ledger
+                                .lock()
+                                .expect("Can't lock Ledger")
+                                .insert(phot.uid(), {
+                                    use aetherus_events::{EventId, mcrt::{MCRT, Interface}};
+                                    EventId::new_mcrt(
+                                        MCRT::Interface(Interface::Refraction),
+                                        0)
+                            });
+                        },
+                        Attribute::Mirror(_) | Attribute::Reflector(_) => {
+                            *phot.uid_mut() = ledger
+                                .lock()
+                                .expect("Can't lock Ledger")
+                                .insert(phot.uid(), {
+                                use aetherus_events::{EventId, mcrt::{MCRT,Reflector}};
+                                EventId::new_mcrt(
+                                    MCRT::Reflector(Reflector::Diffuse),
+                                    0)
+                            });
+                        },
+                        _ => { /* Other attributes do not affect uid */ }
+
+                    }
+                }
+
+                // FIXME: Is the surface interaction also affecting the scattering statistics like
+                // voxels did? => Based on "MONTE CARLO MODELING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
                 scat_dist = None;
             },
             Event::Boundary(boundary_hit) => {

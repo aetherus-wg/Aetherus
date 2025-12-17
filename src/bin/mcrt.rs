@@ -22,6 +22,8 @@ use aetherus::{
     },
 };
 
+use std::sync::{Arc, Mutex};
+
 /// Backup print width if the terminal width can not be determined.
 const BACKUP_TERM_WIDTH: usize = 80;
 
@@ -97,6 +99,8 @@ fn main() {
     let tree = Tree::new(&params.tree, &surfs);
     report!(tree, "hit-scan tree");
 
+    let ledger = Arc::new(Mutex::new(aetherus_events::ledger::Ledger::new()));
+
     let nlights = lights.len();
     let data = lights
         .into_iter()
@@ -107,7 +111,7 @@ fn main() {
             let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, light, &tree, &sett, &bound);
 
             let data =
-                run::multi_thread(&engine, input, &base_output).expect("Failed to run MCRT.");
+                run::multi_thread(&engine, input, &base_output, ledger.clone()).expect("Failed to run MCRT.");
 
             // In the case that we are outputting the files for each individual light, we can output it here with a simple setting.
             if let Some(output_individual) = sett.output_individual_lights() {
@@ -130,6 +134,13 @@ fn main() {
             output += data;
             output
         });
+
+    if let Some(true) = sett.uid_tracked() {
+        aetherus_events::ledger::write_ledger_to_json(
+            &ledger.lock().expect("Failed to lock ledger."),
+            &format!("{}_ledger.json", out_dir.join("simulation").display()),
+        ).expect("Failed to save ledger.");
+    }
 
     section(term_width, "Saving");
     //report!(data, "data");
