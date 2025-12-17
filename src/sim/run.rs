@@ -10,6 +10,8 @@ use rand::thread_rng;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
+use aetherus_events::{emission::Emission, ledger::Ledger, EventId};
+
 /// Run a multi-threaded MCRT simulation.
 /// # Errors
 /// if the progress bar can not be locked.
@@ -19,6 +21,7 @@ pub fn multi_thread<'a>(
     engine: &Engine,
     input: Input<'a>,
     output: &Output,
+    ledger: Arc<Mutex<Ledger>>,
 ) -> Result<Output, Error> {
     let pb = ProgressBar::new("MCRT", input.sett.num_phot());
     let pb = Arc::new(Mutex::new(pb));
@@ -31,7 +34,15 @@ pub fn multi_thread<'a>(
     let threads: Vec<_> = (0..num_threads).collect();
     let mut out: Vec<_> = threads
         .par_iter()
-        .map(|_id| thread(engine, input.clone(), output.clone(), &Arc::clone(&pb)))
+        .map(|_id| {
+            thread(
+                engine,
+                input.clone(),
+                output.clone(),
+                ledger.clone(),
+                &Arc::clone(&pb),
+            )
+        })
         .collect();
     pb.lock()?.finish_with_message("Simulation complete.");
 
@@ -51,6 +62,7 @@ fn thread<'a>(
     engine: &Engine,
     input: Input<'a>,
     mut output: Output,
+    ledger: Arc<Mutex<Ledger>>,
     pb: &Arc<Mutex<ProgressBar>>,
 ) -> Output {
     let mut rng = thread_rng();
@@ -66,10 +78,22 @@ fn thread<'a>(
     } {
         for _ in start..end {
             let mut phot = input.light.emit(&mut rng, phot_energy);
+
+            // FIXME: Replace emission_type and light_id placeholder witha actual values from
+            // input.light
+            if input.sett.uid_tracked() == Some(true) {
+                *phot.uid_mut() = ledger
+                    .lock()
+                    .expect("Could not lock ledger.")
+                    .insert_start(EventId::new_emission(Emission::GaussianBeam, 0));
+            }
+
             if input.sett.time_resolved() == Some(true) {
                 phot = phot.with_time();
             }
-            engine.run(&input, &mut output, &mut rng, phot);
+            // FIXME: Locking here and waiting for engine to run esentially transform this into a
+            // very inefficient sequential (non parallel threaded) program
+            engine.run(&input, &mut output, &ledger, &mut rng, phot);
         }
     }
 
