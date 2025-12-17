@@ -3,15 +3,18 @@
 use crate::{
     io::output::{self, Output},
     phys::Photon,
-    sim::{Event, Input, scatter::scatter, surface::surface, travel::travel},
+    sim::{Attribute, Event, Input, scatter::scatter, surface::surface, travel::travel},
 };
+use aetherus_events::ledger::Ledger;
 use rand::{Rng, RngExt};
+use std::sync::{Arc, Mutex};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
 pub fn standard<R: Rng>(
     input: &Input,
     data: &mut Output,
+    ledger: &Arc<Mutex<Ledger>>,
     mut rng: &mut R,
     mut phot: Photon,
 ) {
@@ -81,6 +84,21 @@ pub fn standard<R: Rng>(
             Event::Scattering(dist) => {
                 travel(&mut phot, &env, dist);
                 scatter(&mut rng, &mut phot, &env);
+                // WARN: Accessing Ledger from many threads will slow down the simulation
+                // considerably. Consider using an async design, encapsulating `uid` in work token
+                // and computed value, transforming insert into a send on an mpsc channel
+                // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
+                if input.sett.uid_tracked() == Some(true) {
+                    *phot.uid_mut() = ledger
+                        .lock()
+                        .expect("Can't lock Ledger")
+                        .insert(phot.uid(), {
+                            use aetherus_events::{EventId, mcrt::{MCRT, Material, Elastic, ScatterDir}};
+                            EventId::new_mcrt(
+                                MCRT::Material(Material::Elastic(Elastic::HenyeyGreenstein(ScatterDir::Any))),
+                                0)
+                    });
+                }
                 // Reset scat_dist for the new scattering event
                 scat_dist = None;
             }
@@ -88,11 +106,41 @@ pub fn standard<R: Rng>(
                 travel(&mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, data);
                 phot.ray_mut().travel(bump_dist);
+                // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
+                if input.sett.uid_tracked() == Some(true) {
+                    match *hit.tag() {
+                        Attribute::Interface(_,_) => {
+                            *phot.uid_mut() = ledger
+                                .lock()
+                                .expect("Can't lock Ledger")
+                                .insert(phot.uid(), {
+                                    use aetherus_events::{EventId, mcrt::{MCRT, Interface}};
+                                    EventId::new_mcrt(
+                                        MCRT::Interface(Interface::Refraction),
+                                        0)
+                            });
+                        },
+                        Attribute::Mirror(_) | Attribute::Reflector(_) => {
+                            *phot.uid_mut() = ledger
+                                .lock()
+                                .expect("Can't lock Ledger")
+                                .insert(phot.uid(), {
+                                use aetherus_events::{EventId, mcrt::{MCRT,Reflector}};
+                                EventId::new_mcrt(
+                                    MCRT::Reflector(Reflector::Diffuse),
+                                    0)
+                            });
+                        },
+                        _ => { /* Other attributes do not affect uid */ }
+
+                    }
+                }
+
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
                 // voxels did? => Based on "MONTE CARLO MODELLING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
                 scat_dist = Some(scat_dist.unwrap() - hit.dist());
                 assert!(scat_dist.unwrap() >= 0.0);
-            }
+            },
             Event::Boundary(boundary_hit) => {
                 travel(&mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
