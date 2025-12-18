@@ -79,7 +79,9 @@ fn main() {
         .link(base_output.reg.spec_reg.set())
         .expect("Failed to link spectrometers to attributes.")
         .link(&mats)
-        .expect("Failed to link materials to attributes.");
+        .expect("Failed to link materials to attributes.")
+        .build()
+        .expect("Failed to build attributes.");
     report!(attrs, "attributes");
     let surfs = params
         .surfs

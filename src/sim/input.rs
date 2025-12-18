@@ -17,14 +17,14 @@ pub struct Input<'a> {
     /// Materials.
     pub mats: &'a Set<Material>,
     /// Attributes.
-    pub attrs: &'a Set<Attribute<'a>>,
+    pub attrs: &'a Set<Attribute>,
     /// Emission light.
     pub light: Light<'a>,
     /// Hit-scan tree.
-    pub tree: &'a Tree<'a, Attribute<'a>>,
+    pub tree: &'a Tree<'a, Attribute>,
     /// General settings.
     pub sett: &'a Settings,
-    /// Boundary for the simulation. 
+    /// Boundary for the simulation.
     pub bound: &'a Boundary,
 }
 
@@ -39,7 +39,7 @@ impl<'a> Input<'a> {
         light: Light<'a>,
         tree: &'a Tree<Attribute>,
         sett: &'a Settings,
-        bound: &'a Boundary
+        bound: &'a Boundary,
     ) -> Self {
         Self {
             spec_reg,

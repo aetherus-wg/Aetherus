@@ -391,7 +391,7 @@ impl<'a> BoundaryHit<'a> {
         }
     }
 
-    pub fn get_hit(&self) -> Hit<'_, Attribute<'_>> {
+    pub fn get_hit(&self) -> Hit<'_, Attribute> {
         Hit::new(
             &Attribute::Mirror(0.0),
             self.dist(),
@@ -400,8 +400,8 @@ impl<'a> BoundaryHit<'a> {
     }
 }
 
-impl<'a> Into<Hit<'a, Attribute<'a>>> for BoundaryHit<'a> {
-    fn into(self) -> Hit<'a, Attribute<'a>> {
+impl<'a> Into<Hit<'a, Attribute>> for BoundaryHit<'a> {
+    fn into(self) -> Hit<'a, Attribute> {
         // Not the most elegant implementation, as the tag is not used.
         Hit::new(
             &Attribute::Mirror(0.0),

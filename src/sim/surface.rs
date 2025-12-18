@@ -15,7 +15,7 @@ pub fn surface(
     env: &mut Local,
     data: &mut Output,
 ) {
-    match *hit.tag() {
+    match hit.tag() {
         Attribute::Interface(inside, outside) => {
             // Reference materials.
             let (curr_mat, next_mat) = if hit.side().is_inside() {
@@ -56,7 +56,7 @@ pub fn surface(
             *phot.ray_mut().dir_mut() = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
         }
         Attribute::Spectrometer(id) => {
-            data.specs[id].try_collect_weight(phot.wavelength(), phot.weight());
+            data.specs[*id].try_collect_weight(phot.wavelength(), phot.weight());
             phot.kill();
         }
         Attribute::Imager(id, width, ref orient) => {
@@ -65,8 +65,8 @@ pub fn surface(
             let y = ((orient.up().dot_vec(&projection) / width) + 1.0) / 2.0;
 
             if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y) {
-                let res = data.imgs[id].pixels().raw_dim();
-                data.imgs[id].pixels_mut()
+                let res = data.imgs[*id].pixels().raw_dim();
+                data.imgs[*id].pixels_mut()
                     [[(res[X] as f64 * x) as usize, (res[Y] as f64 * y) as usize]] +=
                     wavelength_to_col(phot.wavelength()) * (phot.weight() * phot.power()) as f32;
             }
@@ -79,9 +79,9 @@ pub fn surface(
             let y = ((orient.up().dot_vec(&projection) / width) + 1.0) / 2.0;
 
             if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y) {
-                let res = data.ccds[id].raw_dim();
+                let res = data.ccds[*id].raw_dim();
                 if let Some(bin) = binner.try_bin(phot.wavelength()) {
-                    data.ccds[id][[
+                    data.ccds[*id][[
                         (res[X] as f64 * x) as usize,
                         (res[Y] as f64 * y) as usize,
                         bin,
@@ -99,7 +99,7 @@ pub fn surface(
             if hit.side().is_inside() {
                 return;
             }
-            data.phot_cols[id].collect_photon(phot);
+            data.phot_cols[*id].collect_photon(phot);
         },
         Attribute::AttributeChain(ref attrs) => {
             for attr in attrs.iter() {
@@ -108,9 +108,9 @@ pub fn surface(
             }
         },
         Attribute::Rasterise(id, ref rasteriser) => {
-            rasteriser.rasterise(rng, phot, &mut data.plane[id]);
+            rasteriser.rasterise(rng, phot, &mut data.plane[*id]);
         },
-        Attribute::Hyperspectral(ref id, ref plane) => {
+        Attribute::Hyperspectral(id, ref plane) => {
             assert_eq!(*data.vol[*id].param(), OutputParameter::Hyperspectral, "Hyperspectral output target not set to 'hyperspectral' param. ");
 
             let projected_xy = plane.project_onto_plane(phot.ray().pos());
