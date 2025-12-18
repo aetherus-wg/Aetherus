@@ -21,10 +21,10 @@ pub enum Attribute<'a> {
     /// A photon collector, which collects the photon that interact with the linked entities.
     /// These photons can be optionally killed, or left to keep propogating.
     PhotonCollector(usize),
-    /// A chain of attributes, allowing us to perform multiple actions with a 
-    /// photon packet for each interaction. We can chain attributes together here. 
+    /// A chain of attributes, allowing us to perform multiple actions with a
+    /// photon packet for each interaction. We can chain attributes together here.
     AttributeChain(Vec<Attribute<'a>>),
-    /// An output into the output plane object. This rasterises the photon packet into plane. 
+    /// An output into the output plane object. This rasterises the photon packet into plane.
     Rasterise(usize, Rasteriser),
     /// Hyperspectral output - output into a volume output
     Hyperspectral(usize, AxisAlignedPlane),

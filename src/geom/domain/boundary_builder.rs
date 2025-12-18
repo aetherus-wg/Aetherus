@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
 use std::fmt::{Display, Formatter};
 use arctk_attr::file;
 use crate::{
     fmt_report,
     geom::{Boundary, BoundaryCondition, Cube},
     math::Vec3,
-    phys::{ReflectanceBuilder, ReflectanceBuilderShim},
+    phys::{ReflectanceBuilder},
 };
 
 #[file]
@@ -104,7 +104,7 @@ impl Display for BoundaryBuilder {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BoundaryConditionBuilder {
     Kill,
-    Reflect(ReflectanceBuilderShim),
+    Reflect(ReflectanceBuilder),
     Periodic(f64),
     #[cfg(feature = "mpi")]
     MpiRank(usize),
@@ -138,7 +138,7 @@ impl Display for BoundaryConditionBuilder {
             }
             Self::Reflect(ref reflectance) => {
                 writeln!(fmt, "Reflector: ...")?;
-                fmt_report!(fmt, format!("{:?}, {:?}, {:?}", reflectance.0, reflectance.1, reflectance.2), "reflectance");
+                fmt_report!(fmt, format!("{:?}, {:?}, {:?}", reflectance.diff_ref, reflectance.spec_ref, reflectance.specularity), "reflectance");
                 Ok(())
             },
             Self::Periodic(padding) => {
