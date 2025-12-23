@@ -68,11 +68,11 @@ impl Load for EmitterLoader {
             Self::Surface(mesh) => Self::Inst::new_surface(mesh.load(in_dir)?),
             Self::Volume(spatial_map, grid) => {
                 let spatial_map: Array3<f64> = Array3::new_from_file(&in_dir.join(spatial_map))?;
-                Self::Inst::new_volume(spatial_map, grid.load(in_dir)?.build())
+                Self::Inst::new_volume(spatial_map, grid.load(in_dir)?.build()?)
             }
             Self::NonIsotropic(lid_path, trans_build) => {
                 let cdf = SphericalCdf::load(&in_dir.join(lid_path))?;
-                let trans = trans_build.build();
+                let trans = trans_build.build()?;
 
                 Self::Inst::new_non_isotropic(cdf, trans)
             }

@@ -185,7 +185,7 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     report!(builder, "builder");
 
     sub_section(term_width, "Building");
-    let params = builder.build();
+    let params = builder.build().expect("Failed to build parameters.");
     report!(params, "parameters");
 
     params

@@ -2,12 +2,13 @@
 
 use crate::{
     fmt_report,
+    err::Error,
     geom::{Camera, Orient},
     math::{Point3, Vec3},
     ord::{Build, cartesian::{X, Y}},
 };
 use arctk_attr::file;
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Formatter};
 
 /// Loadable camera structure.
 #[file]
@@ -61,19 +62,19 @@ impl Build for CameraBuilder {
     type Inst = Camera;
 
     #[inline]
-    fn build(self) -> Self::Inst {
-        Self::Inst::new(
+    fn build(self) -> Result<Self::Inst, Error> {
+        Ok(Self::Inst::new(
             Orient::new_tar(self.pos, &self.tar),
             self.fov.to_radians(),
             self.res,
             self.ss_power.map_or(1, |ss| ss),
-        )
+        ))
     }
 }
 
 impl Display for CameraBuilder {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(
             fmt,
@@ -129,14 +130,14 @@ mod tests {
 
     #[test]
     fn test_camera_builder_clone() {
-        // Setup the camera builder and clone it. 
+        // Setup the camera builder and clone it.
         let pos = Point3::new(0., 0., 0.);
         let tar = Point3::new(-1.0, 0.0, 0.0);
         let mut build = CameraBuilder::new(pos, tar, 90.0, [640, 480], Some(2));
         build.travel(Vec3::new(1.0, 0.0, 0.0));
         let build_clone = build.clone();
-        
-        // Now we check to see that the properties have persisted. 
+
+        // Now we check to see that the properties have persisted.
         let cam = build_clone.build();
         assert_eq!(*cam.pos(), Point3::new(1.0, 0.0, 0.0));
         assert_eq!(*cam.res(), [640, 480]);

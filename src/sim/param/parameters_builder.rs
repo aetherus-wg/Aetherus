@@ -1,15 +1,21 @@
 //! Buildable parameters.
 
 use crate::{
-    fmt_report, geom::{BoundaryBuilder, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::{Build, Set}, phys::{LightLinkerBuilder, MaterialBuilder}, sim::{LinkerChainStart, EngineBuilder, Parameters, Settings}
+    err::Error,
+    fmt_report,
+    geom::{object::SceneBuilder, BoundaryBuilder, SurfaceLinker, TreeSettings},
+    io::output::OutputConfig,
+    ord::{Build, Set},
+    phys::{LightLinkerBuilder, MaterialBuilder},
+    sim::{EngineBuilder, LinkerChainStart, Parameters, Settings},
 };
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Formatter};
 
 /// Buildable runtime parameters.
 pub struct ParametersBuilder {
     /// Simulation specific settings.
     sett: Settings,
-    /// Boundary settings. 
+    /// Boundary settings.
     boundary: BoundaryBuilder,
     /// Tree settings.
     tree: TreeSettings,
@@ -61,24 +67,26 @@ impl Build for ParametersBuilder {
     type Inst = Parameters;
 
     #[inline]
-    fn build(self) -> Self::Inst {
+    fn build(self) -> Result<Self::Inst, Error> {
         let sett = self.sett;
         let boundary = self.boundary.build();
         let tree = self.tree;
         let surfs = self.surfs;
         let attrs = self.attrs;
-        let mats = self.mats.build();
-        let light = self.lights.build();
-        let engine = self.engine.build();
+        let mats = self.mats.build()?;
+        let light = self.lights.build()?;
+        let engine = self.engine.build()?;
         let output = self.output;
 
-        Self::Inst::new(sett, boundary, tree, surfs, attrs, mats, light, engine, output)
+        Ok(Self::Inst::new(
+            sett, boundary, tree, surfs, attrs, mats, light, engine, output,
+        ))
     }
 }
 
 impl Display for ParametersBuilder {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.sett, "settings");
         fmt_report!(fmt, self.boundary, "boundary");

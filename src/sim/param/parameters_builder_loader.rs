@@ -3,7 +3,9 @@
 use crate::{
     err::Error,
     fs::{Load, Redirect},
-    geom::{boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings},
+    geom::{
+        boundary_builder::BoundaryBuilder, object::SceneBuilder, SurfaceLinkerLoader, TreeSettings,
+    },
     io::output::OutputConfig,
     ord::MultiSet,
     phys::{LightLinkerBuilderLoader, MaterialBuilder},
@@ -48,10 +50,8 @@ impl Load for ParametersBuilderLoader {
         let surfs    = self.surfs.load(in_dir)?
                                  .load(in_dir)?;
         let attrs    = attribute_chain_resolve_set(self.attrs.load(in_dir)?);
-        let mats     = self.mats.load(in_dir)?
-                                .load(in_dir)?;
-        let lights   = self.lights.load(in_dir)?
-                                  .load(in_dir)?;
+        let mats     = self.mats.load(in_dir)?.load(in_dir)?;
+        let lights   = self.lights.load(in_dir)?.load(in_dir)?;
         let engine   = self.engine.load(in_dir)?;
         let output   = self.output.load(in_dir)?;
 

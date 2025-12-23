@@ -1,8 +1,14 @@
 //! Material builder.
 
-use crate::{fmt_report, math::FormulaBuilder, ord::Build, phys::Material};
+use crate::{
+    fmt_report,
+    err::Error,
+    math::FormulaBuilder,
+    ord::Build,
+    phys::Material
+};
 use arctk_attr::file;
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Formatter};
 
 /// Loadable material.
 #[file]
@@ -23,20 +29,20 @@ impl Build for MaterialBuilder {
     type Inst = Material;
 
     #[inline]
-    fn build(self) -> Self::Inst {
-        let ref_index = self.ref_index.build();
-        let scat_coeff = self.scat_coeff.build();
-        let abs_coeff = self.abs_coeff.map(Build::build);
-        let shift_coeff = self.shift_coeff.map(Build::build);
-        let asym_fact = self.asym_fact.build();
+    fn build(self) -> Result<Self::Inst, Error> {
+        let ref_index   = self.ref_index.build()?;
+        let scat_coeff  = self.scat_coeff.build()?;
+        let abs_coeff   = self.abs_coeff.map(Build::build).transpose()?;
+        let shift_coeff = self.shift_coeff.map(Build::build).transpose()?;
+        let asym_fact   = self.asym_fact.build()?;
 
-        Self::Inst::new(ref_index, scat_coeff, abs_coeff, shift_coeff, asym_fact)
+        Ok(Self::Inst::new(ref_index, scat_coeff, abs_coeff, shift_coeff, asym_fact))
     }
 }
 
 impl Display for MaterialBuilder {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.ref_index, "refractive index");
         fmt_report!(fmt, self.scat_coeff, "scattering coefficient (m^-1)");

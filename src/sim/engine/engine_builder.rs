@@ -1,12 +1,13 @@
 //! Engine selection.
 
 use crate::{
+    err::Error,
     math::{FormulaBuilder, Point3},
     ord::Build,
     sim::{Engine, FilmBuilder},
 };
 use ndarray::Array3;
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Formatter};
 
 /// Engine selection.
 pub enum EngineBuilder {
@@ -24,24 +25,24 @@ impl Build for EngineBuilder {
     type Inst = Engine;
 
     #[inline]
-    fn build(self) -> Self::Inst {
-        match self {
+    fn build(self) -> Result<Self::Inst, Error> {
+        Ok(match self {
             Self::Standard => Self::Inst::Standard,
             Self::Raman(p) => Self::Inst::Raman(p),
             Self::Photo(film) => {
                 let res = film.res();
-                Self::Inst::Photo(film.build(), res)
+                Self::Inst::Photo(film.build()?, res)
             }
             Self::Fluorescence(shift_map, conc_spec) => {
-                Self::Inst::Fluorescence(shift_map, conc_spec.build())
+                Self::Inst::Fluorescence(shift_map, conc_spec.build()?)
             }
-        }
+        })
     }
 }
 
 impl Display for EngineBuilder {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         match *self {
             Self::Standard => write!(fmt, "Standard"),
             Self::Raman(ref _p) => write!(fmt, "Raman"),
