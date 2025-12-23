@@ -3,8 +3,10 @@
 use crate::{access, fmt_report, math::Formula, phys::Local};
 use std::fmt::{Display, Error, Formatter};
 
+use aetherus_events::mcrt::SrcId;
+
 /// Optical properties.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Material {
     /// Refractive index.
     ref_index: Formula,
@@ -16,6 +18,8 @@ pub struct Material {
     shift_coeff: Option<Formula>,
     /// Asymmetry factor.
     asym_fact: Formula,
+    /// Source id
+    mat_id: SrcId,
 }
 
 impl Material {
@@ -24,6 +28,7 @@ impl Material {
     access!(abs_coeff: Option<Formula>);
     access!(shift_coeff: Option<Formula>);
     access!(asym_fact: Formula);
+    access!(mat_id, mat_id_mut: SrcId);
 
     /// Construct a new instance.
     #[inline]
@@ -41,7 +46,14 @@ impl Material {
             abs_coeff,
             shift_coeff,
             asym_fact,
+            mat_id: SrcId::Mat(0),
         }
+    }
+
+    pub fn with_id(mut self, mat_id: SrcId) -> Self {
+        debug_assert!(matches!(mat_id, SrcId::Mat(_) | SrcId::MatSurf(_)));
+        self.mat_id = mat_id;
+        self
     }
 
     /// Generate an optical environment for a given wavelength.

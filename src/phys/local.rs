@@ -1,8 +1,10 @@
 //! Local optical environment.
 
 use crate::clone;
+use aetherus_events::mcrt::SrcId;
 
 /// Localised optical environment properties.
+#[derive(PartialEq)]
 pub struct Local {
     /// Refractive index.
     ref_index: f64,
@@ -14,6 +16,8 @@ pub struct Local {
     shift_coeff: f64,
     /// Asymmetry parameter.
     asym: f64,
+    /// Material ID
+    mat_id: SrcId,
 }
 
 impl Local {
@@ -22,6 +26,7 @@ impl Local {
     clone!(abs_coeff: f64);
     clone!(shift_coeff: f64);
     clone!(asym: f64);
+    clone!(mat_id: SrcId);
 
     /// Construct a new instance.
     #[inline]
@@ -45,7 +50,14 @@ impl Local {
             abs_coeff,
             shift_coeff,
             asym,
+            mat_id: SrcId::Mat(0),
         }
+    }
+
+    pub fn with_mat(mut self, mat_id: SrcId) -> Self {
+        debug_assert!(matches!(mat_id, SrcId::Mat(_) | SrcId::MatSurf(_)));
+        self.mat_id = mat_id;
+        self
     }
 
     /// Calculate the interaction coefficient.

@@ -110,6 +110,7 @@ impl OutputConfig {
             imgs,
             ccds,
             photos,
+            uid_insert: None,
             reg,
         }
     }

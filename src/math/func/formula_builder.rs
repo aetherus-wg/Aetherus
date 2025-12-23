@@ -7,6 +7,7 @@ use std::fmt::{Display, Formatter};
 
 /// Mathematical formulae accepting a single scalar argument.
 #[file]
+#[derive(Clone)]
 pub enum FormulaBuilder {
     /// Constant value. = c
     Constant(f64),

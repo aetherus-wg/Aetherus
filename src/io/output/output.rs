@@ -31,6 +31,8 @@ pub struct Output {
     pub ccds: Vec<Array3<f64>>,
     /// Photo data.
     pub photos: Vec<Image>,
+    /// TODO: UID Ledger Shim: Insert request of new events
+    pub uid_insert: Option<()>,
 
     /// Contains the mapping between index and name for
     /// each of the output types.
