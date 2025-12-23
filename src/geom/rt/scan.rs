@@ -20,7 +20,7 @@ impl<'a, T> Scan<'a, T> {
     #[inline]
     #[must_use]
     pub fn new_boundary(dist: f64) -> Self {
-        debug_assert!(dist > 0.0);
+        debug_assert!(dist >= 0.0);
 
         Self::Boundary(dist)
     }

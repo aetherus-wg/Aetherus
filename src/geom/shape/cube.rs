@@ -170,6 +170,7 @@ impl Cube {
             .iter()
             .zip(ray.pos().iter().zip(ray.dir().iter()))
             .map(|(m, (p, d))| (m - p) / d)
+            .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
             .collect();
 
         let t_1: Vec<_> = self
@@ -177,6 +178,7 @@ impl Cube {
             .iter()
             .zip(ray.pos().iter().zip(ray.dir().iter()))
             .map(|(m, (p, d))| (m - p) / d)
+            .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
             .collect();
 
         let t_min = t_0
