@@ -4,7 +4,7 @@ use crate::{
     err::Error,
     fs::{Load, Redirect},
     geom::{
-        boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings,
+        boundary_builder::BoundaryBuilder, object::SceneBuilder, SurfaceLinkerLoader, TreeSettings,
     },
     io::output::OutputConfig,
     ord::MultiSet,
