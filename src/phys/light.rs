@@ -11,7 +11,7 @@ use std::fmt::{Display, Error, Formatter};
 
 /// Photon emission structure.
 #[derive(Clone)]
-pub struct Light<'a> {
+pub struct Light {
     /// Power [J/s].
     power: f64,
     /// Emitter.
@@ -19,10 +19,10 @@ pub struct Light<'a> {
     /// Emission spectrum.
     spec: Probability,
     /// Emitting material.
-    mat: &'a Material,
+    mat: Material,
 }
 
-impl<'a> Light<'a> {
+impl Light {
     clone!(power: f64);
     access!(spec: Probability);
     access!(mat: Material);
@@ -30,7 +30,7 @@ impl<'a> Light<'a> {
     /// Construct a new instance.
     #[inline]
     #[must_use]
-    pub fn new(power: f64, emitter: Emitter, spec: Probability, mat: &'a Material) -> Self {
+    pub fn new(power: f64, emitter: Emitter, spec: Probability, mat: Material) -> Self {
         debug_assert!(power > 0.0);
 
         Self {
@@ -54,7 +54,7 @@ impl<'a> Light<'a> {
     }
 }
 
-impl<'a> Display for Light<'a> {
+impl Display for Light {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
@@ -93,7 +93,7 @@ mod tests {
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
         let emitter = Emitter::new_beam(ray.clone());
         let mat = get_air_material();
-        let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
+        let light = Light::new(1.0, emitter, Probability::new_point(1.0), mat);
 
         // Now emit a photon and check we get the correct values.
         let photon = light.emit(&mut rng, 1.0);
@@ -108,7 +108,7 @@ mod tests {
         let points = vec![Point3::new(1.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 0.0, 1.0)];
         let emitter = Emitter::new_points(points.clone());
         let mat = get_air_material();
-        let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
+        let light = Light::new(1.0, emitter, Probability::new_point(1.0), mat);
 
         // Now emit a photon and check we get the correct values.
         let photon = light.emit(&mut rng, 1.0);
@@ -124,7 +124,7 @@ mod tests {
         let weights = [1.0, 2.0, 3.0];
         let emitter = Emitter::new_weighted_points(points.clone(), &weights);
         let mat = get_air_material();
-        let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
+        let light = Light::new(1.0, emitter, Probability::new_point(1.0), mat);
 
         // Now emit a number of photons and check that the weights are correct.
         let mut freqs = vec![0, 0, 0];
@@ -162,7 +162,7 @@ mod tests {
 
         let emitter = Emitter::new_surface(mesh);
         let mat = get_air_material();
-        let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
+        let light = Light::new(1.0, emitter, Probability::new_point(1.0), mat);
 
         // Now emit a photon and check we get the correct values.
         let photon = light.emit(&mut rng, 1.0);

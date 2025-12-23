@@ -8,7 +8,7 @@ use std::{
 use aetherus::{
     args,
     fs::{File, Load, Save},
-    geom::{Tree, object::Object},
+    geom::Tree,
     ord::{Build, Link, Name, Set},
     report,
     sim::{

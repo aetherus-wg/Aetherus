@@ -39,7 +39,7 @@ impl LightLinker {
 }
 
 impl<'a> Link<'a, Material> for LightLinker {
-    type Inst = Light<'a>;
+    type Inst = Light;
 
     #[inline]
     fn requires(&self) -> Vec<Name> {
@@ -55,7 +55,7 @@ impl<'a> Link<'a, Material> for LightLinker {
         let emitter = self.emitter;
         let spec = self.spec;
 
-        Ok(Self::Inst::new(power, emitter, spec, mat))
+        Ok(Self::Inst::new(power, emitter, spec, mat.clone()))
     }
 }
 
