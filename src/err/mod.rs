@@ -13,6 +13,12 @@ pub enum Error {
     /// Parallelisation poison.
     #[error("Parallelisation poison.")]
     Parallel,
+    /// UID Ledger error
+    #[error("UIDs Ledger error: {0}")]
+    Ledger(String),
+    /// Linking error
+    #[error("Linking error: {0}")]
+    Linking(String),
     /// Formatting error.
     #[error("Formatting")]
     Format(#[from] std::fmt::Error),
@@ -64,6 +70,12 @@ impl From<&str> for Error {
     #[inline]
     fn from(err: &str) -> Self {
         Self::Text(err.to_owned())
+    }
+}
+
+impl From<String> for Error {
+    fn from(err: String) -> Self {
+        Error::from(err.as_str()) // Reuse the `From<&str>` implementation
     }
 }
 
