@@ -57,8 +57,8 @@ pub fn peel_off(input: &Input, mut phot: Photon, env: &Local, pos: Point3) -> Op
             prob *= (-x * inter_coeff).exp();
 
             // Do something at the collision point.
-            match *hit.tag() {
-                Attribute::Interface(inside, outside) => {
+            match hit.tag().attr {
+                Attribute::Interface(ref inside, ref outside) => {
                     // Determine far side material.
                     inter_coeff = if hit.side().is_inside() {
                         outside.sample_environment(phot.wavelength()).inter_coeff()

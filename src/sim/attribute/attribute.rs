@@ -1,13 +1,21 @@
 //! Optical attributes.
 
+use aetherus_events::mcrt::SrcId;
+
 use crate::{fmt_report, geom::Orient, io::output::{Rasteriser, AxisAlignedPlane}, phys::{Material, Reflectance}, tools::Binner};
 use std::fmt::{Display, Error, Formatter};
 
+// TODO: Perhaps pass SurfaceAttr instead of Object as tag to Mesh
+pub struct SurfaceAttr {
+    src_id: SrcId,
+    surf_attr: Attribute
+}
+
 /// Surface attributes.
 #[derive(Debug, PartialEq, Clone)]
-pub enum Attribute<'a> {
+pub enum Attribute {
     /// Material interface, inside material reference, outside material reference.
-    Interface(&'a Material, &'a Material),
+    Interface(Material, Material),
     /// Partially reflective mirror, reflection fraction.
     Mirror(f64),
     /// Spectrometer detector.
@@ -23,17 +31,17 @@ pub enum Attribute<'a> {
     PhotonCollector(usize),
     /// A chain of attributes, allowing us to perform multiple actions with a
     /// photon packet for each interaction. We can chain attributes together here.
-    AttributeChain(Vec<Attribute<'a>>),
+    AttributeChain(Vec<Attribute>),
     /// An output into the output plane object. This rasterises the photon packet into plane.
     Rasterise(usize, Rasteriser),
     /// Hyperspectral output - output into a volume output
     Hyperspectral(usize, AxisAlignedPlane),
 }
 
-impl Display for Attribute<'_> {
+impl Display for Attribute {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
-        match *self {
+        match self {
             Self::Interface(in_mat, out_mat) => {
                 write!(fmt, "Interface: {} :| {}", in_mat, out_mat)
             }

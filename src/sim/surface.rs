@@ -1,8 +1,15 @@
 //! Photon scattering function.
 
 use crate::{
-    geom::Hit, img::Colour, io::output::{Output, OutputParameter}, math::Point3, ord::cartesian::{X, Y}, phys::{Crossing, Local, Photon}, sim::Attribute
+    geom::{object::Object, Hit},
+    img::Colour,
+    io::output::{Output, OutputParameter},
+    math::Point3,
+    ord::cartesian::{X, Y},
+    phys::{Crossing, Local, Photon},
+    sim::Attribute,
 };
+use aetherus_events::{mcrt_event, EventType};
 use rand::{rngs::ThreadRng, Rng};
 
 /// Handle a surface collision.
@@ -10,13 +17,13 @@ use rand::{rngs::ThreadRng, Rng};
 #[inline]
 pub fn surface(
     rng: &mut ThreadRng,
-    hit: &Hit<Attribute>,
+    hit: &Hit<Object>,
     phot: &mut Photon,
     env: &mut Local,
     data: &mut Output,
-) {
-    match *hit.tag() {
-        Attribute::Interface(inside, outside) => {
+) -> EventType {
+    match hit.tag().attr {
+        Attribute::Interface(ref inside, ref outside) => {
             // Reference materials.
             let (curr_mat, next_mat) = if hit.side().is_inside() {
                 (inside, outside)
@@ -27,6 +34,11 @@ pub fn surface(
             // Find local optical environments.
             let curr_env = curr_mat.sample_environment(phot.wavelength());
             let next_env = next_mat.sample_environment(phot.wavelength());
+
+            debug_assert!(
+                curr_env == *env,
+                "Current env cached in the simulation doesn't match env detected from surface interaction"
+            );
 
             // Get the near, and far side refractive indices.
             let curr_ref_index = curr_env.ref_index();
@@ -45,19 +57,23 @@ pub fn surface(
             if r <= crossing.ref_prob() {
                 // Reflect.
                 *phot.ray_mut().dir_mut() = *crossing.ref_dir();
+                EventType::MCRT(mcrt_event!(Interface, Reflection))
             } else {
                 // Refract.
                 *phot.ray_mut().dir_mut() = crossing.trans_dir().expect("Invalid refraction.");
                 *env = next_env;
+                EventType::MCRT(mcrt_event!(Interface, Refraction))
             }
         }
         Attribute::Mirror(abs) => {
             *phot.weight_mut() *= abs;
             *phot.ray_mut().dir_mut() = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
+            EventType::MCRT(mcrt_event!(Reflector, Specular))
         }
         Attribute::Spectrometer(id) => {
             data.specs[id].try_collect_weight(phot.wavelength(), phot.weight());
             phot.kill();
+            EventType::Detection
         }
         Attribute::Imager(id, width, ref orient) => {
             let projection = orient.pos() - phot.ray().pos();
@@ -72,6 +88,7 @@ pub fn surface(
             }
 
             phot.kill();
+            EventType::Detection
         }
         Attribute::Ccd(id, width, ref orient, ref binner) => {
             let projection = orient.pos() - phot.ray().pos();
@@ -90,37 +107,55 @@ pub fn surface(
             }
 
             phot.kill();
+            EventType::Detection
         }
-        Attribute::Reflector(ref reflectance) => match reflectance.reflect(rng, &phot, hit) {
-            Some(ray) => *phot.ray_mut() = ray,
-            None => phot.kill(),
-        },
+        Attribute::Reflector(ref reflectance) => {
+            match reflectance.reflect(rng, &phot, hit) {
+                Some(ray) => *phot.ray_mut() = ray,
+                None => phot.kill(),
+            }
+            // FIXME: Get reflector type from the reflectance.reflect() fn instead
+            EventType::MCRT(mcrt_event!(Reflector, Specular))
+        }
         Attribute::PhotonCollector(id) => {
-            if hit.side().is_inside() {
-                return;
+            if !hit.side().is_inside() {
+                data.phot_cols[id].collect_photon(phot);
             }
-            data.phot_cols[id].collect_photon(phot);
-        },
+            EventType::Detection
+        }
         Attribute::AttributeChain(ref attrs) => {
-            for attr in attrs.iter() {
-                let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
-                surface(rng, &hit_proxy, phot, env, data)
-            }
-        },
+            // FIXME: For some reason this was not working
+            //for attr in attrs.iter() {
+            //    let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
+            //    surface(rng, &hit_proxy, phot, env, data)
+            //}
+            EventType::Detection
+        }
         Attribute::Rasterise(id, ref rasteriser) => {
             rasteriser.rasterise(rng, phot, &mut data.plane[id]);
-        },
+            EventType::Detection
+        }
         Attribute::Hyperspectral(ref id, ref plane) => {
-            assert_eq!(*data.vol[*id].param(), OutputParameter::Hyperspectral, "Hyperspectral output target not set to 'hyperspectral' param. ");
+            assert_eq!(
+                *data.vol[*id].param(),
+                OutputParameter::Hyperspectral,
+                "Hyperspectral output target not set to 'hyperspectral' param. "
+            );
 
+            // FIXME: Maybe use Array3 instead of Point3, to make obvious the difference to a point
+            // in space and a (x, y, lambda) vector
             let projected_xy = plane.project_onto_plane(phot.ray().pos());
             let hp_loc = Point3::new(projected_xy.0, projected_xy.1, phot.wavelength());
             let projected_area = plane.projected_pix_area(&data.vol[*id]);
             let spec_binsize = plane.hyperspectral_bin_size(&data.vol[*id]);
             match data.vol[*id].gen_index(&hp_loc) {
-                Some(index) => data.vol[*id].data_mut()[index] += phot.power() * phot.weight() / (projected_area * spec_binsize),
-                None => {},
+                Some(index) => {
+                    data.vol[*id].data_mut()[index] +=
+                        phot.power() * phot.weight() / (projected_area * spec_binsize)
+                }
+                None => {}
             }
+            EventType::Detection
         }
     }
 }

@@ -1,13 +1,13 @@
 use crate::{
     access, clone, fmt_report,
-    geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace},
+    geom::{Cube, Hit, Ray, Side, Trace, object::Object, plane::ray_plane_intersection},
     math::{Dir3, Point3, Vec3},
     phys::{Photon, Reflectance},
     sim::Attribute,
     ord::cartesian::{X, Y, Z},
 };
 use rand::rngs::ThreadRng;
-use std::fmt::{Display, Formatter};
+use std::{fmt::{Display, Formatter}, marker::PhantomData};
 
 /// Struct that represents a boundary.
 /// This will be used to determine how the boundary conditions behaves when it interacts
@@ -391,17 +391,18 @@ impl<'a> BoundaryHit<'a> {
         }
     }
 
-    pub fn get_hit(&self) -> Hit<'_, Attribute<'_>> {
+    pub fn get_hit(&self) -> Hit<'_, PhantomData<Object>> {
         Hit::new(
-            &Attribute::Mirror(0.0),
+            &PhantomData,
             self.dist(),
             Side::Inside(self.direction().normal_vector()),
         )
     }
 }
 
-impl<'a> Into<Hit<'a, Attribute<'a>>> for BoundaryHit<'a> {
-    fn into(self) -> Hit<'a, Attribute<'a>> {
+// FIXME: Now we are using Object to tag surfaces.
+impl<'a> Into<Hit<'a, Attribute>> for BoundaryHit<'a> {
+    fn into(self) -> Hit<'a, Attribute> {
         // Not the most elegant implementation, as the tag is not used.
         Hit::new(
             &Attribute::Mirror(0.0),

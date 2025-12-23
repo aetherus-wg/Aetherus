@@ -26,8 +26,8 @@ pub struct ParametersBuilderLoader {
     boundary: Redirect<BoundaryBuilder>,
     /// Tree settings.
     tree: Redirect<TreeSettings>,
-    /// Surfaces.
-    surfs: MultiSet<SurfaceLinkerLoader>,
+    /// Objects.
+    objs: MultiSet<SceneBuilder>,
     /// Attributes.
     attrs: MultiSet<AttributeLinkerChainProxy>,
     /// Materials.
@@ -47,8 +47,7 @@ impl Load for ParametersBuilderLoader {
         let sett     = self.sett.load(in_dir)?;
         let boundary = self.boundary.load(in_dir)?;
         let tree     = self.tree.load(in_dir)?;
-        let surfs    = self.surfs.load(in_dir)?
-                                 .load(in_dir)?;
+        let objs     = self.objs.load(in_dir)?.load(in_dir)?;
         let attrs    = attribute_chain_resolve_set(self.attrs.load(in_dir)?);
         let mats     = self.mats.load(in_dir)?.load(in_dir)?;
         let lights   = self.lights.load(in_dir)?.load(in_dir)?;
@@ -56,7 +55,7 @@ impl Load for ParametersBuilderLoader {
         let output   = self.output.load(in_dir)?;
 
         Ok(Self::Inst::new(
-            sett, boundary, tree, surfs, attrs, mats, lights, engine, output,
+            sett, boundary, tree, objs, attrs, mats, lights, engine, output,
         ))
     }
 }

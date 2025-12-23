@@ -8,7 +8,7 @@ use crate::{
 use rand::{rngs::ThreadRng, Rng};
 use std::sync::{Arc, Mutex};
 
-use aetherus_events::ledger::Ledger;
+use aetherus_events::{EventId, ledger::Ledger};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
@@ -79,7 +79,7 @@ pub fn standard(input: &Input, mut data: &mut Output, ledger: &Arc<Mutex<Ledger>
             },
             Event::Scattering(dist) => {
                 travel(&mut data, &mut phot, &env,dist);
-                scatter(&mut rng, &mut phot, &env);
+                let event_type = scatter(&mut rng, &mut phot, &env);
                 // WARN: Accessing Ledger from many threads will slow down the simulation
                 // considerably. Consider using an async design, encapsulating `uid` in work token
                 // and computed value, transforming insert into a send on an mpsc channel
@@ -88,48 +88,22 @@ pub fn standard(input: &Input, mut data: &mut Output, ledger: &Arc<Mutex<Ledger>
                     *phot.uid_mut() = ledger
                         .lock()
                         .expect("Can't lock Ledger")
-                        .insert(phot.uid(), {
-                            use aetherus_events::{EventId, mcrt::{MCRT, Material, Elastic, ScatterDir}};
-                            EventId::new_mcrt(
-                                MCRT::Material(Material::Elastic(Elastic::HenyeyGreenstein(ScatterDir::Any))),
-                                0)
-                    });
+                        .insert(phot.uid(), EventId { event_type, src_id: *env.mat_id()});
                 }
                 // Reset scat_dist for the new scattering event
                 scat_dist = None;
             }
             Event::Surface(hit) => {
                 travel(&mut data, &mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
+                let event_type = surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
                 travel(&mut data, &mut phot, &env, bump_dist);
                 // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
                 if input.sett.uid_tracked() == Some(true) {
-                    match *hit.tag() {
-                        Attribute::Interface(_,_) => {
-                            *phot.uid_mut() = ledger
-                                .lock()
-                                .expect("Can't lock Ledger")
-                                .insert(phot.uid(), {
-                                    use aetherus_events::{EventId, mcrt::{MCRT, Interface}};
-                                    EventId::new_mcrt(
-                                        MCRT::Interface(Interface::Refraction),
-                                        0)
-                            });
-                        },
-                        Attribute::Mirror(_) | Attribute::Reflector(_) => {
-                            *phot.uid_mut() = ledger
-                                .lock()
-                                .expect("Can't lock Ledger")
-                                .insert(phot.uid(), {
-                                use aetherus_events::{EventId, mcrt::{MCRT,Reflector}};
-                                EventId::new_mcrt(
-                                    MCRT::Reflector(Reflector::Diffuse),
-                                    0)
-                            });
-                        },
-                        _ => { /* Other attributes do not affect uid */ }
+                    *phot.uid_mut() = ledger
+                        .lock()
+                        .expect("Can't lock Ledger")
+                        .insert(phot.uid(), EventId { event_type, src_id: *hit.tag().src_id});
 
-                    }
                 }
 
                 // FIXME: Is the surface interaction also affecting the scattering statistics like

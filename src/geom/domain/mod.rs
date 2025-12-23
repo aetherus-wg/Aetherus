@@ -9,8 +9,9 @@ pub mod surface_linker;
 pub mod surface_linker_loader;
 pub mod tree;
 pub mod tree_settings;
+pub mod object;
 
 pub use self::{
-    boundary::*, boundary_builder::*, grid::*, grid_builder::*, surface::*, surface_linker::*, 
+    boundary::*, boundary_builder::*, grid::*, grid_builder::*, surface::*, surface_linker::*,
     surface_linker_loader::*, tree::*, tree_settings::*,
 };

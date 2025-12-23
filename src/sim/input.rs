@@ -2,7 +2,7 @@
 
 use crate::{
     fmt_report,
-    geom::{Boundary, Tree},
+    geom::{object::Object, Boundary, Tree},
     ord::{Register, Set},
     phys::{Light, Material},
     sim::{Attribute, Settings},
@@ -17,14 +17,14 @@ pub struct Input<'a> {
     /// Materials.
     pub mats: &'a Set<Material>,
     /// Attributes.
-    pub attrs: &'a Set<Attribute<'a>>,
+    pub attrs: &'a Set<Attribute>,
     /// Emission light.
-    pub light: Light<'a>,
+    pub light: Light,
     /// Hit-scan tree.
-    pub tree: &'a Tree<'a, Attribute<'a>>,
+    pub tree: &'a Tree<'a, Object>,
     /// General settings.
     pub sett: &'a Settings,
-    /// Boundary for the simulation. 
+    /// Boundary for the simulation.
     pub bound: &'a Boundary,
 }
 
@@ -36,10 +36,10 @@ impl<'a> Input<'a> {
         spec_reg: &'a Register,
         mats: &'a Set<Material>,
         attrs: &'a Set<Attribute>,
-        light: Light<'a>,
-        tree: &'a Tree<Attribute>,
+        light: Light,
+        tree: &'a Tree<Object>,
         sett: &'a Settings,
-        bound: &'a Boundary
+        bound: &'a Boundary,
     ) -> Self {
         Self {
             spec_reg,
