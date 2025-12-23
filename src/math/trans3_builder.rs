@@ -1,6 +1,6 @@
 //! Transform form implementation.
 
-use crate::{math::Vec3, ord::Build};
+use crate::{err::Error, math::Vec3, ord::Build};
 use arctk_attr::file;
 use nalgebra::{Translation3, UnitQuaternion};
 
@@ -20,7 +20,7 @@ impl Build for Trans3Builder {
     type Inst = crate::math::Trans3;
 
     #[inline]
-    fn build(self) -> Self::Inst {
+    fn build(self) -> Result<Self::Inst, Error> {
         let trans = self
             .trans
             .unwrap_or_else(|| Translation3::new(0.0, 0.0, 0.0));
@@ -34,6 +34,6 @@ impl Build for Trans3Builder {
 
         let scale = self.scale.unwrap_or(1.0);
 
-        Self::Inst::from_parts(trans, rot, scale)
+        Ok(Self::Inst::from_parts(trans, rot, scale))
     }
 }
