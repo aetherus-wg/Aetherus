@@ -151,12 +151,12 @@ impl<T: Build> Build for Set<T> {
     type Inst = Set<T::Inst>;
 
     #[allow(clippy::expect_used)]
-    fn build(self) -> Self::Inst {
+    fn build(self) -> Result<Self::Inst, Error> {
         let mut list = Vec::with_capacity(self.0.len());
         for (name, val) in self.0 {
-            list.push((name, val.build()));
+            list.push((name, val.build()?));
         }
-        Self::Inst::from_pairs(list).expect("Failed to build set.")
+        Ok(Self::Inst::from_pairs(list).expect("Failed to build set."))
     }
 }
 

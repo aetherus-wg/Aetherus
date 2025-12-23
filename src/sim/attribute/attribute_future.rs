@@ -8,15 +8,21 @@ use crate::{
     math::{Dir3, Point3, Vec3},
     ord::{
         cartesian::{X, Y},
-        Link, Name, Set,
+        Build, Link, Name, Set,
     },
     phys::{Material, Reflectance, ReflectanceBuilder},
+    sim::attribute::Attribute,
     tools::{Binner, Range},
-    sim::attribute::Attribute
 };
 use arctk_attr::file;
 use serde::{Deserialize, Deserializer};
 use std::fmt::{Display, Formatter};
+
+#[derive(Debug, Clone)]
+pub enum InterfaceFuture {
+    Future((Name, Name)),      // Future
+    Value(Material, Material), // Resolved ID
+}
 
 #[derive(Debug, Clone)]
 pub enum IdFuture {
@@ -54,7 +60,6 @@ pub enum ReflectorFuture {
     Value(Reflectance), // Resolved Reflectrance struct
 }
 
-
 macro_rules! unwrap_future {
     ($ftype:tt, $e:expr) => {
         match $e {
@@ -65,6 +70,17 @@ macro_rules! unwrap_future {
             )),
         }
     };
+}
+
+type InterfaceConfig = (Name, Name);
+impl<'de> Deserialize<'de> for InterfaceFuture {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let builder = InterfaceConfig::deserialize(deserializer)?;
+        Ok(InterfaceFuture::Future(builder))
+    }
 }
 
 impl<'de> Deserialize<'de> for IdFuture {
@@ -153,7 +169,7 @@ impl<'de> Deserialize<'de> for RasteriseFuture {
 #[derive(Clone)]
 pub enum AttributeFuture {
     /// Material interface, inside material name, outside material name.
-    Interface(Name, Name),
+    Interface(InterfaceFuture),
     /// Partially reflective mirror, reflection fraction.
     Mirror(f64),
     /// Spectrometer id, range, resolution.
@@ -185,7 +201,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
 
     fn link(mut self, reg: &'a Set<usize>) -> Result<Self, Error> {
         Ok(match self {
-            Self::Interface(_,_) | Self::Mirror(_) => self,
+            Self::Interface(_) | Self::Mirror(_) => self,
             Self::Spectrometer(ref mut spec_future) => {
                 if let SpectrometerFuture::Future((name, _range, _resolution)) = spec_future {
                     if let Some(id) = reg.get(&name) {
@@ -195,7 +211,9 @@ impl<'a> Link<'a, usize> for AttributeFuture {
                 self
             }
             Self::Imager(ref mut img_future) => {
-                if let ImagerFuture::Future((name, _resolution, width, center, forward)) = img_future {
+                if let ImagerFuture::Future((name, _resolution, width, center, forward)) =
+                    img_future
+                {
                     if let Some(id) = reg.get(&name) {
                         let orient = Orient::new(Ray::new(*center, Dir3::from(*forward)));
                         *img_future = ImagerFuture::Value(*id, *width, orient)
@@ -204,7 +222,9 @@ impl<'a> Link<'a, usize> for AttributeFuture {
                 self
             }
             Self::Ccd(ref mut ccd_future) => {
-                if let CcdFuture::Future((name, _resolution, width, center, forward, binner)) = ccd_future {
+                if let CcdFuture::Future((name, _resolution, width, center, forward, binner)) =
+                    ccd_future
+                {
                     if let Some(id) = reg.get(&name) {
                         let orient = Orient::new(Ray::new(*center, Dir3::from(*forward)));
                         *ccd_future = CcdFuture::Value(*id, *width, orient, binner.clone())
@@ -259,50 +279,87 @@ impl<'a> Link<'a, usize> for AttributeFuture {
 }
 
 impl<'a> Link<'a, Material> for AttributeFuture {
-    type Inst = Attribute<'a>;
+    type Inst = Self;
 
     #[inline]
     fn requires(&self) -> Vec<Name> {
         vec![]
     }
 
-    fn link(self, mats: &'a Set<Material>) -> Result<Self::Inst, Error> {
+    fn link(mut self, mats: &'a Set<Material>) -> Result<Self::Inst, Error> {
         Ok(match self {
-            Self::Interface(in_name, out_name) => {
-                let inside = mats.get(&in_name).ok_or(Error::Text(format!(
-                    "Failed to link attribute-interface key: {}", in_name)
-                ))?;
-                let outside = mats.get(&out_name).ok_or(Error::Text(format!(
-                    "Failed to link attribute-interface key: {}", out_name)
-                ))?;
-                Self::Inst::Interface(inside, outside)
+            Self::Interface(ref mut intf_future) => {
+                if let InterfaceFuture::Future((in_name, out_name)) = intf_future {
+                    let inside = mats.get(&in_name).ok_or(Error::Text(format!(
+                        "Failed to link attribute-interface key: {}",
+                        in_name
+                    )))?;
+                    let outside = mats.get(&out_name).ok_or(Error::Text(format!(
+                        "Failed to link attribute-interface key: {}",
+                        out_name
+                    )))?;
+                    *intf_future = InterfaceFuture::Value(inside.clone(), outside.clone());
+                }
+                self
             }
-            Self::Mirror(abs)                                        => Self::Inst::Mirror(abs),
-            Self::Spectrometer(SpectrometerFuture::Value(id))        => Self::Inst::Spectrometer(id),
-            Self::Imager(ImagerFuture::Value(id, width, orient))     => Self::Inst::Imager(id, width, orient),
-            Self::Ccd(CcdFuture::Value(id, width, orient, binner))   => Self::Inst::Ccd(id, width, orient, binner),
-            Self::Reflector(ReflectorFuture::Value(reflectance))     => Self::Inst::Reflector(reflectance),
-            Self::PhotonCollector(PhotonCollectorFuture::Value(id))  => Self::Inst::PhotonCollector(id),
-            Self::Rasterise(IdFuture::Value(id),
-                            RasteriseFuture::Value(rasteriser))      => Self::Inst::Rasterise(id, rasteriser),
-            Self::Hyperspectral(IdFuture::Value(id), plane)          => Self::Inst::Hyperspectral(id, plane),
-            Self::AttributeChain(attrs)                              => {
-                let linked_attrs: Result<Vec<_>, _> = attrs.iter()
-                    .map(|a| a.clone().link(&mats))
-                    .collect();
-
-                Self::Inst::AttributeChain(linked_attrs?)
-            },
-            _ => panic!("Attempted to convert unlinked AttributeFuture into Attribute"),
+            _ => self,
         })
     }
+}
 
+impl Build for AttributeFuture {
+    type Inst = Attribute;
+
+    fn build(self) -> Result<Self::Inst, Error> {
+        Ok(match self {
+            Self::Interface(InterfaceFuture::Value(in_mat, out_mat)) => {
+                Self::Inst::Interface(in_mat, out_mat)
+            }
+            Self::Mirror(abs) => Self::Inst::Mirror(abs),
+            Self::Spectrometer(SpectrometerFuture::Value(id)) => Self::Inst::Spectrometer(id),
+            Self::Imager(ImagerFuture::Value(id, width, orient)) => {
+                Self::Inst::Imager(id, width, orient)
+            }
+            Self::Ccd(CcdFuture::Value(id, width, orient, binner)) => {
+                Self::Inst::Ccd(id, width, orient, binner)
+            }
+            Self::Reflector(ReflectorFuture::Value(reflectance)) => {
+                Self::Inst::Reflector(reflectance)
+            }
+            Self::Reflector(ReflectorFuture::Future(builder)) => {
+                let ref_model = builder.build()?;
+                Self::Inst::Reflector(ref_model)
+            }
+            Self::PhotonCollector(PhotonCollectorFuture::Value(id)) => {
+                Self::Inst::PhotonCollector(id)
+            }
+            Self::Rasterise(IdFuture::Value(id), RasteriseFuture::Value(rasteriser)) => {
+                Self::Inst::Rasterise(id, rasteriser)
+            }
+            Self::Hyperspectral(IdFuture::Value(id), plane) => Self::Inst::Hyperspectral(id, plane),
+            Self::AttributeChain(attrs) => {
+                let linked_attrs: Vec<_> = attrs
+                    .iter()
+                    .map(|a| a.clone().build())
+                    .collect::<Result<Vec<_>, Error>>()?;
+
+                Self::Inst::AttributeChain(linked_attrs)
+            }
+            _ => panic!(
+                "Attempted to convert unlinked AttributeFuture: {} into Attribute",
+                self
+            ),
+        })
+    }
 }
 
 impl Display for AttributeFuture {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         match self {
-            Self::Interface(in_name, out_name) => {
+            Self::Interface(intf_future) => {
+                let (in_name, out_name) = unwrap_future!(InterfaceFuture, intf_future).expect(
+                    "The attributes has already been built before displaying configuration",
+                );
                 write!(fmt, "Interface: {} :| {}", in_name, out_name)
             }
             Self::Mirror(abs) => {
@@ -310,7 +367,9 @@ impl Display for AttributeFuture {
             }
             Self::Spectrometer(spec_future) => {
                 let (id, [min, max], bins) = unwrap_future!(SpectrometerFuture, spec_future)
-                    .expect("The attributes has already been built before displaying configuration");
+                    .expect(
+                        "The attributes has already been built before displaying configuration",
+                    );
                 write!(
                     fmt,
                     "Spectrometer: {} {} ({})",
@@ -321,7 +380,9 @@ impl Display for AttributeFuture {
             }
             Self::Imager(imager_future) => {
                 let (id, res, width, center, forward) = unwrap_future!(ImagerFuture, imager_future)
-                    .expect("The attributes has already been built before displaying configuration");
+                    .expect(
+                        "The attributes has already been built before displaying configuration",
+                    );
                 writeln!(fmt, "Imager: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, &format!("[{} x {}]", res[X], res[Y]), "resolution");
@@ -331,8 +392,10 @@ impl Display for AttributeFuture {
                 Ok(())
             }
             Self::Ccd(ccd_future) => {
-                let (id, res, width, center, forward, binner) = unwrap_future!(CcdFuture, ccd_future)
-                    .expect("The attributes has already been built before displaying configuration");
+                let (id, res, width, center, forward, binner) = unwrap_future!(
+                    CcdFuture, ccd_future
+                )
+                .expect("The attributes has already been built before displaying configuration");
                 writeln!(fmt, "Ccd: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, &format!("[{} x {}]", res[X], res[Y]), "resolution");
@@ -343,8 +406,9 @@ impl Display for AttributeFuture {
                 Ok(())
             }
             Self::Reflector(ref_future) => {
-                let ref_shim = unwrap_future!(ReflectorFuture, ref_future)
-                    .expect("The attributes has already been built before displaying configuration");
+                let ref_shim = unwrap_future!(ReflectorFuture, ref_future).expect(
+                    "The attributes has already been built before displaying configuration",
+                );
                 writeln!(fmt, "Reflector: ...")?;
                 fmt_report!(
                     fmt,
@@ -376,8 +440,9 @@ impl Display for AttributeFuture {
                 Ok(())
             }
             Self::PhotonCollector(pc_future) => {
-                let (id, kill_phot) = unwrap_future!(PhotonCollectorFuture, pc_future)
-                    .expect("The attributes has already been built before displaying configuration");
+                let (id, kill_phot) = unwrap_future!(PhotonCollectorFuture, pc_future).expect(
+                    "The attributes has already been built before displaying configuration",
+                );
                 writeln!(fmt, "Photon Collector: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, kill_phot, "kill photons?");
@@ -391,18 +456,21 @@ impl Display for AttributeFuture {
                 Ok(())
             }
             Self::Rasterise(id_future, rast_future) => {
-                let id = unwrap_future!(IdFuture, id_future)
-                    .expect("The attributes has already been built before displaying configuration");
-                let rast_builder = unwrap_future!(RasteriseFuture, rast_future)
-                    .expect("The attributes has already been built before displaying configuration");
+                let id = unwrap_future!(IdFuture, id_future).expect(
+                    "The attributes has already been built before displaying configuration",
+                );
+                let rast_builder = unwrap_future!(RasteriseFuture, rast_future).expect(
+                    "The attributes has already been built before displaying configuration",
+                );
                 writeln!(fmt, "Rasterise: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, rast_builder, "rasteriser");
                 Ok(())
             }
             Self::Hyperspectral(id_future, ref plane) => {
-                let id = unwrap_future!(IdFuture, id_future)
-                    .expect("The attributes has already been built before displaying configuration");
+                let id = unwrap_future!(IdFuture, id_future).expect(
+                    "The attributes has already been built before displaying configuration",
+                );
                 writeln!(fmt, "Hyperspectral: ...")?;
                 fmt_report!(fmt, id, "name");
                 fmt_report!(fmt, plane, "plane");
@@ -454,7 +522,8 @@ mod tests {
     fn test_link_spectrometer_future_to_value() {
         let mut reg: Set<usize> = BTreeMap::new();
         reg.insert("name", 1);
-        let attr = AttributeFuture::Spectrometer(SpectrometerFuture::Future(("name".to_string(), 0, 0)));
+        let attr =
+            AttributeFuture::Spectrometer(SpectrometerFuture::Future(("name".to_string(), 0, 0)));
         let result = attr.link(&reg).unwrap();
         if let AttributeFuture::Spectrometer(SpectrometerFuture::Value(id)) = result {
             assert_eq!(id, 1);
