@@ -9,7 +9,7 @@ use aetherus::{
     args,
     fs::{File, Load, Save},
     geom::Tree,
-    ord::{Build, Link},
+    ord::{Build, Link, Name, Set},
     report,
     sim::{
         Parameters, ParametersBuilderLoader
@@ -53,7 +53,7 @@ fn main() {
         .link(&mats)
         .expect("Failed to link materials to lights.");
     report!(lights, "lights");
-    let attrs = params
+    let attrs_future = params
         .attrs
         .link(base_output.reg.vol_reg.set())
         .expect("Failed to link volume output to attributes. ")
@@ -62,15 +62,41 @@ fn main() {
         .link(base_output.reg.detectors_reg.set())
         .expect("Failed to link detectors to attributes.")
         .link(&mats)
-        .expect("Failed to link materials to attributes.")
+        .expect("Failed to link materials to attributes.");
+    //report!(attrs, "attributes");
+    let objs_builder = params
+        .objs
+        .link(&attrs_future)
+        .expect("Failed to link global attributes. ")
+        .link(&mats)
+        .expect("Failed to link materials to attributes.");
+
+    let scenes = objs_builder
         .build()
-        .expect("Failed to build attributes.");
-    report!(attrs, "attributes");
-    let surfs = params
-        .surfs
-        .link(&attrs)
-        .expect("Failed to link attribute to surfaces.");
-    report!(surfs, "surfaces");
+        .expect("Failed to build scene geometries.");
+
+    let objs: Vec<_> = scenes
+        .build()
+        .expect("Failed to build scene objects.")
+        .into_iter()
+        .flat_map(|o| o.clone())
+        .collect();
+
+    println!("{} Objects have been read from files", objs.len());
+    for obj in objs.iter() {
+        report!(obj.obj_name, "Object");
+    }
+
+    let surfs_vec: Vec<_> = objs
+        .iter()
+        .map(|obj| (Name::new(&obj.obj_name), obj.get_surface()))
+        .collect();
+
+    let surfs = Set::from_pairs(surfs_vec)
+        .expect("Failed to build surface set.");
+
+    //report!(surfs, "surfaces");
+    let surfs_names = surfs.names_list();
 
     surfs.save(&out_dir.join("export_surfaces.obj"))
         .expect("Failed to save surfaces to output directory.");

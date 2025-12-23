@@ -2,8 +2,7 @@ use crate::{
     core::Real,
     fmt_report,
     geom::{Hit, Ray},
-    phys::{Spectrum, Photon},
-    sim::Attribute,
+    phys::{Photon, Spectrum},
 };
 use rand::{Rng, RngExt};
 use std::{f64::consts::PI, fmt::Display};
@@ -115,11 +114,11 @@ impl Reflectance {
     /// reflectance model that is used. Note that the returned ray can be an
     /// option. In the case that `None` is returned, this is indicative that the
     /// photon should not be reflected, and should be destroyed.
-    pub fn reflect<R: Rng>(
+    pub fn reflect<R: Rng, T>(
         &self,
         rng: &mut R,
         incident_photon: &Photon,
-        hit: &Hit<Attribute>,
+        hit: &Hit<T>,
     ) -> Option<(Ray, f64)> {
         match *self {
             Self::Lambertian { ref refspec } => {

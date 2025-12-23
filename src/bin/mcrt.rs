@@ -9,11 +9,10 @@ use aetherus::{
     args,
     fs::{File, Load, Save},
     geom::Tree,
-    ord::{Build, Link},
+    ord::{Build, Link, Name, Set},
     report,
     sim::{
-        run, Input, Parameters,
-        ParametersBuilderLoader,
+        Attribute, Input, Parameters, ParametersBuilderLoader, run
     },
     util::{
         banner::{section, sub_section, title},
@@ -21,6 +20,7 @@ use aetherus::{
         fmt::term,
     },
 };
+use aetherus_events::SrcId;
 
 use std::sync::{Arc, Mutex};
 
@@ -43,8 +43,19 @@ fn main() {
     report!(sett, "settings");
     let bound = params.boundary;
     report!(bound, "boundary");
-    let mats = params.mats;
+    let mut mats = params.mats;
     report!(mats, "materials");
+
+    let ledger = Arc::new(Mutex::new(aetherus_events::ledger::Ledger::new()));
+    {
+        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
+
+        for name in mats.names_list() {
+            let mat = mats.get_mut(&name).unwrap();
+            *mat = mat.clone().with_id(ledger_guard.with_mat(name.to_string()));
+        }
+        drop(ledger_guard);
+    }
 
     //sub_section(term_width, "Registration");
     //let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
@@ -68,7 +79,7 @@ fn main() {
         .link(&mats)
         .expect("Failed to link materials to lights.");
     report!(lights, "lights");
-    let attrs = params
+    let attrs_future = params
         .attrs
         .link(base_output.reg.vol_reg.set())
         .expect("Failed to link volume output to attributes. ")
@@ -77,15 +88,60 @@ fn main() {
         .link(base_output.reg.detectors_reg.set())
         .expect("Failed to link detectors to attributes.")
         .link(&mats)
-        .expect("Failed to link materials to attributes.")
+        .expect("Failed to link materials to attributes.");
+    //report!(attrs, "attributes");
+    let objs_builder = params
+        .objs
+        .link(&attrs_future)
+        .expect("Failed to link global attributes. ")
+        .link(&mats)
+        .expect("Failed to link materials to attributes.");
+
+    let scenes = objs_builder
+        .build()
+        .expect("Failed to build scene geometries.");
+
+
+    let mut objs: Vec<_> = scenes
+        .build()
+        .expect("Failed to build scene objects.")
+        .into_iter()
+        .flat_map(|o| o.clone())
+        .collect();
+
+    for obj in objs.iter_mut() {
+        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
+        let src_id = match obj.attr {
+            // TODO: Move this to allocate_ids inside Object struct
+            Attribute::Interface(..) => {
+                ledger_guard.with_matsurf(obj.obj_name.clone(), obj.mat_name.clone().unwrap(), None)
+            },
+            Attribute::Mirror(..) | Attribute::Reflector(..) => {
+                ledger_guard.with_surf(obj.obj_name.clone(), None)
+            },
+            _ => SrcId::None,
+        };
+        obj.with_id(src_id).expect("Failed to assign source ID to object.");
+    }
+
+    println!("{} Objects have been read from files", objs.len());
+    for obj in objs.iter() {
+        report!(obj.obj_name, "Object");
+    }
+
+    let surfs_vec: Vec<_> = objs
+        .iter()
+        .map(|obj| (Name::new(&obj.obj_name), obj.get_surface()))
+        .collect();
+
+    let surfs = Set::from_pairs(surfs_vec)
+        .expect("Failed to build surface set.");
+
+    let attrs = attrs_future
         .build()
         .expect("Failed to build attributes.");
-    report!(attrs, "attributes");
-    let surfs = params
-        .surfs
-        .link(&attrs)
-        .expect("Failed to link attribute to surfaces.");
-    report!(surfs, "surfaces");
+
+    //report!(surfs, "surfaces");
 
     /*
      * Create a boundary for the simulation with boundary conditions.
@@ -97,7 +153,6 @@ fn main() {
     let tree = Tree::new(&params.tree, &surfs);
     report!(tree, "hit-scan tree");
 
-    let ledger = Arc::new(Mutex::new(aetherus_events::ledger::Ledger::new()));
 
     let nlights = lights.len();
     let data = lights
@@ -106,7 +161,7 @@ fn main() {
         .fold(base_output.clone(), |mut output, (light_idx, (light_id, light))| {
             section(term_width, &format!("Running for light {} ({} / {})", light_id, light_idx + 1, nlights));
             report!(light, light_id);
-            let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, light, &tree, &sett, &bound);
+            let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, &light, &tree, &sett, &bound);
 
             let data =
                 run::multi_thread(&engine, &input, &base_output, ledger.clone()).expect("Failed to run MCRT.");
@@ -152,9 +207,9 @@ fn initialisation(term_width: usize) -> (PathBuf, PathBuf, PathBuf) {
     section(term_width, "Initialisation");
     sub_section(term_width, "args");
     args!(
-        bin_path: PathBuf;
-        output_dir: PathBuf;
-        input_dir: PathBuf;
+        bin_path:    PathBuf;
+        output_dir:  PathBuf;
+        input_dir:   PathBuf;
         params_path: PathBuf
     );
     report!(bin_path.display(), "binary path");

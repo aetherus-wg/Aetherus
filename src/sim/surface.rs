@@ -1,24 +1,25 @@
 //! Photon scattering function.
 
 use crate::{
-    geom::Hit,
+    geom::{object::Object, Hit},
     io::output::Output,
     phys::{Crossing, Local, Photon},
     sim::Attribute,
 };
+use aetherus_events::{mcrt_event, EventType};
 use rand::{Rng, RngExt};
 
 /// Handle a surface collision.
 #[allow(clippy::expect_used)]
 pub fn surface<R: Rng>(
     rng: &mut R,
-    hit: &Hit<Attribute>,
+    hit: &Hit<Object>,
     phot: &mut Photon,
     env: &mut Local,
     data: &mut Output,
-) {
-    match hit.tag() {
-        Attribute::Interface(inside, outside) => {
+) -> EventType {
+    match hit.tag().attr {
+        Attribute::Interface(ref inside, ref outside) => {
             // Reference materials.
             let (curr_mat, next_mat) = if hit.side().is_inside() {
                 (inside, outside)
@@ -29,6 +30,11 @@ pub fn surface<R: Rng>(
             // Find local optical environments.
             let curr_env = curr_mat.sample_environment(phot.wavelength());
             let next_env = next_mat.sample_environment(phot.wavelength());
+
+            debug_assert!(
+                curr_env == *env,
+                "Current env cached in the simulation doesn't match env detected from surface interaction"
+            );
 
             // Get the near, and far side refractive indices.
             let curr_ref_index = curr_env.ref_index();
@@ -47,11 +53,13 @@ pub fn surface<R: Rng>(
             if r <= crossing.ref_prob() {
                 // Reflect.
                 phot.ray_mut().update_dir(*crossing.ref_dir());
+                EventType::MCRT(mcrt_event!(Interface, Reflection))
             } else {
                 // Refract.
                 let new_dir = crossing.trans_dir().expect("Invalid refraction.");
                 phot.ray_mut().update_dir(new_dir);
                 *env = next_env;
+                EventType::MCRT(mcrt_event!(Interface, Refraction))
             }
         }
         Attribute::Reflector(ref reflectance) => {
@@ -63,11 +71,13 @@ pub fn surface<R: Rng>(
                 },
                 None => phot.kill(),
             }
+            EventType::MCRT(mcrt_event!(Reflector, Diffuse))
         }
         Attribute::Mirror(abs) => {
             *phot.weight_mut() *= abs;
             let new_dir = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
             phot.ray_mut().update_dir(new_dir);
+            EventType::MCRT(mcrt_event!(Reflector, Specular))
         }
         Attribute::Detector(id) => {
             if !hit.side().is_inside() {
@@ -75,18 +85,20 @@ pub fn surface<R: Rng>(
                 // photon, hence this is a very ugly walk-around to fix this issues which needs to be
                 // sorted out properly.
                 let mut future_phot = phot.clone();
-                data.collect_photon(&mut future_phot, *id);
+                data.collect_photon(&mut future_phot, id);
                 if future_phot.weight() <= 0.0 {
                     phot.kill();
                 }
             }
+            EventType::Detection
         }
         Attribute::AttributeChain(ref attrs) => {
             // FIXME: For some reason this is not working
-            for attr in attrs {
-                let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
-                surface(rng, &hit_proxy, phot, env, data);
-            }
+            //for attr in attrs {
+            //    let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
+            //    surface(rng, &hit_proxy, phot, env, data);
+            //}
+            EventType::Detection
         }
     }
 }

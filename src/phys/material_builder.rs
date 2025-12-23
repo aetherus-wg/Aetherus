@@ -12,6 +12,7 @@ use std::fmt::{Display, Formatter};
 
 /// Loadable material.
 #[file]
+#[derive(Clone)]
 pub struct MaterialBuilder {
     /// Refractive index.
     ref_index: FormulaBuilder,

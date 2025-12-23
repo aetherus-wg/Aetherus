@@ -31,11 +31,29 @@
 
   }},
 
-  surfs: { Here: {
-      cube_object: {
-        attr: "cube_material",
-        mesh: ["./objs/DiffusionCube.obj", null]
+  objs: { Here: {
+      scene: {
+        obj: "./objs/DiffusionCube.obj",
+        attrs_map: {
+          Cube: {
+            Interface: "cube_material",
+          },
+        },
+        mats_map : {
+          Cube_material: "cube_material",
+        },
       },
+      det: {
+        obj: "./objs/square.obj",
+        transform: {
+          trans: [0.050, 0.050, 0.050],
+          scale: 0.050,
+          rot: [90, 0, 0]
+        },
+        attrs_map: {
+          default: "spad_sensor",
+        },
+      }
   }},
 
   attrs: { Here: {
