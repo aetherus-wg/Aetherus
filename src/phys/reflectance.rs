@@ -1,8 +1,8 @@
 use crate::{
     core::Real,
     fmt_report,
-    geom::{Hit, Ray},
-    phys::{Spectrum, Photon},
+    geom::{Hit, Ray, object::Object},
+    phys::{Photon, Spectrum},
     sim::Attribute,
 };
 use rand::Rng;
@@ -49,18 +49,18 @@ pub enum Reflectance {
     /// around the normal vector, irrespective of the direction of the incident
     /// light ray.
     /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
-    /// dependent way of determining how many photons are reflected or killed. 
+    /// dependent way of determining how many photons are reflected or killed.
     /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
-    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    /// to no reflection, and 1.0 corresponds to all photons reflected.
     Lambertian { refspec: Spectrum },
     /// Specular Reflectance
     ///
     /// Provides a purely specular reflectance, where the angle of the reflected
     /// photon from the normal vector is the same as the incoming ray.
     /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
-    /// dependent way of determining how many photons are reflected or killed. 
+    /// dependent way of determining how many photons are reflected or killed.
     /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
-    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    /// to no reflection, and 1.0 corresponds to all photons reflected.
     Specular { refspec: Spectrum },
     /// Composition Reflectance Model - Specular + Diffuse
     ///
@@ -82,9 +82,9 @@ impl Reflectance {
     /// In this case photons are randomly distributed in the hemisphere in which
     /// the normal to the surface lies.
     /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
-    /// dependent way of determining how many photons are reflected or killed. 
+    /// dependent way of determining how many photons are reflected or killed.
     /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
-    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    /// to no reflection, and 1.0 corresponds to all photons reflected.
     pub fn new_lambertian(refspec: Spectrum) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
         assert!(reflectance_spectrum_valid(&refspec));
@@ -95,9 +95,9 @@ impl Reflectance {
     /// This returns a purely specular reflection. In this case the incoming photons
     /// are reflected like they would be from a mirror; at the same angle to the normal vector of the surface.
     /// The `refspec` is the reflectance spectrum and provides a (optionally) wavelength
-    /// dependent way of determining how many photons are reflected or killed. 
+    /// dependent way of determining how many photons are reflected or killed.
     /// The spectral reflectance has to be defined between 0.0 - 1.0, where 0.0 corresponds
-    /// to no reflection, and 1.0 corresponds to all photons reflected. 
+    /// to no reflection, and 1.0 corresponds to all photons reflected.
     pub fn new_specular(refspec: Spectrum) -> Self {
         // Check that we have sensible reflectances --- they range from 0.0 - 1.0.
         assert!(reflectance_spectrum_valid(&refspec));
@@ -128,11 +128,11 @@ impl Reflectance {
     /// option. In the case that `None` is returned, this is indicative that the
     /// photon should not be reflected, and should be destroyed.
     #[inline]
-    pub fn reflect<R: Rng>(
+    pub fn reflect<R: Rng, T>(
         &self,
         rng: &mut R,
         incident_photon: &Photon,
-        hit: &Hit<Attribute>,
+        hit: &Hit<T>,
     ) -> Option<Ray> {
         match *self {
             Self::Lambertian { ref refspec } => {

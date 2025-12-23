@@ -1,7 +1,15 @@
 //! Optical attributes.
 
+use aetherus_events::mcrt::SrcId;
+
 use crate::{fmt_report, geom::Orient, io::output::{Rasteriser, AxisAlignedPlane}, phys::{Material, Reflectance}, tools::Binner};
 use std::fmt::{Display, Error, Formatter};
+
+// TODO: Perhaps pass SurfaceAttr instead of Object as tag to Mesh
+pub struct SurfaceAttr {
+    src_id: SrcId,
+    surf_attr: Attribute
+}
 
 /// Surface attributes.
 #[derive(Debug, PartialEq, Clone)]

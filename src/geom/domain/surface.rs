@@ -7,7 +7,7 @@ use std::fmt::{Display, Error, Formatter};
 pub struct Surface<'a, T> {
     /// Mesh.
     mesh: Mesh,
-    /// Attribute.
+    /// Object.
     attr: &'a T,
 }
 
@@ -37,14 +37,14 @@ impl<T: Display> Display for Surface<'_, T> {
 mod tests {
     use crate::{
         geom::{Mesh, Surface, SmoothTriangle, Triangle},
-        math::{Dir3, Point3}, 
+        math::{Dir3, Point3},
         sim::Attribute,
     };
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
     fn test_new() {
-        // Make a single upward facing triangle for the surface. 
+        // Make a single upward facing triangle for the surface.
         let triangles = vec![ SmoothTriangle::new(
             Triangle::new([
                 Point3::new(0.0, 0.0, 0.0),
@@ -56,7 +56,7 @@ mod tests {
 
         let mesh = Mesh::new(triangles);
         let surf = Surface::new(mesh, &Attribute::Mirror(0.5));
-        
+
         assert_approx_eq!(surf.mesh().area(), 0.5);
     }
 }

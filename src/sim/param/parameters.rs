@@ -1,7 +1,15 @@
 //! Runtime parameters.
 
 use crate::{
-    fmt_report, geom::{Boundary, SurfaceLinker, TreeSettings}, io::output::OutputConfig, ord::Set, phys::{LightLinker, Material}, sim::{LinkerChainStart, Engine, Settings}
+    fmt_report,
+    geom::{
+        object::{Object, Scene, SceneBuilder},
+        Boundary, SurfaceLinker, TreeSettings,
+    },
+    io::output::OutputConfig,
+    ord::Set,
+    phys::{LightLinker, Material},
+    sim::{Engine, LinkerChainStart, Settings},
 };
 use std::fmt::{Display, Error, Formatter};
 
@@ -14,7 +22,7 @@ pub struct Parameters {
     /// Tree settings.
     pub tree: TreeSettings,
     /// Surfaces.
-    pub surfs: Set<SurfaceLinker>,
+    pub objs: Set<SceneBuilder>,
     /// Attributes.
     pub attrs: Set<LinkerChainStart>,
     /// Materials.
@@ -36,7 +44,7 @@ impl Parameters {
         sett: Settings,
         boundary: Boundary,
         tree: TreeSettings,
-        surfs: Set<SurfaceLinker>,
+        objs: Set<SceneBuilder>,
         attrs: Set<LinkerChainStart>,
         mats: Set<Material>,
         lights: Set<LightLinker>,
@@ -47,7 +55,7 @@ impl Parameters {
             sett,
             boundary,
             tree,
-            surfs,
+            objs,
             attrs,
             mats,
             lights,
@@ -64,7 +72,7 @@ impl Display for Parameters {
         fmt_report!(fmt, self.sett, "settings");
         fmt_report!(fmt, self.boundary, "boundary");
         fmt_report!(fmt, self.tree, "tree settings");
-        fmt_report!(fmt, self.surfs, "surfaces");
+        fmt_report!(fmt, self.objs, "objects");
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.mats, "materials");
         fmt_report!(fmt, self.lights, "lights");
