@@ -85,12 +85,14 @@ pub fn surface<R: Rng>(
                 // photon, hence this is a very ugly walk-around to fix this issues which needs to be
                 // sorted out properly.
                 let mut future_phot = phot.clone();
-                data.collect_photon(&mut future_phot, id);
+                data.phot_cols[id].collect_photon(&mut future_phot);
                 if future_phot.weight() <= 0.0 {
                     phot.kill();
                 }
+                EventType::Detection
+            } else {
+                EventType::None
             }
-            EventType::Detection
         }
         Attribute::AttributeChain(ref _attrs) => {
             // FIXME: For some reason this is not working

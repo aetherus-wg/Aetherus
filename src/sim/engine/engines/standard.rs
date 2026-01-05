@@ -8,7 +8,7 @@ use crate::{
 use rand::{Rng, RngExt};
 use std::sync::{Arc, Mutex};
 
-use aetherus_events::{EventId, ledger::Ledger};
+use aetherus_events::{ledger::Ledger, EventId, EventType};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
@@ -44,7 +44,6 @@ pub fn standard<R: Rng>(
     // It could be that this is preventing our photon packets from interacting with the boundary.
     //while let Some((index, voxel)) = input.grid.gen_index_voxel(phot.ray().pos()) {
     while input.bound.contains(phot.ray().pos()) {
-
         // Loop limit check.
         if num_loops >= loop_limit {
             println!("[WARN] : Terminating photon: loop limit reached.");
@@ -90,10 +89,14 @@ pub fn standard<R: Rng>(
                 // and computed value, transforming insert into a send on an mpsc channel
                 // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
                 if input.sett.uid_tracked() == Some(true) {
-                    *phot.uid_mut() = ledger
-                        .lock()
-                        .expect("Can't lock Ledger")
-                        .insert(phot.uid(), EventId { event_type, src_id: *env.mat_id()});
+                    *phot.uid_mut() = ledger.lock().expect("Can't lock Ledger").insert(
+                        phot.uid(),
+                        EventId {
+                            event_type,
+                            src_id: *env.mat_id(),
+                        },
+                    );
+
                 }
                 // Reset scat_dist for the new scattering event
                 scat_dist = None;
@@ -103,12 +106,14 @@ pub fn standard<R: Rng>(
                 let event_type = surface(&mut rng, &hit, &mut phot, &mut env, data);
                 phot.ray_mut().travel(bump_dist);
                 // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
-                if input.sett.uid_tracked() == Some(true) {
-                    *phot.uid_mut() = ledger
-                        .lock()
-                        .expect("Can't lock Ledger")
-                        .insert(phot.uid(), EventId { event_type, src_id: *hit.tag().src_id});
-
+                if input.sett.uid_tracked() == Some(true) && event_type != EventType::None {
+                    *phot.uid_mut() = ledger.lock().expect("Can't lock Ledger").insert(
+                        phot.uid(),
+                        EventId {
+                            event_type,
+                            src_id: *hit.tag().src_id,
+                        },
+                    );
                 }
 
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
