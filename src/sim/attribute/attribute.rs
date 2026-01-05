@@ -1,6 +1,6 @@
 //! Optical attributes.
 
-use aetherus_events::mcrt::SrcId;
+use aetherus_events::SrcId;
 
 use crate::{fmt_report, geom::Orient, io::output::{Rasteriser, AxisAlignedPlane}, phys::{Material, Reflectance}, tools::Binner};
 use std::fmt::{Display, Error, Formatter};

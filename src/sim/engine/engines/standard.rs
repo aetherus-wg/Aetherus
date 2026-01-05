@@ -8,13 +8,18 @@ use crate::{
 use rand::{rngs::ThreadRng, Rng};
 use std::sync::{Arc, Mutex};
 
-use aetherus_events::{EventId, ledger::Ledger};
+use aetherus_events::{ledger::Ledger, EventId, EventType};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
 #[inline]
-pub fn standard(input: &Input, mut data: &mut Output, ledger: &Arc<Mutex<Ledger>>, mut rng: &mut ThreadRng, mut phot: Photon) {
-
+pub fn standard(
+    input: &Input,
+    mut data: &mut Output,
+    ledger: &Arc<Mutex<Ledger>>,
+    mut rng: &mut ThreadRng,
+    mut phot: Photon,
+) {
     // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(output::OutputParameter::Emission) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
@@ -40,7 +45,6 @@ pub fn standard(input: &Input, mut data: &mut Output, ledger: &Arc<Mutex<Ledger>
     // It could be that this is preventing our photon packets from interacting with the boundary.
     //while let Some((index, voxel)) = input.grid.gen_index_voxel(phot.ray().pos()) {
     while input.bound.contains(phot.ray().pos()) {
-
         // Loop limit check.
         if num_loops >= loop_limit {
             println!("[WARN] : Terminating photon: loop limit reached.");
@@ -62,33 +66,46 @@ pub fn standard(input: &Input, mut data: &mut Output, ledger: &Arc<Mutex<Ledger>
         if scat_dist.is_none() {
             scat_dist = Some(-(rng.gen::<f64>()).ln() / env.inter_coeff());
         }
-        let surf_hit = input
-            .tree
-            .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist.unwrap()));
-        let boundary_hit = input.bound.dist_boundary(phot.ray())
+        let surf_hit = input.tree.scan(
+            phot.ray().clone(),
+            bump_dist,
+            voxel_dist.min(scat_dist.unwrap()),
+        );
+        let boundary_hit = input
+            .bound
+            .dist_boundary(phot.ray())
             .expect("Photon not contained in boundary.");
 
-
         // Event handling.
-        match Event::new(voxel_dist, scat_dist.unwrap(), surf_hit, boundary_hit, bump_dist) {
+        match Event::new(
+            voxel_dist,
+            scat_dist.unwrap(),
+            surf_hit,
+            boundary_hit,
+            bump_dist,
+        ) {
             Event::Voxel(dist) => {
                 travel(&mut data, &mut phot, &env, dist + bump_dist);
                 // Update scat_dist for the frame of the new position
                 scat_dist = Some(scat_dist.unwrap() - dist - bump_dist);
                 assert!(scat_dist.unwrap() > 0.0);
-            },
+            }
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env,dist);
+                travel(&mut data, &mut phot, &env, dist);
                 let event_type = scatter(&mut rng, &mut phot, &env);
                 // WARN: Accessing Ledger from many threads will slow down the simulation
                 // considerably. Consider using an async design, encapsulating `uid` in work token
                 // and computed value, transforming insert into a send on an mpsc channel
                 // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
                 if input.sett.uid_tracked() == Some(true) {
-                    *phot.uid_mut() = ledger
-                        .lock()
-                        .expect("Can't lock Ledger")
-                        .insert(phot.uid(), EventId { event_type, src_id: *env.mat_id()});
+                    *phot.uid_mut() = ledger.lock().expect("Can't lock Ledger").insert(
+                        phot.uid(),
+                        EventId {
+                            event_type,
+                            src_id: *env.mat_id(),
+                        },
+                    );
+
                 }
                 // Reset scat_dist for the new scattering event
                 scat_dist = None;
@@ -98,25 +115,27 @@ pub fn standard(input: &Input, mut data: &mut Output, ledger: &Arc<Mutex<Ledger>
                 let event_type = surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
                 travel(&mut data, &mut phot, &env, bump_dist);
                 // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
-                if input.sett.uid_tracked() == Some(true) {
-                    *phot.uid_mut() = ledger
-                        .lock()
-                        .expect("Can't lock Ledger")
-                        .insert(phot.uid(), EventId { event_type, src_id: *hit.tag().src_id});
-
+                if input.sett.uid_tracked() == Some(true) && event_type != EventType::None {
+                    *phot.uid_mut() = ledger.lock().expect("Can't lock Ledger").insert(
+                        phot.uid(),
+                        EventId {
+                            event_type,
+                            src_id: *hit.tag().src_id,
+                        },
+                    );
                 }
 
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
                 // voxels did? => Based on "MONTE CARLO MODELING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
                 scat_dist = None;
-            },
+            }
             Event::Boundary(boundary_hit) => {
                 travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
                     travel(&mut data, &mut phot, &env, bump_dist);
-                    scat_dist = Some(scat_dist.unwrap() - boundary_hit.dist()- bump_dist);
+                    scat_dist = Some(scat_dist.unwrap() - boundary_hit.dist() - bump_dist);
                 }
             }
         }

@@ -120,8 +120,10 @@ pub fn surface(
         Attribute::PhotonCollector(id) => {
             if !hit.side().is_inside() {
                 data.phot_cols[id].collect_photon(phot);
+                EventType::Detection
+            } else {
+                EventType::None
             }
-            EventType::Detection
         }
         Attribute::AttributeChain(ref attrs) => {
             // FIXME: For some reason this was not working

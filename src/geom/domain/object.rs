@@ -2,7 +2,7 @@
 
 use std::{fmt::Display, path::{Path, PathBuf}, rc::Rc};
 
-use aetherus_events::mcrt::SrcId;
+use aetherus_events::SrcId;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{

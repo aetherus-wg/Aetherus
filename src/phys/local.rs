@@ -1,7 +1,7 @@
 //! Local optical environment.
 
 use crate::clone;
-use aetherus_events::mcrt::SrcId;
+use aetherus_events::SrcId;
 
 /// Localised optical environment properties.
 #[derive(PartialEq)]

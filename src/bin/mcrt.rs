@@ -20,7 +20,7 @@ use aetherus::{
         fmt::term,
     },
 };
-use aetherus_events::mcrt::SrcId;
+use aetherus_events::SrcId;
 
 use std::sync::{Arc, Mutex};
 

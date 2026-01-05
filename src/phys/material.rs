@@ -3,7 +3,7 @@
 use crate::{access, fmt_report, math::Formula, phys::Local};
 use std::fmt::{Display, Error, Formatter};
 
-use aetherus_events::mcrt::SrcId;
+use aetherus_events::SrcId;
 
 /// Optical properties.
 #[derive(Clone, Debug, PartialEq)]
