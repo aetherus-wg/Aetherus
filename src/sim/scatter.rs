@@ -18,7 +18,7 @@ pub fn scatter(rng: &mut ThreadRng, phot: &mut Photon, env: &Local) -> EventId {
     let phi = sample_henyey_greenstein(rng, env.asym());
     let theta = rng.gen_range(0.0..(PI * 2.0));
     phot.ray_mut().rotate(phi, theta);
-    EventId { event_type: EventType::MCRT(mcrt_event!(Material, Elastic, HenyeyGreenstein, Any)), src_id: *env.mat_id() }
+    EventId { event_type: EventType::MCRT(mcrt_event!(Material, Elastic, HenyeyGreenstein, Any)), src_id: env.mat_id() }
 }
 
 /// Perform a photon scattering event with a probability of shifting wavelength.
@@ -33,7 +33,7 @@ pub fn shift_scatter(rng: &mut ThreadRng, phot: &mut Photon, env: &Local) -> Eve
         // Shift occurs.
         // Fluorescence event removes photons from optical range of interest.
         *phot.weight_mut() = 0.0;
-        return EventId { event_type: EventType::MCRT(mcrt_event!(Material, Inelastic, Raman, Any)), src_id: *env.mat_id() }
+        return EventId { event_type: EventType::MCRT(mcrt_event!(Material, Inelastic, Raman, Any)), src_id: env.mat_id() }
     }
 
     // The remaining weight is scattered.
@@ -41,5 +41,5 @@ pub fn shift_scatter(rng: &mut ThreadRng, phot: &mut Photon, env: &Local) -> Eve
     let theta = rng.gen_range(0.0..(PI * 2.0));
     phot.ray_mut().rotate(phi, theta);
 
-    EventId { event_type: EventType::MCRT(mcrt_event!(Material, Inelastic, Raman, Any)), src_id: *env.mat_id() }
+    EventId { event_type: EventType::MCRT(mcrt_event!(Material, Inelastic, Raman, Any)), src_id: env.mat_id() }
 }
