@@ -17,7 +17,6 @@ pub fn raman(
     mut rng: &mut ThreadRng,
     mut phot: Photon,
 ) {
-
     // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(OutputParameter::Emission) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
@@ -81,7 +80,7 @@ pub fn raman(
             }
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, data);
+                surface(&mut rng, &hit, &mut phot, &mut env, data, None);
                 travel(&mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {

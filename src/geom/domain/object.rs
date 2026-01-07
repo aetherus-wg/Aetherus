@@ -35,7 +35,7 @@ impl Object {
             mat_name: None,
             mat: None,
             mesh: Mesh::new(vec![]),
-            src_id: SrcId::MatSurf(0),
+            src_id: SrcId::Surf(0),
             attr: Attribute::Mirror(0.0),
         }
     }
