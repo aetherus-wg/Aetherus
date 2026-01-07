@@ -192,14 +192,17 @@ fn main() {
             output
         });
 
+    section(term_width, "Saving");
+
+    let ledger_path = out_dir.join("simulation_ledger.json");
+    println!("[SAVE] {}", ledger_path.display());
     if let Some(true) = sett.uid_tracked() {
         aetherus_events::ledger::write_ledger_to_json(
             &ledger.lock().expect("Failed to lock ledger."),
-            &format!("{}_ledger.json", out_dir.join("simulation").display()),
+            &ledger_path,
         ).expect("Failed to save ledger.");
     }
 
-    section(term_width, "Saving");
     //report!(data, "data");
     data.save(&out_dir).expect("Failed to save output data.");
 

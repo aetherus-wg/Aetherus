@@ -9,7 +9,7 @@ use crate::{
     phys::{Crossing, Local, Photon},
     sim::Attribute,
 };
-use aetherus_events::{mcrt_event, EventType};
+use aetherus_events::{EventId, EventType, ledger::Uid, mcrt_event};
 use rand::{rngs::ThreadRng, Rng};
 
 /// Handle a surface collision.
@@ -21,7 +21,8 @@ pub fn surface(
     phot: &mut Photon,
     env: &mut Local,
     data: &mut Output,
-) -> EventType {
+    seq_id: Option<u32>,
+) -> EventId {
     match hit.tag().attr {
         Attribute::Interface(ref inside, ref outside) => {
             // Reference materials.
@@ -57,23 +58,23 @@ pub fn surface(
             if r <= crossing.ref_prob() {
                 // Reflect.
                 *phot.ray_mut().dir_mut() = *crossing.ref_dir();
-                EventType::MCRT(mcrt_event!(Interface, Reflection))
+                EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Reflection)), src_id: *hit.tag().src_id }
             } else {
                 // Refract.
                 *phot.ray_mut().dir_mut() = crossing.trans_dir().expect("Invalid refraction.");
                 *env = next_env;
-                EventType::MCRT(mcrt_event!(Interface, Refraction))
+                EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Refraction)), src_id: *env.mat_id() }
             }
         }
         Attribute::Mirror(abs) => {
             *phot.weight_mut() *= abs;
             *phot.ray_mut().dir_mut() = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
-            EventType::MCRT(mcrt_event!(Reflector, Specular))
+            EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Specular)), src_id: *hit.tag().src_id }
         }
         Attribute::Spectrometer(id) => {
             data.specs[id].try_collect_weight(phot.wavelength(), phot.weight());
             phot.kill();
-            EventType::Detection
+            EventId { event_type: EventType::Detection, src_id: *hit.tag().src_id }
         }
         Attribute::Imager(id, width, ref orient) => {
             let projection = orient.pos() - phot.ray().pos();
@@ -88,7 +89,7 @@ pub fn surface(
             }
 
             phot.kill();
-            EventType::Detection
+            EventId { event_type: EventType::Detection, src_id: *hit.tag().src_id }
         }
         Attribute::Ccd(id, width, ref orient, ref binner) => {
             let projection = orient.pos() - phot.ray().pos();
@@ -107,7 +108,7 @@ pub fn surface(
             }
 
             phot.kill();
-            EventType::Detection
+            EventId { event_type: EventType::Detection, src_id: *hit.tag().src_id }
         }
         Attribute::Reflector(ref reflectance) => {
             match reflectance.reflect(rng, &phot, hit) {
@@ -115,14 +116,23 @@ pub fn surface(
                 None => phot.kill(),
             }
             // FIXME: Get reflector type from the reflectance.reflect() fn instead
-            EventType::MCRT(mcrt_event!(Reflector, Specular))
+            EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Specular)), src_id: *hit.tag().src_id }
         }
         Attribute::PhotonCollector(id) => {
             if !hit.side().is_inside() {
-                data.phot_cols[id].collect_photon(phot);
-                EventType::Detection
+                // FIXME: The photon collection happens before the new Uid is updated in the
+                // photon, hence this is a very ugly walk-around to fix this issues which needs to be
+                // sorted out properly.
+                let mut future_phot = phot.clone();
+                let event_id = EventId { event_type: EventType::Detection, src_id: *hit.tag().src_id };
+                *future_phot.uid_mut() = Uid::from_event(seq_id.unwrap(), &event_id);
+                data.phot_cols[id].collect_photon(&mut future_phot);
+                if future_phot.weight() <= 0.0 {
+                    phot.kill();
+                }
+                event_id
             } else {
-                EventType::None
+                EventId { event_type: EventType::None, src_id: *hit.tag().src_id }
             }
         }
         Attribute::AttributeChain(ref attrs) => {
@@ -131,11 +141,11 @@ pub fn surface(
             //    let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
             //    surface(rng, &hit_proxy, phot, env, data)
             //}
-            EventType::Detection
+            EventId { event_type: EventType::None, src_id: *hit.tag().src_id }
         }
         Attribute::Rasterise(id, ref rasteriser) => {
             rasteriser.rasterise(rng, phot, &mut data.plane[id]);
-            EventType::Detection
+            EventId { event_type: EventType::Detection, src_id: *hit.tag().src_id }
         }
         Attribute::Hyperspectral(id, ref plane) => {
             assert_eq!(
@@ -157,7 +167,7 @@ pub fn surface(
                 }
                 None => {}
             }
-            EventType::Detection
+            EventId { event_type: EventType::Detection, src_id: *hit.tag().src_id }
         }
     }
 }

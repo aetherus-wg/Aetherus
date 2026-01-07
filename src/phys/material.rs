@@ -75,7 +75,7 @@ impl Material {
             .map_or(0.0, |shift_coeff_formula| shift_coeff_formula.y(w));
         let g = self.asym_fact.y(w);
 
-        Local::new(ref_index, scat, abs, shift, g)
+        Local::new(ref_index, scat, abs, shift, g).with_id(self.mat_id)
     }
 }
 
@@ -104,3 +104,30 @@ impl Display for Material {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sample_environment() {
+        let material = Material::new(
+            Formula::Constant{c: 1.5},
+            Formula::Constant{c: 10.0 },
+            Some(Formula::Constant{c: 2.0 }),
+            Some(Formula::Constant{c: 1.0 }),
+            Formula::Constant{c: 0.8 },
+        ).with_id(SrcId::Mat(42));
+
+        let local = material.sample_environment(550.0); // wavelength here is dummy since we have
+        // spectrum invariant material
+
+        assert_eq!(local.ref_index(), 1.5);
+        assert_eq!(local.scat_coeff(), 10.0);
+        assert_eq!(local.abs_coeff(), 2.0);
+        assert_eq!(local.shift_coeff(), 1.0);
+        assert_eq!(local.asym(), 0.8);
+        assert_eq!(local.mat_id(), SrcId::Mat(42));
+    }
+}
+

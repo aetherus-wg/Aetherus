@@ -54,7 +54,7 @@ impl Local {
         }
     }
 
-    pub fn with_mat(mut self, mat_id: SrcId) -> Self {
+    pub fn with_id(mut self, mat_id: SrcId) -> Self {
         debug_assert!(matches!(mat_id, SrcId::Mat(_) | SrcId::MatSurf(_)));
         self.mat_id = mat_id;
         self

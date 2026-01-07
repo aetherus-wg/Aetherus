@@ -18,7 +18,7 @@ pub fn raman(
     mut rng: &mut ThreadRng,
     mut phot: Photon,
 ) {
-    // Add to the emission variables in which the photon is present. 
+    // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(OutputParameter::Emission) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
             vol.data_mut()[index] += phot.power() * phot.weight();
@@ -81,13 +81,13 @@ pub fn raman(
             }
             Event::Surface(hit) => {
                 travel(&mut data, &mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
+                surface(&mut rng, &hit, &mut phot, &mut env, &mut data, None);
                 travel(&mut data, &mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {
                 travel(&mut data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
-                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
+                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
                     travel(&mut data, &mut phot, &env, bump_dist);
                 }

@@ -27,11 +27,11 @@ where
 {
     pub fn load(self, in_dir: &Path) -> Result<Set<T>, Error> {
         match self {
-            Self::Single(redir) => Load::load(redir, in_dir),
+            Self::Single(redir) => redir.load(in_dir),
             Self::Multi(redirs) => {
                 redirs.into_iter()
                     .fold(Ok(Set::empty()), |acc, redir| {
-                        let curr_set = Load::load(redir, in_dir).context("Set load from MultiSet")?;
+                        let curr_set = redir.load(in_dir).context("Set load from MultiSet")?;
                         acc?.combine(curr_set)
                     })
             }

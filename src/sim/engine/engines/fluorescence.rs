@@ -91,7 +91,7 @@ pub fn fluorescence(
             }
             Event::Surface(hit) => {
                 travel(&mut data, &mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut local, &mut data);
+                surface(&mut rng, &hit, &mut phot, &mut local, &mut data, None);
                 travel(&mut data, &mut phot, &env, bump_dist);
             }
             Event::Boundary(boundary_hit) => {
