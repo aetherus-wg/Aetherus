@@ -324,7 +324,7 @@ impl<'a, T> Tree<'a, T> {
     #[must_use]
     pub fn scan(&self, mut ray: Ray, bump_dist: f64, max_dist: f64) -> Option<Hit<'_, T>> {
         debug_assert!(bump_dist > 0.0);
-        debug_assert!(max_dist > 0.0);
+        debug_assert!(max_dist >= 0.0);
 
         let mut dist_travelled = 0.0;
 

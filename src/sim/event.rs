@@ -28,7 +28,7 @@ impl<'a, T> Event<'a, T> {
         boundary_hit: BoundaryHit<'a>,
         bump_dist: f64,
     ) -> Self {
-        debug_assert!(voxel_dist > 0.0);
+        debug_assert!(voxel_dist >= 0.0);
         debug_assert!(scat_dist > 0.0);
         debug_assert!(bump_dist > 0.0);
 

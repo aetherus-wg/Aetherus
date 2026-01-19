@@ -170,6 +170,7 @@ impl Cube {
             .iter()
             .zip(ray.pos().iter().zip(ray.dir().iter()))
             .map(|(m, (p, d))| (m - p) / d)
+            .filter(|x| x.is_finite())
             .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
             .collect();
 
@@ -178,6 +179,7 @@ impl Cube {
             .iter()
             .zip(ray.pos().iter().zip(ray.dir().iter()))
             .map(|(m, (p, d))| (m - p) / d)
+            .filter(|x| x.is_finite())
             .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
             .collect();
 
