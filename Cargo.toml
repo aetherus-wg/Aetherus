@@ -47,7 +47,7 @@ splines = { version = "4.0.*", features = ["serde"] }
 statrs = "0.15.*"
 terminal_size = "0.2.*"
 cubic-splines = "0.2.0"
-lidrs = "0.2.*"
+lidrs = "0.2.3"
 
 # Formats for the File I/O Library.
 json5 = "0.4.*"
