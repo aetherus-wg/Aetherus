@@ -20,7 +20,7 @@ impl<T: NcTypeDescriptor + Copy> File for Array2<T> {
         let xi = arr.shape()[X];
         let yi = arr.shape()[Y];
 
-        let raw_vec = arr.into_raw_vec();
+        let (raw_vec, _) = arr.into_raw_vec_and_offset();
         let arr = Array2::from_shape_vec([xi, yi], raw_vec)?;
         Ok(arr)
     }
@@ -38,7 +38,7 @@ impl<T: NcTypeDescriptor + Copy> File for Array3<T> {
         let yi = arr.shape()[Y];
         let zi = arr.shape()[Z];
 
-        let raw_vec = arr.into_raw_vec();
+        let (raw_vec, _) = arr.into_raw_vec_and_offset();
         let arr = Array3::from_shape_vec([xi, yi, zi], raw_vec)?;
         Ok(arr)
     }

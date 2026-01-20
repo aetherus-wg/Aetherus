@@ -27,7 +27,7 @@ impl Save for Image {
         encoder.set_depth(BitDepth::Eight);
         let mut writer = encoder.write_header()?;
 
-        writer.write_image_data(data.into_raw_vec().flat())?;
+        writer.write_image_data(data.into_raw_vec_and_offset().0.flat())?;
 
         Ok(())
     }
@@ -41,13 +41,13 @@ mod tests {
 
     #[test]
     fn test_save() {
-        let pixel = Colour::new(0.0, 0.0, 0.0, 1.0); 
+        let pixel = Colour::new(0.0, 0.0, 0.0, 1.0);
         let img = Image::new(arr2(&[[pixel, pixel], [pixel, pixel]]));
         let path = Path::new("test.png");
         let res = img.save(&path);
         assert!(res.is_ok());
 
-        // Clean-up the written image. 
+        // Clean-up the written image.
         std::fs::remove_file(path).unwrap();
     }
 }
