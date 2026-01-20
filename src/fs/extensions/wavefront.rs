@@ -6,7 +6,6 @@ use crate::{
     math::{Dir3, Point3},
 };
 use std::{
-    io::{BufRead, BufReader},
     path::Path,
 };
 use obj::Obj;

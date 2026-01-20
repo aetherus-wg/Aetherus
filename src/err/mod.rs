@@ -60,17 +60,6 @@ pub enum Error {
 unsafe impl Send for Error {}
 unsafe impl Sync for Error {}
 
-macro_rules! impl_from_for_err {
-    ($enum:path, $error:ty) => {
-        impl From<$error> for Error {
-            #[inline]
-            fn from(e: $error) -> Self {
-                $enum(e)
-            }
-        }
-    };
-}
-
 impl From<&str> for Error {
     #[inline]
     fn from(err: &str) -> Self {
