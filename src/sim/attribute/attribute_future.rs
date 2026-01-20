@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_link_spectrometer_value_unchanged() {
-        let reg: Set<usize> = BTreeMap::new();
+        let reg: Set<usize> = crate::ord::set::Set::new(BTreeMap::new());
         let attr = AttributeFuture::Spectrometer(SpectrometerFuture::Value(1));
         let result = attr.link(&reg).unwrap();
         if let AttributeFuture::Spectrometer(SpectrometerFuture::Value(id)) = result {
@@ -520,10 +520,11 @@ mod tests {
 
     #[test]
     fn test_link_spectrometer_future_to_value() {
-        let mut reg: Set<usize> = BTreeMap::new();
-        reg.insert("name", 1);
+        let mut reg_map = BTreeMap::new();
+        reg_map.insert(Name::new("name"), 1);
+        let reg: Set<usize> = crate::ord::set::Set::new(reg_map);
         let attr =
-            AttributeFuture::Spectrometer(SpectrometerFuture::Future(("name".to_string(), 0, 0)));
+            AttributeFuture::Spectrometer(SpectrometerFuture::Future((Name::new("name"), [0.0, 0.0], 0)));
         let result = attr.link(&reg).unwrap();
         if let AttributeFuture::Spectrometer(SpectrometerFuture::Value(id)) = result {
             assert_eq!(id, 1);

@@ -122,7 +122,7 @@ mod tests {
         file2.write_all("{ pos: [0.0, 0.0, 0.0], tar: [1.0, 0.0, 0.0], fov: 90.0, res: [640, 480] }".as_bytes()).unwrap();
         drop(file2);
 
-        let cam: Camera = CameraBuilder::load(file.path()).unwrap().build();
+        let cam: Camera = CameraBuilder::load(file.path()).unwrap().build().expect("Failed to build camera");
         assert_eq!(*cam.pos(), Point3::new(0.0, 0.0, 0.0));
         assert_eq!(*cam.res(), [640, 480]);
         assert_eq!(cam.num_pixels(), 640 * 480);
@@ -138,7 +138,7 @@ mod tests {
         let build_clone = build.clone();
 
         // Now we check to see that the properties have persisted.
-        let cam = build_clone.build();
+        let cam = build_clone.build().expect("Failed to build camera");
         assert_eq!(*cam.pos(), Point3::new(1.0, 0.0, 0.0));
         assert_eq!(*cam.res(), [640, 480]);
         assert_eq!(cam.num_pixels(), 640 * 480);

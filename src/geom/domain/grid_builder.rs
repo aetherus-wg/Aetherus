@@ -137,7 +137,7 @@ mod tests {
 
         // Read the file.
         let grid_builder = GridBuilder::load(&path).unwrap();
-        let grid = grid_builder.build();
+        let grid = grid_builder.build().expect("Failed to build Grid");
 
         // Check the results.
         assert_eq!(grid.boundary(), &Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0)));

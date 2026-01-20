@@ -393,7 +393,7 @@ mod tests {
     };
     use assert_approx_eq::assert_approx_eq;
 
-    fn make_test_surfs() -> BTreeMap<Name, Surface<'static, Attribute<'static>>> {
+    fn make_test_surfs() -> BTreeMap<Name, Surface<'static, Attribute>> {
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let mut surfs_map = BTreeMap::new();
         // Make a single upward facing triangle for the surface.
@@ -433,7 +433,7 @@ mod tests {
         let padding = 1e-6;
 
         let tree_settings = TreeSettings::new(1, 1, padding);
-        let tree: Tree<'_, Attribute<'_>> = Tree::new(&tree_settings, &surfs);
+        let tree: Tree<'_, Attribute> = Tree::new(&tree_settings, &surfs);
 
         // Check that the boundary for the tree is correct.
         // The factor of two is because the padding is applied at both sides of each voxel in the tree.

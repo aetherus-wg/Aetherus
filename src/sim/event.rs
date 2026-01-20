@@ -106,7 +106,7 @@ mod tests {
     fn test_new_boundary_event() {
 
         let bhit = BoundaryHit::new(&BoundaryCondition::Periodic(0.0), 0.1, BoundaryDirection::North);
-        let event: Event<'_, Attribute<'_>> = Event::new(2.0, 1.0, None, bhit.clone(), 0.5);
+        let event: Event<'_, Attribute> = Event::new(2.0, 1.0, None, bhit.clone(), 0.5);
         assert_eq!(event, Event::Boundary(bhit));
     }
 
