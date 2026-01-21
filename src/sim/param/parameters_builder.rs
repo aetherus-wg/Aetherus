@@ -3,7 +3,7 @@
 use crate::{
     err::Error,
     fmt_report,
-    geom::{object::SceneBuilder, BoundaryBuilder, SurfaceLinker, TreeSettings},
+    geom::{object::SceneBuilder, BoundaryBuilder, TreeSettings},
     io::output::OutputConfig,
     ord::{Build, Set},
     phys::{LightLinkerBuilder, MaterialBuilder},

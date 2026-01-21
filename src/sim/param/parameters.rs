@@ -3,8 +3,8 @@
 use crate::{
     fmt_report,
     geom::{
-        object::{Object, Scene, SceneBuilder},
-        Boundary, SurfaceLinker, TreeSettings,
+        object::SceneBuilder,
+        Boundary, TreeSettings,
     },
     io::output::OutputConfig,
     ord::Set,

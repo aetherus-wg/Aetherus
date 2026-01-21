@@ -1,9 +1,9 @@
 //! Objects structure that define Surface, Material, SrcId and Attributes
 
-use std::{fmt::Display, path::{Path, PathBuf}, rc::Rc};
+use std::{fmt::Display, path::{Path, PathBuf}};
 
 use aetherus_events::SrcId;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 
 use crate::{
     err::Error, fmt_report, fs::Load, geom::{Mesh, SmoothTriangle, Surface, Transformable}, math::{Dir3, Point3, Trans3, Trans3Builder}, ord::{Build, Link, Map, Name, Set}, phys::{Material, MaterialBuilder}, sim::{Attribute, AttributeFuture}

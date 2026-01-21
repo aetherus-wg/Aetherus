@@ -135,7 +135,7 @@ pub fn surface(
                 EventId { event_type: EventType::None, src_id: hit.tag().src_id }
             }
         }
-        Attribute::AttributeChain(ref attrs) => {
+        Attribute::AttributeChain(ref _attrs) => {
             // FIXME: For some reason this was not working
             //for attr in attrs.iter() {
             //    let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());

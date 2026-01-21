@@ -1,9 +1,8 @@
 use crate::{
     core::Real,
     fmt_report,
-    geom::{Hit, Ray, object::Object},
+    geom::{Hit, Ray},
     phys::{Photon, Spectrum},
-    sim::Attribute,
 };
 use rand::Rng;
 use std::{f64::consts::PI, fmt::Display};

@@ -3,7 +3,7 @@
 use crate::{
     io::output::{self, Output},
     phys::Photon,
-    sim::{scatter::scatter, surface::surface, travel::travel, Attribute, Event, Input},
+    sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
 };
 use rand::{rngs::ThreadRng, Rng};
 use std::sync::{Arc, Mutex};
