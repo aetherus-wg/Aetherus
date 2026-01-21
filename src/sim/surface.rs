@@ -87,7 +87,9 @@ pub fn surface<R: Rng>(
                 // sorted out properly.
                 let mut future_phot = phot.clone();
                 let event_id = EventId { event_type: EventType::Detection, src_id: *hit.tag().src_id };
-                *future_phot.uid_mut() = Uid::new(seq_id.unwrap(), event_id.encode());
+                if let Some(seq_id) = seq_id {
+                    *future_phot.uid_mut() = Uid::new(seq_id, event_id.encode());
+                }
                 data.phot_cols[id].collect_photon(&mut future_phot);
                 if future_phot.weight() <= 0.0 {
                     phot.kill();
