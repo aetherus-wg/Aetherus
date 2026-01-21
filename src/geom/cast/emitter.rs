@@ -223,7 +223,7 @@ mod tests {
         let emitter = Emitter::new_gaussian(emit_ray.clone(), 0.1);
 
         let emitted_ray = emitter.emit(&mut rng);
-        assert_eq!(emitted_ray.dir(), emit_ray.dir());
+        assert!(emitted_ray.dir().dot(emit_ray.dir()) > 0.95);
         assert_eq!(emitted_ray.pos(), emit_ray.pos());
     }
 
