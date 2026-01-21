@@ -89,9 +89,10 @@ impl Camera {
         phi -= self.half_delta_theta * (self.res[Y] * self.ss_power) as f64;
 
         let mut ray = self.orient.forward_ray();
-        *ray.dir_mut() = Rot3::from_axis_angle(&Vec3::from(self.orient.down()), theta)
+        let new_dir = Rot3::from_axis_angle(&Vec3::from(self.orient.down()), theta)
             * Rot3::from_axis_angle(&Vec3::from(*self.orient.right()), phi)
             * ray.dir();
+        ray.update_dir(new_dir);
 
         ray
     }

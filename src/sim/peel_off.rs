@@ -27,7 +27,7 @@ pub fn peel_off(input: &Input, mut phot: Photon, env: &Local, pos: Point3) -> Op
         return None;
     }
 
-    *phot.ray_mut().dir_mut() = dir;
+    phot.ray_mut().update_dir(dir);
 
     let loop_limit = input.sett.loop_limit();
     let bump_dist = input.sett.bump_dist();

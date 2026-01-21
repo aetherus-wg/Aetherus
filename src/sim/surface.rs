@@ -57,18 +57,20 @@ pub fn surface(
             let r = rng.gen::<f64>();
             if r <= crossing.ref_prob() {
                 // Reflect.
-                *phot.ray_mut().dir_mut() = *crossing.ref_dir();
+                phot.ray_mut().update_dir(*crossing.ref_dir());
                 EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Reflection)), src_id: hit.tag().src_id }
             } else {
                 // Refract.
-                *phot.ray_mut().dir_mut() = crossing.trans_dir().expect("Invalid refraction.");
+                let new_dir = crossing.trans_dir().expect("Invalid refraction.");
+                phot.ray_mut().update_dir(new_dir);
                 *env = next_env;
                 EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Refraction)), src_id: env.mat_id() }
             }
         }
         Attribute::Mirror(abs) => {
             *phot.weight_mut() *= abs;
-            *phot.ray_mut().dir_mut() = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
+            let new_dir = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
+            phot.ray_mut().update_dir(new_dir);
             EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Specular)), src_id: hit.tag().src_id }
         }
         Attribute::Spectrometer(id) => {

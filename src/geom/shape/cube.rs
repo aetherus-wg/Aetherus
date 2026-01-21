@@ -170,8 +170,8 @@ impl Cube {
             }
             (f64::NEG_INFINITY, f64::INFINITY)
         } else {
-            let t1 = (self.mins.x() - ray.pos().x()) / ray.dir().x();
-            let t2 = (self.maxs.x() - ray.pos().x()) / ray.dir().x();
+            let t1 = (self.mins.x() - ray.pos().x()) * ray.invdir().x;
+            let t2 = (self.maxs.x() - ray.pos().x()) * ray.invdir().x;
             (t1.min(t2), t1.max(t2))
         };
 
@@ -182,8 +182,8 @@ impl Cube {
             }
             (f64::NEG_INFINITY, f64::INFINITY)
         } else {
-            let t1 = (self.mins.y() - ray.pos().y()) / ray.dir().y();
-            let t2 = (self.maxs.y() - ray.pos().y()) / ray.dir().y();
+            let t1 = (self.mins.y() - ray.pos().y()) * ray.invdir().y;
+            let t2 = (self.maxs.y() - ray.pos().y()) * ray.invdir().y;
             (t1.min(t2), t1.max(t2))
         };
 
@@ -200,8 +200,8 @@ impl Cube {
             }
             (f64::NEG_INFINITY, f64::INFINITY)
         } else {
-            let t1 = (self.mins.z() - ray.pos().z()) / ray.dir().z();
-            let t2 = (self.maxs.z() - ray.pos().z()) / ray.dir().z();
+            let t1 = (self.mins.z() - ray.pos().z()) * ray.invdir().z;
+            let t2 = (self.maxs.z() - ray.pos().z()) * ray.invdir().z;
             (t1.min(t2), t1.max(t2))
         };
 
