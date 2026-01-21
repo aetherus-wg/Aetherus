@@ -1,8 +1,8 @@
 [package]
 name = "aetherus"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Freddy Wordingham <f.wordingham@exeter.ac.uk>", "Sam Morrell <s.a.f.morrell@exeter.ac.uk>", "Cristian Bourceanu <v.c.bourceanu@smd.ed.ac.uk>"]
-edition = "2018"
+edition = "2021"
 description = "Physics simulation library and binaries"
 repository = "https://github.com/aetherus-wg/aetherus"
 readme = "README.md"
