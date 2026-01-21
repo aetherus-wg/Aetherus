@@ -44,16 +44,18 @@ pub fn surface(
             let r = rng.gen::<f64>();
             if r <= crossing.ref_prob() {
                 // Reflect.
-                *phot.ray_mut().dir_mut() = *crossing.ref_dir();
+                phot.ray_mut().update_dir(*crossing.ref_dir());
             } else {
                 // Refract.
-                *phot.ray_mut().dir_mut() = crossing.trans_dir().expect("Invalid refraction.");
+                let new_dir = crossing.trans_dir().expect("Invalid refraction.");
+                phot.ray_mut().update_dir(new_dir);
                 *env = next_env;
             }
         }
         Attribute::Mirror(abs) => {
             *phot.weight_mut() *= abs;
-            *phot.ray_mut().dir_mut() = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
+            let new_dir = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
+            phot.ray_mut().update_dir(new_dir);
         }
         Attribute::Spectrometer(id) => {
             data.specs[*id].try_collect_weight(phot.wavelength(), phot.weight());

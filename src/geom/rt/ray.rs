@@ -2,8 +2,10 @@
 
 use crate::{
     access,
+    core::Real,
     math::{Dir3, Point3, Rot3, Vec3},
 };
+use nalgebra::Vector3;
 
 /// Ray structure.
 ///
@@ -15,24 +17,34 @@ pub struct Ray {
     pos: Point3,
     /// Ray direction.
     dir: Dir3,
+    /// Inverse ray direction, to compute division using multiplication
+    invdir: Vector3<Real>,
 }
 
 impl Ray {
     access!(pos, pos_mut: Point3);
-    access!(dir, dir_mut: Dir3);
+    access!(dir: Dir3);
+    access!(invdir: Vector3<Real>);
 
     /// Construct a new instance.
     #[inline]
     #[must_use]
     pub fn new(pos: Point3, mut dir: Dir3) -> Self {
         let _ = dir.renormalize();
-        Self { pos, dir }
+        let invdir = Vector3::new(1.0_f64 / dir.x(), 1.0_f64 / dir.y(), 1.0_f64 / dir.z());
+        Self { pos, dir, invdir }
     }
 
     /// Destruct self into components.
     #[must_use]
     pub const fn destruct(self) -> (Point3, Dir3) {
         (self.pos, self.dir)
+    }
+
+    pub fn update_dir(&mut self, mut dir: Dir3) {
+        let _ = dir.renormalize();
+        self.dir = dir;
+        self.invdir = Vector3::new(1.0 / dir.x(), 1.0 / dir.y(), 1.0 / dir.z());
     }
 
     /// Move along the direction of travel a given distance.
@@ -56,8 +68,7 @@ impl Ray {
         let pitch_rot = Rot3::from_axis_angle(&Vec3::from(pitch_axis), pitch);
         let roll_rot = Rot3::from_axis_angle(&Vec3::from(self.dir), roll);
 
-        self.dir = roll_rot * pitch_rot * self.dir;
-        let _ = self.dir.renormalize();
+        self.update_dir(roll_rot * pitch_rot * self.dir);
     }
 }
 
