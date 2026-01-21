@@ -11,7 +11,7 @@ use nalgebra::Vector3;
 ///
 /// This is the type at the core of our ray tracing / hit scan implementation.
 /// This is also the type at the core of our photon implementation.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Ray {
     /// Ray origin.
     pos: Point3,
@@ -19,6 +19,12 @@ pub struct Ray {
     dir: Dir3,
     /// Inverse ray direction, to compute division using multiplication
     invdir: Vector3<Real>,
+}
+
+impl PartialEq for Ray {
+    fn eq(&self, other: &Self) -> bool {
+        self.pos == other.pos && self.dir == other.dir
+    }
 }
 
 impl Ray {
