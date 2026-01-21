@@ -10,7 +10,6 @@ use crate::{
 use arctk_attr::file;
 use rand::Rng;
 use std::{
-    cmp::Ordering,
     fmt::{Display, Formatter},
 };
 
@@ -160,53 +159,56 @@ impl Cube {
     /// Determine the intersection distances along a ray's direction.
     #[must_use]
     fn intersections(&self, ray: &Ray) -> (f64, f64) {
-        // TODO: Precompute 1/ray.dir() as it's used at every Voxel transition and f64 div
-        // takes much longer thatn f64 mul
-        let t_0: Vec<_> = self
-            .mins
-            .iter()
-            .zip(ray.pos().iter().zip(ray.dir().iter()))
-            .map(|(m, (p, d))| (m - p) / d)
-            .filter(|x| x.is_finite())
-            .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
-            .collect();
+        // X slab
+        let (mut tmin, mut tmax) = if ray.dir().x() == 0.0 {
+            // Ray parallel to x planes
+            if ray.pos().x() < self.mins.x() || ray.pos().x() > self.maxs.x() {
+                return (f64::INFINITY, f64::NEG_INFINITY);
+            }
+            (f64::NEG_INFINITY, f64::INFINITY)
+        } else {
+            let t1 = (self.mins.x() - ray.pos().x()) / ray.dir().x();
+            let t2 = (self.maxs.x() - ray.pos().x()) / ray.dir().x();
+            (t1.min(t2), t1.max(t2))
+        };
 
-        let t_1: Vec<_> = self
-            .maxs
-            .iter()
-            .zip(ray.pos().iter().zip(ray.dir().iter()))
-            .map(|(m, (p, d))| (m - p) / d)
-            .filter(|x| x.is_finite())
-            .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
-            .collect();
+        // Y slab
+        let (tymin, tymax) = if ray.dir().y() == 0.0 {
+            if ray.pos().y() < self.mins.y() || ray.pos().y() > self.maxs.y() {
+                return (f64::INFINITY, f64::NEG_INFINITY);
+            }
+            (f64::NEG_INFINITY, f64::INFINITY)
+        } else {
+            let t1 = (self.mins.y() - ray.pos().y()) / ray.dir().y();
+            let t2 = (self.maxs.y() - ray.pos().y()) / ray.dir().y();
+            (t1.min(t2), t1.max(t2))
+        };
 
-        let t_min = t_0
-            .iter()
-            .zip(t_1.iter())
-            .map(|(a, b)| a.min(*b))
-            .max_by(|a, b| {
-                if a < b {
-                    Ordering::Less
-                } else {
-                    Ordering::Greater
-                }
-            })
-            .unwrap();
+        if tmin > tymax || tymin > tmax {
+            return (f64::INFINITY, f64::NEG_INFINITY);
+        }
+        tmin = tmin.max(tymin);
+        tmax = tmax.min(tymax);
 
-        let t_max = t_0
-            .iter()
-            .zip(t_1.iter())
-            .map(|(a, b)| a.max(*b))
-            .min_by(|a, b| {
-                if a < b {
-                    Ordering::Less
-                } else {
-                    Ordering::Greater
-                }
-            })
-            .unwrap();
+        // Z slab
+        let (tzmin, tzmax) = if ray.dir().z() == 0.0 {
+            if ray.pos().z() < self.mins.z() || ray.pos().z() > self.maxs.z() {
+                return (f64::INFINITY, f64::NEG_INFINITY);
+            }
+            (f64::NEG_INFINITY, f64::INFINITY)
+        } else {
+            let t1 = (self.mins.z() - ray.pos().z()) / ray.dir().z();
+            let t2 = (self.maxs.z() - ray.pos().z()) / ray.dir().z();
+            (t1.min(t2), t1.max(t2))
+        };
 
-        (t_min, t_max)
+        if tmin > tzmax || tzmin > tmax {
+            return (f64::INFINITY, f64::NEG_INFINITY);
+        }
+        tmin = tmin.max(tzmin);
+        tmax = tmax.min(tzmax);
+
+        (tmin, tmax)
     }
 
     /// Generate a random position within the cube's volume.
