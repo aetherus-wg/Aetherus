@@ -19,7 +19,6 @@ impl Binner {
     clone!(bins: usize);
 
     /// Construct a new Binner.
-    #[inline]
     #[must_use]
     pub fn new(range: Range, bins: usize) -> Self {
         debug_assert!(bins > 0);
@@ -28,14 +27,12 @@ impl Binner {
     }
 
     /// Calculate the bin width.
-    #[inline]
     #[must_use]
     pub fn bin_width(&self) -> f64 {
         self.range.width() / self.bins as f64
     }
 
     /// Determine the corresponding bin.
-    #[inline]
     #[must_use]
     pub fn bin(&self, x: f64) -> usize {
         debug_assert!(self.range.contains(x));
@@ -46,7 +43,6 @@ impl Binner {
     }
 
     /// Determine the corresponding bin if the value is within the range.
-    #[inline]
     #[must_use]
     pub fn try_bin(&self, x: f64) -> Option<usize> {
         self.range.contains(x).then(|| self.bin(x))

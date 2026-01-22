@@ -8,7 +8,6 @@ use rand::{rngs::ThreadRng, Rng};
 use std::f64::consts::PI;
 
 /// Perform a photon scattering event.
-#[inline]
 pub fn scatter(rng: &mut ThreadRng, phot: &mut Photon, env: &Local) {
     // Part of the weight is absorbed.
     *phot.weight_mut() *= env.albedo();
@@ -20,7 +19,6 @@ pub fn scatter(rng: &mut ThreadRng, phot: &mut Photon, env: &Local) {
 }
 
 /// Perform a photon scattering event with a probability of shifting wavelength.
-#[inline]
 pub fn shift_scatter(rng: &mut ThreadRng, phot: &mut Photon, env: &Local) {
     // Part of the weight is absorbed.
     *phot.weight_mut() *= env.albedo();

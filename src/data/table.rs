@@ -46,7 +46,6 @@ impl<T> Table<T> {
 
 impl<T: Copy> Table<T> {
     /// Construct a new instance from a two-dimensional array.
-    #[inline]
     #[must_use]
     pub fn new_from_array(headings: Vec<String>, values: &Array2<T>) -> Self {
         debug_assert!(!headings.is_empty());
@@ -69,7 +68,6 @@ impl<T: Copy> Table<T> {
 }
 
 impl<T: AddAssign + Clone> AddAssign<&Self> for Table<T> {
-    #[inline]
     fn add_assign(&mut self, rhs: &Self) {
         debug_assert!(self.headings == rhs.headings);
         debug_assert!(self.rows.len() == rhs.rows.len());
@@ -91,7 +89,6 @@ impl<T: Display> Save for Table<T> {
 }
 
 impl<T: Display> Display for Table<T> {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         write!(fmt, "{}", self.headings[0])?;
         for heading in self.headings.iter().skip(1) {

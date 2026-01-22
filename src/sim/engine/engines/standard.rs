@@ -9,9 +9,12 @@ use rand::{rngs::ThreadRng, Rng};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
-#[inline]
-pub fn standard(input: &Input, mut data: &mut Output, mut rng: &mut ThreadRng, mut phot: Photon) {
-
+pub fn standard(
+    input: &Input,
+    mut data: &mut Output,
+    mut rng: &mut ThreadRng,
+    mut phot: Photon,
+) {
     // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(output::OutputParameter::Emission) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {

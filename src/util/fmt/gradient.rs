@@ -5,7 +5,6 @@ use palette::{Gradient, LinSrgba};
 use rgb::RGB8;
 
 /// Create a string of a gradients colour.
-#[inline]
 #[must_use]
 pub fn to_string(grad: &Gradient<LinSrgba>, len: usize) -> String {
     let mut scale = String::new();

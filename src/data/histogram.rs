@@ -52,7 +52,6 @@ impl Histogram {
     }
 
     /// Increment the bin corresponding to x by unity.
-    #[inline]
     pub fn collect(&mut self, x: f64) {
         debug_assert!(self.binner.range().contains(x));
 
@@ -61,7 +60,6 @@ impl Histogram {
     }
 
     /// Increment the bin corresponding to x by a given weight.
-    #[inline]
     pub fn collect_weight(&mut self, x: f64, weight: f64) {
         debug_assert!(self.binner.range().contains(x));
         debug_assert!(weight > 0.0);
@@ -71,7 +69,6 @@ impl Histogram {
     }
 
     /// Increment the bin corresponding to x by unity if x is contained within the range.
-    #[inline]
     pub fn try_collect(&mut self, x: f64) {
         if let Some(index) = self.binner.try_bin(x) {
             self.counts[index] += 1.0;
@@ -79,14 +76,12 @@ impl Histogram {
     }
 
     /// Increment the bin corresponding to x by unity if x is contained within the range.
-    #[inline]
     pub fn try_collect_weight(&mut self, x: f64, weight: f64) {
         if let Some(index) = self.binner.try_bin(x) {
             self.counts[index] += weight;
         }
     }
 
-    #[inline]
     pub fn iter(&self) -> HistogramIterator<'_> {
         HistogramIterator::new(self)
     }
@@ -103,7 +98,6 @@ impl AddAssign<&Self> for Histogram {
 }
 
 impl Save for Histogram {
-    #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = File::create(path)?;
 
@@ -119,7 +113,6 @@ impl Save for Histogram {
 }
 
 impl Display for Histogram {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         fmt_report!(fmt, self.binner, "binner");
         fmt_report!(fmt, self.counts.sum(), "total counts");

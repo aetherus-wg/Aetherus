@@ -44,7 +44,6 @@ impl Material {
     }
 
     /// Generate an optical environment for a given wavelength.
-    #[inline]
     #[must_use]
     pub fn sample_environment(&self, w: f64) -> Local {
         let ref_index = self.ref_index.y(w);

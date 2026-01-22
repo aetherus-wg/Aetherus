@@ -7,7 +7,6 @@ use rand::{rngs::ThreadRng, Rng};
 
 /// Handle a surface collision.
 #[allow(clippy::expect_used)]
-#[inline]
 pub fn surface(
     rng: &mut ThreadRng,
     hit: &Hit<Attribute>,

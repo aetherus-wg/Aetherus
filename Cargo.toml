@@ -2,7 +2,7 @@
 name = "aetherus"
 version = "0.3.1"
 authors = ["Freddy Wordingham <f.wordingham@exeter.ac.uk>", "Sam Morrell <s.a.f.morrell@exeter.ac.uk>", "Cristian Bourceanu <v.c.bourceanu@smd.ed.ac.uk>"]
-edition = "2018"
+edition = "2021"
 description = "Physics simulation library and binaries"
 repository = "https://github.com/aetherus-wg/aetherus"
 readme = "README.md"
@@ -62,6 +62,7 @@ pyo3 = { version = "0.21.1", features = ["extension-module"], optional = true }
 obj = "0.10.2"
 anyhow = "1.0.100"
 thiserror = "2.0.17"
+log = "0.4.29"
 
 [dev-dependencies]
 tempfile = "3.2.*"
@@ -83,3 +84,6 @@ name = "mcrt"
 name = "mpi_tests"
 path = "src/bin/tests/mpi_tests.rs"
 required-features = ["mpi"]
+
+[profile.release]
+debug = true

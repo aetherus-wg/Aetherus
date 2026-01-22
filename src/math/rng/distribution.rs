@@ -11,7 +11,6 @@ lazy_static! {
 }
 
 /// Sample the Henyey-Greenstein phase function with a given asymmetry parameter.
-#[inline]
 #[must_use]
 pub fn sample_henyey_greenstein<R: Rng>(rng: &mut R, asym: f64) -> f64 {
     debug_assert!(asym.abs() <= 1.0);
@@ -27,7 +26,6 @@ pub fn sample_henyey_greenstein<R: Rng>(rng: &mut R, asym: f64) -> f64 {
 }
 
 /// Sample the normal distribution.
-#[inline]
 #[must_use]
 pub fn sample_normal<R: Rng>(rng: &mut R) -> f64 {
     let a = (-2.0 * rng.gen_range(0.0_f64..1.0).ln()).sqrt();
@@ -47,7 +45,6 @@ pub fn sample_gaussian<R: Rng>(rng: &mut R, mu: f64, sigma: f64) -> f64 {
 }
 
 /// Create a random unit vector.
-#[inline]
 #[must_use]
 pub fn rand_isotropic_dir<R: Rng>(rng: &mut R) -> Dir3 {
     let theta = rng.gen_range(0.0..(2.0 * PI));
@@ -64,7 +61,6 @@ pub fn rand_isotropic_dir<R: Rng>(rng: &mut R) -> Dir3 {
 // FIXME: How are the following getting random numbers since no Rng is used?
 
 /// Sample points within a circle using the golden ratio.
-#[inline]
 #[must_use]
 pub fn rand_circle_point(n: i32, max: i32) -> (f64, f64) {
     debug_assert!(n >= 0);
@@ -77,7 +73,6 @@ pub fn rand_circle_point(n: i32, max: i32) -> (f64, f64) {
 }
 
 /// Sample points on a sphere's surface using the golden ratio.
-#[inline]
 #[must_use]
 pub fn rand_sphere_point(n: i32, max: i32) -> (f64, f64) {
     debug_assert!(n >= 0);
