@@ -29,7 +29,6 @@ pub enum EngineBuilderLoader {
 impl Load for EngineBuilderLoader {
     type Inst = EngineBuilder;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Standard => Self::Inst::Standard,

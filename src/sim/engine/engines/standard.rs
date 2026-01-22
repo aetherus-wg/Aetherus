@@ -12,7 +12,6 @@ use aetherus_events::{ledger::Ledger, EventType};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
-#[inline]
 pub fn standard(
     input: &Input,
     mut data: &mut Output,

@@ -75,7 +75,6 @@ impl Crossing {
     }
 
     /// Calculate the reflection direction.
-    #[inline]
     #[must_use]
     fn init_ref_dir(inc: &Dir3, norm: &Dir3, ci: f64) -> Dir3 {
         (inc.into_inner() + (2.0 * ci * norm.into_inner())).into()
