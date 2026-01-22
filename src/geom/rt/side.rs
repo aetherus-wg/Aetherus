@@ -19,7 +19,6 @@ pub enum Side {
 
 impl Side {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(dir: &Dir3, norm: Dir3) -> Self {
         if dir.dot(&norm) < 0.0 {
@@ -30,7 +29,6 @@ impl Side {
     }
 
     /// Check if the side is an inside.
-    #[inline]
     #[must_use]
     pub const fn is_inside(&self) -> bool {
         match *self {
@@ -41,7 +39,6 @@ impl Side {
 
     /// Reference the surface-normal vector.
     /// This points away from the constructing direction normal.
-    #[inline]
     #[must_use]
     pub const fn norm(&self) -> &Dir3 {
         match *self {
@@ -55,7 +52,7 @@ mod tests {
     use super::*;
     use crate::math::Dir3;
 
-    /// Checks that the position of the 
+    /// Checks that the position of the
     #[test]
     fn test_new_inside() {
         // Importantly, we are testing the side of the surface hit.

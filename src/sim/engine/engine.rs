@@ -29,7 +29,6 @@ pub enum Engine {
 
 impl Engine {
     /// Run the engine for a single photon.
-    #[inline]
     pub fn run(&self, input: &Input, data: &mut Output, ledger: &Arc<Mutex<Ledger>>, rng: &mut ThreadRng, phot: Photon) {
         match *self {
             Self::Standard => engines::standard(input, data, &ledger, rng, phot),

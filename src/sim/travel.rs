@@ -7,7 +7,6 @@ use crate::{
 use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 
 /// Move the photon forward and record the flight.
-#[inline]
 pub fn travel(data: &mut Output, phot: &mut Photon, env: &Local, dist: f64) {
     debug_assert!(dist > 0.0);
 
