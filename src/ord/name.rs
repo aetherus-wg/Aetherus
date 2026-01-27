@@ -26,6 +26,6 @@ impl Name {
 impl Display for Name {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
-        write!(fmt, "{{{}}}", self.0)
+        write!(fmt, "{}", self.0)
     }
 }
