@@ -52,6 +52,7 @@
             mpich
             llvmPackages.clang
             cmake # Required for static compile of NetCDF.
+            cargo-flamegraph
           ];
 
           env = {
