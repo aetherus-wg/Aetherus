@@ -31,6 +31,7 @@ impl Material {
     access!(mat_id, mat_id_mut: SrcId);
 
     /// Construct a new instance.
+    #[inline]
     #[must_use]
     pub const fn new(
         ref_index: Formula,

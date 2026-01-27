@@ -24,6 +24,7 @@ pub enum EngineBuilder {
 impl Build for EngineBuilder {
     type Inst = Engine;
 
+    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Standard => Self::Inst::Standard,

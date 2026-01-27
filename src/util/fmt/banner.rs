@@ -6,7 +6,6 @@ use colored::Colorize;
 static mut SECTION: i32 = 0;
 
 /// Print a colourful title bar to the terminal.
-#[inline]
 pub fn title(term_width: usize, title: &str) {
     let title = title.to_uppercase();
 
@@ -35,7 +34,6 @@ pub fn title(term_width: usize, title: &str) {
 }
 
 /// Print a section bar to the terminal.
-#[inline]
 pub fn section(term_width: usize, title: &str) {
     let title = title.to_uppercase();
     unsafe {
@@ -62,7 +60,6 @@ pub fn section(term_width: usize, title: &str) {
 }
 
 /// Print a sub-section message to the terminal.
-#[inline]
 pub fn sub_section(term_width: usize, title: &str) {
     println!(
         "---- {} {}",
@@ -72,13 +69,11 @@ pub fn sub_section(term_width: usize, title: &str) {
 }
 
 /// Print a sub-sub-section message to the terminal.
-#[inline]
 pub fn sub_sub_section(title: &str) {
     println!("---- {}", colour(title));
 }
 
 /// Colour a given message with the appropriate section colour.
-#[inline]
 #[must_use]
 fn colour(string: &str) -> String {
     match unsafe { SECTION } % 6 {

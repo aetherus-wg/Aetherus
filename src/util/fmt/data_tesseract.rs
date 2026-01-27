@@ -24,7 +24,6 @@ pub struct DataTesseract {
 impl DataTesseract {
     /// Construct a new instance.
     #[allow(clippy::expect_used)]
-    #[inline]
     #[must_use]
     pub fn new(data: &Array4<f64>) -> Self {
         let shape = data.shape();
@@ -64,7 +63,6 @@ impl DataTesseract {
 }
 
 impl Display for DataTesseract {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(

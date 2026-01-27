@@ -19,7 +19,6 @@ pub struct Trans3Builder {
 impl Build for Trans3Builder {
     type Inst = crate::math::Trans3;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         let trans = self
             .trans

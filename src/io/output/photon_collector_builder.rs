@@ -19,7 +19,6 @@ impl PhotonCollectorBuilder {
 }
 
 impl Display for PhotonCollectorBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
         let kill_str = match self.kill_photons {
             Some(kf) => kf,

@@ -28,7 +28,6 @@ pub struct DataSquare {
 impl DataSquare {
     /// Construct a new instance.
     #[allow(clippy::expect_used)]
-    #[inline]
     #[must_use]
     pub fn new(data: &Array2<f64>) -> Self {
         let shape = data.shape();
@@ -68,7 +67,6 @@ impl DataSquare {
 }
 
 impl Display for DataSquare {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(

@@ -166,7 +166,6 @@ impl OutputConfig {
 }
 
 impl fmt::Display for OutputConfig {
-    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
 

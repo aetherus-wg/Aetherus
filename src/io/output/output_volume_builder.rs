@@ -8,9 +8,9 @@ use crate::{
     ord::cartesian::{X, Y, Z},
 };
 
-/// Configuration for the OutputVolume. 
+/// Configuration for the OutputVolume.
 /// Importantly this can be serialised / deserialised using serde, so that this
-/// can be built from a JSON configuration file. 
+/// can be built from a JSON configuration file.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OutputVolumeBuilder {
     boundary: (Vec3, Vec3),
@@ -26,7 +26,6 @@ impl OutputVolumeBuilder {
 }
 
 impl Display for OutputVolumeBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, "...", "boundary");
