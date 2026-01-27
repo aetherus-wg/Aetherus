@@ -96,11 +96,7 @@ impl OutputVolume {
     #[inline]
     #[must_use]
     fn gen_index_axis(min: f64, max: f64, res: usize, coord: f64) -> usize {
-        if coord == max {
-            res - 1
-        } else {
-            (((coord - min) / (max - min)) * res as f64).floor() as usize
-        }
+        (res-1).min((((coord - min) / (max - min)) * res as f64).floor() as usize)
     }
 
     /// If the given position is contained within the grid,
