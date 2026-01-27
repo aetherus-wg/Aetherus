@@ -129,7 +129,7 @@ mod tests {
         let rows = vec![vec![1, 2], vec![3, 4]];
         let table = Table::new(headings, rows);
         assert_eq!(table.headings, vec!["a".to_string(), "b".to_string()]);
-        // Check that we can get the rows back out, test the into_inner method in the process. 
+        // Check that we can get the rows back out, test the into_inner method in the process.
         assert_eq!(table.into_inner(), vec![vec![1, 2], vec![3, 4]]);
     }
 
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn new_from_array() {
         let headings = vec!["a".to_string(), "b".to_string()];
-        let values = Array1::from_vec(vec![1, 2, 3, 4]).into_shape((2, 2)).unwrap();
+        let values = Array1::from_vec(vec![1, 2, 3, 4]).into_shape_with_order((2, 2)).unwrap();
         let table = Table::new_from_array(headings, &values);
         assert_eq!(table.headings, vec!["a".to_string(), "b".to_string()]);
         assert_eq!(table.rows, vec![vec![1, 2], vec![3, 4]]);
