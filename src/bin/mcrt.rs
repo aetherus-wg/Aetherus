@@ -193,6 +193,15 @@ fn main() {
     let ledger_path = out_dir.join("simulation_ledger.json");
     println!("[SAVE] {}", ledger_path.display());
     if let Some(true) = sett.uid_tracked() {
+        use aetherus_events::{pattern, filter::find_dangling_uids, filter::BitsProperty};
+        let no_detector_property = BitsProperty::NoMatch(pattern!(Detection, SrcId::None));
+
+        let uids = find_dangling_uids(&ledger.lock().expect("Failed to lock ledger."), no_detector_property);
+        println!("[INFO] Found {} dangling UIDs to prune.", uids.len());
+        for uid in uids {
+            ledger.lock().expect("Failed to lock ledger.").prune(&uid);
+        }
+
         aetherus_events::ledger::write_ledger_to_json(
             &ledger.lock().expect("Failed to lock ledger."),
             &ledger_path,
