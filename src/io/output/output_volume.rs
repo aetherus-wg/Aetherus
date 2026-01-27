@@ -157,7 +157,6 @@ impl AddAssign<&Self> for OutputVolume {
 }
 
 impl Save for OutputVolume {
-    #[inline]
     fn save_data(&self, path: &std::path::Path) -> Result<(), crate::err::Error> {
         (&self.data / self.voxel_volume()).save(&path)?;
         Ok(())
@@ -165,7 +164,6 @@ impl Save for OutputVolume {
 }
 
 impl Display for OutputVolume {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.boundary, "boundary");

@@ -6,11 +6,11 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Rasteriser {
-    /// Rasterises the illuminance of the photons fed to the rasteriser using 
-    /// a provided transmission function. 
+    /// Rasterises the illuminance of the photons fed to the rasteriser using
+    /// a provided transmission function.
     Illuminance(Transmission),
     /// Counts the number of photon packets that trigger the rasteriser by summing
-    /// their weights. 
+    /// their weights.
     PhotonCount,
 }
 
@@ -27,7 +27,7 @@ impl Rasteriser {
                     match plane.at_mut(xy.0, xy.1) {
                         Some(pix) => *pix += phot.weight() * phot.power() / area,
                         None => panic!("Illuminance rasterisation outside raster"),
-                    } 
+                    }
                 };
             }
             Self::PhotonCount => {
@@ -35,14 +35,13 @@ impl Rasteriser {
                 match plane.at_mut(xy.0, xy.1) {
                     Some(pix) => *pix += phot.weight(),
                     None => panic!("Photon count rasterisation outside raster"),
-                }   
+                }
             }
         }
     }
 }
 
 impl Display for Rasteriser {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Illuminance(ref trans) => {

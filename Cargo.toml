@@ -62,7 +62,7 @@ pyo3 = { version = "0.21.1", features = ["extension-module"], optional = true }
 obj = "0.10.2"
 anyhow = "1.0.100"
 thiserror = "2.0.17"
-aetherus-events = { git = "https://github.com/aetherus-wg/aetherus-events", version = "0.1.3" }
+aetherus-events = { git = "https://github.com/aetherus-wg/aetherus-events", version = "0.1.5" }
 log = "0.4.29"
 
 [dev-dependencies]
@@ -84,3 +84,6 @@ name = "mcrt"
 name = "mpi_tests"
 path = "src/bin/tests/mpi_tests.rs"
 required-features = ["mpi"]
+
+[profile.release]
+debug = true

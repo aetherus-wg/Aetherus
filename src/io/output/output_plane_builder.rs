@@ -41,7 +41,6 @@ mod tests {
 }
 
 impl Display for OutputPlaneBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, "...", "boundary");

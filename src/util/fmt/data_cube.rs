@@ -28,7 +28,6 @@ pub struct DataCube {
 impl DataCube {
     /// Construct a new instance.
     #[allow(clippy::expect_used)]
-    #[inline]
     #[must_use]
     pub fn new(data: &Array3<f64>) -> Self {
         let shape = data.shape();
@@ -68,7 +67,6 @@ impl DataCube {
 }
 
 impl Display for DataCube {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(

@@ -91,7 +91,6 @@ impl AddAssign<&Self> for PhotonCollector {
 }
 
 impl Display for PhotonCollector {
-    #[inline]
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(fmt, "PhotonCollector: ")?;
         fmt_report!(fmt, self.kill_photon, "kill on collect");

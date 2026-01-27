@@ -105,7 +105,6 @@ impl AddAssign for Output {
 
 
 impl Save for Output {
-    #[inline]
     fn save_data(&self, out_dir: &Path) -> Result<(), Error> {
 
         for (vol, name) in self.vol.iter().zip(self.reg.vol_reg.names_list()) {
@@ -144,7 +143,6 @@ impl Save for Output {
 }
 
 impl Display for Output {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
 
