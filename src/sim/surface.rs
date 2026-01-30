@@ -72,6 +72,8 @@ pub fn surface(
             phot.ray_mut().update_dir(new_dir);
             EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Specular)), src_id: hit.tag().src_id }
         }
+        // TODO: Move all the detectors to the Output struct and separate concerns, hence the MCRT
+        // core should only contain the logic necessary for the the photon propagation
         Attribute::Spectrometer(id) => {
             data.specs[id].try_collect_weight(phot.wavelength(), phot.weight());
             phot.kill();

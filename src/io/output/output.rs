@@ -1,17 +1,22 @@
 use crate::{
+    data::Histogram,
+    err::Error,
     fmt_report,
     fs::Save,
-    data::Histogram,
+    geom::properties::Trace,
     img::Image,
-    err::Error,
-    io::output::{OutputPlane, OutputRegistry, OutputVolume, PhotonCollector}, phys::Photon,
-};
-use std::{
-    ops::AddAssign,
-    path::Path,
-    fmt::{Display, Formatter},
+    io::output::{OutputPlane, OutputRegistry, OutputVolume, PhotonCollector},
+    phys::{Local, Photon},
+    sim::travel,
 };
 use ndarray::Array3;
+use std::{
+    fmt::{Display, Formatter},
+    ops::AddAssign,
+    path::Path,
+};
+
+use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 
 use super::OutputParameter;
 
@@ -23,7 +28,7 @@ pub struct Output {
     pub plane: Vec<OutputPlane>,
     /// Photon Collectors.
     pub phot_cols: Vec<PhotonCollector>,
-    /// Spectra.
+    /// Spectral.
     pub specs: Vec<Histogram>,
     /// Image data.
     pub imgs: Vec<Image>,
@@ -39,15 +44,95 @@ pub struct Output {
     pub reg: OutputRegistry,
 }
 
+fn voxels_march(
+    vol: &OutputVolume,
+    env: &Local,
+    phot: &Photon,
+    dist: f64,
+) -> Vec<([usize; 3], f64, f64)> {
+    let mut result = Vec::new();
+    let mut tmp_phot = phot.clone();
+    let mut tmp_dist = dist;
+    *tmp_phot.tof_mut() = None;
+    while tmp_dist > 0.0 {
+        let (index, voxel) = match vol.gen_index_voxel(tmp_phot.ray().pos()) {
+            Some(inner) => inner,
+            None => break,
+        };
+        let voxel_dist = match voxel.dist(tmp_phot.ray()) {
+            Some(dist) => dist,
+            None => break,
+        };
+        let step = voxel_dist.min(tmp_dist);
+        tmp_dist -= step;
+
+        let voxel_in_power = tmp_phot.weight() * tmp_phot.power();
+
+        // Compute the effective distance that results in the same energy accumulation for
+        // a non absorbing medium.
+        let effective_step = if env.abs_coeff() == 0.0 {
+            step
+        } else {
+            (1.0 - (-env.abs_coeff() * step).exp()) / env.abs_coeff()
+        };
+
+        // Step temporal photon to the next voxel
+        travel(&mut tmp_phot, &env, step + f64::EPSILON);
+
+        result.push((index, voxel_in_power, effective_step));
+    }
+    result
+}
+
 impl Output {
+    pub fn volume_estimate(&mut self, env: &Local, phot: &Photon, dist: f64) {
+        assert!(env.abs_coeff() >= 0.0);
+
+        // Energy Density.
+        for vol in self.get_volumes_for_param_mut(OutputParameter::Energy) {
+            voxels_march(&vol, &env, &phot, dist).into_iter().for_each(
+                |(index, voxel_in_power, effective_step)| {
+                    // Update the voxel value
+                    vol.data_mut()[index] += voxel_in_power * effective_step * env.ref_index()
+                        / SPEED_OF_LIGHT_IN_VACUUM;
+                },
+            );
+        }
+
+        // Absorption.
+        for vol in self.get_volumes_for_param_mut(OutputParameter::Absorption) {
+            voxels_march(&vol, &env, &phot, dist).into_iter().for_each(
+                |(index, voxel_in_power, effective_step)| {
+                    // Update the voxel value
+                    vol.data_mut()[index] +=
+                        voxel_in_power * effective_step * env.abs_coeff() * env.ref_index()
+                            / SPEED_OF_LIGHT_IN_VACUUM;
+                },
+            );
+        }
+
+        // Shifts.
+        for vol in self.get_volumes_for_param_mut(OutputParameter::Shift) {
+            voxels_march(&vol, &env, &phot, dist).into_iter().for_each(
+                |(index, voxel_in_power, effective_step)| {
+                    // Update the voxel value
+                    vol.data_mut()[index] +=
+                        voxel_in_power * effective_step * env.shift_coeff() * env.ref_index()
+                            / SPEED_OF_LIGHT_IN_VACUUM;
+                },
+            );
+        }
+    }
     /// This function polls each of the output volumes in the output object to
     /// find the closest voxel distance based on the position of the current
     /// photon packet. This will then return the shortest distance to the
     /// the current voxel boundary. There may be a case where there is no voxel
     /// in the path of travel of the packet, in that case return `None`.
     pub fn voxel_dist(&self, phot: &Photon) -> f64 {
-        let dists: Vec<f64> = self.vol.iter()
-            .map(|grid| { grid.voxel_dist(phot) })
+        let dists: Vec<f64> = self
+            .vol
+            .iter()
+            .map(|grid| grid.voxel_dist(phot))
             .filter(Option::is_some)
             .map(Option::unwrap)
             .collect();
@@ -58,13 +143,15 @@ impl Output {
     }
 
     pub fn get_volumes_for_param(&self, param: OutputParameter) -> Vec<&OutputVolume> {
-        self.vol.iter()
+        self.vol
+            .iter()
             .filter(|&vol| vol.param() == &param)
             .collect()
     }
 
     pub fn get_volumes_for_param_mut(&mut self, param: OutputParameter) -> Vec<&mut OutputVolume> {
-        self.vol.iter_mut()
+        self.vol
+            .iter_mut()
             .filter(|vol| vol.param() == &param)
             .collect()
     }
@@ -103,10 +190,8 @@ impl AddAssign for Output {
     }
 }
 
-
 impl Save for Output {
     fn save_data(&self, out_dir: &Path) -> Result<(), Error> {
-
         for (vol, name) in self.vol.iter().zip(self.reg.vol_reg.names_list()) {
             let path = out_dir.join(format!("volume_{}.nc", name.to_string()));
             vol.save(&path)?;

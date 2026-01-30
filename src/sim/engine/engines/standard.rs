@@ -60,37 +60,34 @@ pub fn standard(
             *phot.weight_mut() *= roulette_barrels;
         }
 
-        // Interaction distances.
-        let voxel_dist = data.voxel_dist(&phot);
+        // Scattering distanc
         if scat_dist.is_none() {
-            scat_dist = Some(-(rng.gen::<f64>()).ln() / env.inter_coeff());
+            scat_dist = Some(-(rng.gen::<f64>()).ln() / env.scat_coeff());
         }
+        // NOTE: Does aggregated absorption and scattering reduce the scanning depth?
+        // Perhaps the distance considerations signigicantly reduces the time to complet the Tree search
         let surf_hit = input.tree.scan(
             phot.ray().clone(),
             bump_dist,
-            voxel_dist.min(scat_dist.unwrap()),
+            scat_dist.unwrap(),
         );
         let boundary_hit = input
             .bound
             .dist_boundary(phot.ray())
             .expect("Photon not contained in boundary.");
 
+        let interaction_event = Event::new(scat_dist.unwrap(), surf_hit, boundary_hit, bump_dist);
+
+        data.volume_estimate(&env, &phot, interaction_event.dist());
+        let interaction_env = env.clone();
+        let interaction_dist = interaction_event.dist();
+
         // Event handling.
-        match Event::new(
-            voxel_dist,
-            scat_dist.unwrap(),
-            surf_hit,
-            boundary_hit,
-            bump_dist,
-        ) {
-            Event::Voxel(dist) => {
-                travel(&mut data, &mut phot, &env, dist + bump_dist);
-                // Update scat_dist for the frame of the new position
-                scat_dist = Some(scat_dist.unwrap() - dist - bump_dist);
-                assert!(scat_dist.unwrap() > 0.0);
-            }
+        match interaction_event {
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, dist);
+                travel(&mut phot, &env, dist);
+                // Reset scat_dist for the new scattering event
+                scat_dist = None;
                 let event_id = scatter(&mut rng, &mut phot, &env);
                 // WARN: Accessing Ledger from many threads will slow down the simulation
                 // considerably. Consider using an async design, encapsulating `uid` in work token
@@ -102,16 +99,14 @@ pub fn standard(
                                             .insert(phot.uid(), event_id);
 
                 }
-                // Reset scat_dist for the new scattering event
-                scat_dist = None;
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, hit.dist());
+                travel(&mut phot, &env, hit.dist());
                 // FIXME: next_seq_id needed here only for PhotonCollector, which needs the updated
                 // Uid before it can store the photon data. How to solve this RAW hazard?
                 let next_seq_id = ledger.lock().expect("Can't lock Ledger").get_next_seq_id(&phot.uid());
                 let event_id = surface(&mut rng, &hit, &mut phot, &mut env, &mut data, next_seq_id);
-                travel(&mut data, &mut phot, &env, bump_dist);
+                travel(&mut phot, &env, bump_dist);
                 if input.sett.uid_tracked() == Some(true) && event_id.event_type != EventType::None {
                     *phot.uid_mut() = ledger.lock()
                                             .expect("Can't lock Ledger")
@@ -120,14 +115,15 @@ pub fn standard(
 
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
                 // voxels did? => Based on "MONTE CARLO MODELING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
-                scat_dist = None;
+                scat_dist = Some(scat_dist.unwrap() - hit.dist() - bump_dist);
+                assert!(scat_dist.unwrap() > 0.0);
             }
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, boundary_hit.dist());
+                travel(&mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
-                    travel(&mut data, &mut phot, &env, bump_dist);
+                    travel(&mut phot, &env, bump_dist);
                     scat_dist = Some(scat_dist.unwrap() - boundary_hit.dist() - bump_dist);
                 }
             }
@@ -135,6 +131,9 @@ pub fn standard(
 
         if phot.weight() <= 0.0 {
             break;
+        } else {
+            // Update weight based on Beer's Law
+            *phot.weight_mut() *= (- interaction_env.abs_coeff() * interaction_dist).exp();
         }
     }
 }

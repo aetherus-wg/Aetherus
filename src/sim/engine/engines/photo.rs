@@ -68,10 +68,9 @@ pub fn photo(
         let boundary_hit = input.bound.dist_boundary(phot.ray()).expect("Photon not contained in boundary. ");
 
         // Event handling.
-        match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, dist + bump_dist),
+        match Event::new(scat_dist, surf_hit, boundary_hit, bump_dist) {
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, dist);
+                travel(&mut phot, &env, dist);
 
                 // Capture.
                 for (frame, photo) in frames.iter().zip(data.photos.iter_mut()) {
@@ -91,16 +90,16 @@ pub fn photo(
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, hit.dist());
+                travel(&mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, &mut data, None);
-                travel(&mut data, &mut phot, &env, bump_dist);
+                travel(&mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, boundary_hit.dist());
+                travel(&mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
-                    travel(&mut data, &mut phot, &env, bump_dist);
+                    travel(&mut phot, &env, bump_dist);
                 }
             }
         }
