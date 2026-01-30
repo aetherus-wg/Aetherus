@@ -18,6 +18,7 @@ use std::{
 /// Ray emission structure.
 #[file]
 pub enum EmitterLoader {
+    Point(Point3),
     /// Single beam.
     Beam(Point3, Dir3),
     /// Gaussian beam
@@ -40,6 +41,7 @@ impl Load for EmitterLoader {
     #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         Ok(match self {
+            Self::Point(pos) => Self::Inst::Point(pos),
             Self::Beam(pos, dir) => Self::Inst::new_beam(Ray::new(pos, dir)),
             Self::Gaussian(pos, dir, std_dev) => Self::Inst::new_gaussian(Ray::new(pos, dir), std_dev),
             Self::Points(points_path) => {
@@ -84,6 +86,7 @@ impl Display for EmitterLoader {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         let kind = match *self {
+            Self::Point { .. }         => "Point",
             Self::Beam { .. }           => "Beam",
             Self::Gaussian { .. }       => "Gaussian",
             Self::Points { .. }         => "Points",

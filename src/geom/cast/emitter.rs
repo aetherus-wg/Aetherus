@@ -16,6 +16,7 @@ use std::{
 /// Ray emission structure.
 #[derive(Clone)]
 pub enum Emitter {
+    Point(Point3),
     /// Single beam.
     Beam(Ray),
     /// Gaussian beam (Ray, Divergence Half-Angle)
@@ -36,7 +37,6 @@ pub enum Emitter {
 
 impl Emitter {
     /// Construct a new beam instance.
-    #[inline]
     #[must_use]
     pub const fn new_beam(ray: Ray) -> Self {
         Self::Beam(ray)
@@ -49,7 +49,6 @@ impl Emitter {
 
 
     /// Construct a new points instance.
-    #[inline]
     #[must_use]
     pub fn new_points(points: Vec<Point3>) -> Self {
         debug_assert!(!points.is_empty());
@@ -58,7 +57,6 @@ impl Emitter {
     }
 
     /// Construct a new points instance.
-    #[inline]
     #[must_use]
     pub fn new_weighted_points(points: Vec<Point3>, weights: &[f64]) -> Self {
         debug_assert!(!points.is_empty());
@@ -76,14 +74,12 @@ impl Emitter {
     }
 
     /// Construct a new surface instance.
-    #[inline]
     #[must_use]
     pub const fn new_surface(mesh: Mesh) -> Self {
         Self::Surface(mesh)
     }
 
     /// Construct a new volume instance.
-    #[inline]
     #[must_use]
     pub fn new_volume(map: Array3<f64>, grid: Grid) -> Self {
         debug_assert!(map.sum() > 0.0);
@@ -93,7 +89,6 @@ impl Emitter {
     }
 
     /// Construct a new non-isotropic point source instance.
-    #[inline]
     #[must_use]
     pub fn new_non_isotropic(cdf: SphericalCdf, trans: Trans3) -> Self {
         Self::NonIsotropic(cdf, trans)
@@ -103,6 +98,7 @@ impl Emitter {
     #[must_use]
     pub fn emit<R: Rng>(&self, rng: &mut R) -> Ray {
         match *self {
+            Self::Point(pos) => Ray::new(pos, rand_isotropic_dir(rng)),
             Self::Beam(ref ray) => ray.clone(),
             Self::Gaussian(ref ray, div_half_angle) => {
                 // 1. given local frame ray.dir is z axis, need to derive (x,y) directions in the
@@ -181,6 +177,7 @@ impl Emitter {
 impl Display for Emitter {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         let kind = match *self {
+            Self::Point { .. } => "Point",
             Self::Beam { .. } => "Beam",
             Self::Gaussian { .. } => "Gaussian",
             Self::Points { .. } => "Points",
