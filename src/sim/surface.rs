@@ -56,6 +56,8 @@ pub fn surface<R: Rng>(
             let new_dir = Crossing::calc_ref_dir(phot.ray().dir(), hit.side().norm());
             phot.ray_mut().update_dir(new_dir);
         }
+        // TODO: Move all the detectors to the Output struct and separate concerns, hence the MCRT
+        // core should only contain the logic necessary for the the photon propagation
         Attribute::Spectrometer(id) => {
             data.specs[*id].try_collect_weight(phot.wavelength(), phot.weight());
             phot.kill();

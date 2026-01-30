@@ -3,6 +3,7 @@
 use crate::clone;
 
 /// Localised optical environment properties.
+#[derive(PartialEq, Clone)]
 pub struct Local {
     /// Refractive index.
     ref_index: f64,
