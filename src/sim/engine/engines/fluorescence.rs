@@ -81,24 +81,25 @@ pub fn fluorescence(
             .dist_boundary(phot.ray())
             .expect("Photon not contained in boundary. ");
 
+        // FIXME: This engine hasn't been tested with the new output volume segregation
+
         // Event handling.
-        match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(data, &mut phot, &env, dist + bump_dist),
+        match Event::new(scat_dist, surf_hit, boundary_hit, bump_dist) {
             Event::Scattering(dist) => {
-                travel(data, &mut phot, &env, dist);
+                travel(&mut phot, &env, dist);
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(data, &mut phot, &env, hit.dist());
+                travel(&mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut local, data);
-                travel(data, &mut phot, &env, bump_dist);
+                travel(&mut phot, &env, bump_dist);
             }
             Event::Boundary(boundary_hit) => {
-                travel(data, &mut phot, &env, boundary_hit.dist());
+                travel(&mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
-                    travel(data, &mut phot, &env, bump_dist);
+                    travel(&mut phot, &env, bump_dist);
                 }
             }
         }
