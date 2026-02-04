@@ -90,7 +90,6 @@ impl Display for DataTesseract {
 impl Analyze for Array4<f64> {
     type Inst = DataTesseract;
 
-    #[inline]
     fn display(&self) -> Self::Inst {
         Self::Inst::new(self)
     }

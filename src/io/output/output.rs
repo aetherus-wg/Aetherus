@@ -44,17 +44,34 @@ pub struct Output {
     pub reg: OutputRegistry,
 }
 
-fn voxels_march(
-    vol: &OutputVolume,
+fn voxels_march<F>(
+    vol: &mut OutputVolume,
     env: &Local,
     phot: &Photon,
     dist: f64,
-) -> Vec<([usize; 3], f64, f64)> {
-    let mut result = Vec::new();
+    bump_dist: f64,
+    delta_fn: &F,
+) where
+    F:  Fn(f64, f64) -> f64,
+{
+    assert!(dist > 0.0, "Photon travel distance must be positive non-zero");
+
     let mut tmp_phot = phot.clone();
     let mut tmp_dist = dist;
     *tmp_phot.tof_mut() = None;
+    let mut iter_limit = 1_000;
+
+    // TODO:
+    // 1. First move tmp_phot to the voxel boundary
+    // 2. Iterate throgh the voxels, until distance exhaust or exit boundary is hit
+
     while tmp_dist > 0.0 {
+        iter_limit -= 1;
+        if iter_limit <= 0 {
+            println!("Iterations exhausted with photon {:?} and dist {:?}", tmp_phot.ray(), tmp_dist);
+            break;
+        }
+
         let (index, voxel) = match vol.gen_index_voxel(tmp_phot.ray().pos()) {
             Some(inner) => inner,
             None => break,
@@ -63,7 +80,18 @@ fn voxels_march(
             Some(dist) => dist,
             None => break,
         };
-        let step = voxel_dist.min(tmp_dist);
+
+        if voxel_dist == 0.0 {
+            println!("Investigate voxel at index {:?}", index);
+        }
+
+        assert!(voxel_dist>= 0.0, "Cannot travel backwards");
+        assert!(tmp_dist>= 0.0, "Cannot travel backwards");
+
+        let mut step = voxel_dist.min(tmp_dist);
+        assert!(step > 0.0, "Step size must be positive non-zero");
+
+        step += bump_dist;
         tmp_dist -= step;
 
         let voxel_in_power = tmp_phot.weight() * tmp_phot.power();
@@ -76,53 +104,52 @@ fn voxels_march(
             (1.0 - (-env.abs_coeff() * step).exp()) / env.abs_coeff()
         };
 
-        // Step temporal photon to the next voxel
-        travel(&mut tmp_phot, &env, step + f64::EPSILON);
+        assert!(effective_step > 0.0, "Step size must be positive non-zero");
 
-        result.push((index, voxel_in_power, effective_step));
+        // Step temporal photon to the next voxel
+        travel(&mut tmp_phot, &env, step + bump_dist);
+
+        assert!(tmp_phot.ray() != phot.ray());
+
+        vol.data_mut()[index] += delta_fn(voxel_in_power, effective_step);
     }
-    result
 }
 
 impl Output {
-    pub fn volume_estimate(&mut self, env: &Local, phot: &Photon, dist: f64) {
+    pub fn volume_estimate(&mut self, env: &Local, phot: &Photon, dist: f64, bump_dist: f64) {
         assert!(env.abs_coeff() >= 0.0);
 
         // Energy Density.
-        for vol in self.get_volumes_for_param_mut(OutputParameter::Energy) {
-            voxels_march(&vol, &env, &phot, dist).into_iter().for_each(
-                |(index, voxel_in_power, effective_step)| {
-                    // Update the voxel value
-                    vol.data_mut()[index] += voxel_in_power * effective_step * env.ref_index()
-                        / SPEED_OF_LIGHT_IN_VACUUM;
-                },
-            );
-        }
+        let energy_fn = |voxel_in_power: f64, effective_step: f64| {
+            voxel_in_power * effective_step * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM
+        };
+        self.get_volumes_for_param_mut(OutputParameter::Energy)
+            .iter_mut()
+            .for_each(|vol| {
+                voxels_march(vol, &env, &phot, dist, bump_dist, &energy_fn);
+            });
 
         // Absorption.
-        for vol in self.get_volumes_for_param_mut(OutputParameter::Absorption) {
-            voxels_march(&vol, &env, &phot, dist).into_iter().for_each(
-                |(index, voxel_in_power, effective_step)| {
-                    // Update the voxel value
-                    vol.data_mut()[index] +=
-                        voxel_in_power * effective_step * env.abs_coeff() * env.ref_index()
-                            / SPEED_OF_LIGHT_IN_VACUUM;
-                },
-            );
-        }
+        let absorption_fn = |voxel_in_power: f64, effective_step: f64| {
+            voxel_in_power * effective_step * env.abs_coeff() * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM
+        };
+        self.get_volumes_for_param_mut(OutputParameter::Absorption)
+            .iter_mut()
+            .for_each(|vol| {
+                voxels_march(vol, env, phot, dist, bump_dist, &absorption_fn);
+            });
 
         // Shifts.
-        for vol in self.get_volumes_for_param_mut(OutputParameter::Shift) {
-            voxels_march(&vol, &env, &phot, dist).into_iter().for_each(
-                |(index, voxel_in_power, effective_step)| {
-                    // Update the voxel value
-                    vol.data_mut()[index] +=
-                        voxel_in_power * effective_step * env.shift_coeff() * env.ref_index()
-                            / SPEED_OF_LIGHT_IN_VACUUM;
-                },
-            );
-        }
+        let shift_fn = |voxel_in_power: f64, effective_step: f64| {
+            voxel_in_power * effective_step * env.shift_coeff() * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM
+        };
+        self.get_volumes_for_param_mut(OutputParameter::Shift)
+            .iter_mut()
+            .for_each(|vol| {
+                voxels_march(vol, env, phot, dist, bump_dist, &shift_fn);
+            });
     }
+
     /// This function polls each of the output volumes in the output object to
     /// find the closest voxel distance based on the position of the current
     /// photon packet. This will then return the shortest distance to the

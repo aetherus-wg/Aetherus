@@ -41,12 +41,12 @@ impl LightLinker {
 impl<'a> Link<'a, Material> for LightLinker {
     type Inst = Light;
 
-    #[inline]
     fn requires(&self) -> Vec<Name> {
         vec![self.mat.clone()]
     }
 
-    #[inline]
+    // TODO: Infer emitting material from the space position of the source,
+    // scanning for the objects and boundary in the scene
     fn link(self, mats: &'a Set<Material>) -> Result<Self::Inst, Error> {
         let mat = mats
             .get(&self.mat)
@@ -60,7 +60,6 @@ impl<'a> Link<'a, Material> for LightLinker {
 }
 
 impl Display for LightLinker {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.power, "power (J/s)");

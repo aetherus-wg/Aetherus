@@ -78,7 +78,7 @@ pub fn standard(
 
         let interaction_event = Event::new(scat_dist.unwrap(), surf_hit, boundary_hit, bump_dist);
 
-        data.volume_estimate(&env, &phot, interaction_event.dist());
+        data.volume_estimate(&env, &phot, interaction_event.dist(), bump_dist);
         let interaction_env = env.clone();
         let interaction_dist = interaction_event.dist();
 
@@ -115,8 +115,8 @@ pub fn standard(
 
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
                 // voxels did? => Based on "MONTE CARLO MODELING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
-                scat_dist = Some(scat_dist.unwrap() - hit.dist() - bump_dist);
-                assert!(scat_dist.unwrap() > 0.0);
+                scat_dist = Some(scat_dist.unwrap() - hit.dist());
+                assert!(scat_dist.unwrap() >= 0.0);
             }
             Event::Boundary(boundary_hit) => {
                 travel(&mut phot, &env, boundary_hit.dist());
