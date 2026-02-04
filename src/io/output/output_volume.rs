@@ -144,6 +144,10 @@ impl OutputVolume {
         let dist = voxel.dist(phot.ray())?;
         Some(dist)
     }
+
+    pub fn boundary_dist(&self, phot: &Photon) -> Option<f64> {
+        self.boundary.dist(phot.ray())
+    }
 }
 
 impl AddAssign<&Self> for OutputVolume {

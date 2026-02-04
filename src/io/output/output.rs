@@ -59,19 +59,24 @@ fn voxels_march<F>(
     let mut tmp_phot = phot.clone();
     let mut tmp_dist = dist;
     *tmp_phot.tof_mut() = None;
-    let mut iter_limit = 1_000;
 
-    // TODO:
     // 1. First move tmp_phot to the voxel boundary
-    // 2. Iterate throgh the voxels, until distance exhaust or exit boundary is hit
-
-    while tmp_dist > 0.0 {
-        iter_limit -= 1;
-        if iter_limit <= 0 {
-            println!("Iterations exhausted with photon {:?} and dist {:?}", tmp_phot.ray(), tmp_dist);
-            break;
+    if vol.contains(phot.ray().pos()) {
+        // Photon is already inside the output volume
+    } else {
+        if let Some(boundary_dist) = vol.boundary_dist(&tmp_phot) {
+            travel(&mut tmp_phot, &env, boundary_dist + bump_dist);
+        } else {
+            // This output volume has not been found in the path of this photon
+            return;
         }
+    }
 
+    // 2. Max travel to within the volume of interest
+    tmp_dist = tmp_dist.min(vol.boundary_dist(&tmp_phot).unwrap_or(f64::INFINITY));
+
+    // 3. Iterate throgh the voxels, until the distance is consumed
+    while tmp_dist > 0.0 {
         let (index, voxel) = match vol.gen_index_voxel(tmp_phot.ray().pos()) {
             Some(inner) => inner,
             None => break,
@@ -85,11 +90,11 @@ fn voxels_march<F>(
             println!("Investigate voxel at index {:?}", index);
         }
 
-        assert!(voxel_dist>= 0.0, "Cannot travel backwards");
-        assert!(tmp_dist>= 0.0, "Cannot travel backwards");
+        debug_assert!(voxel_dist>= 0.0, "Cannot travel backwards");
+        debug_assert!(tmp_dist>= 0.0, "Cannot travel backwards");
 
         let mut step = voxel_dist.min(tmp_dist);
-        assert!(step > 0.0, "Step size must be positive non-zero");
+        debug_assert!(step > 0.0, "Step size must be positive non-zero");
 
         step += bump_dist;
         tmp_dist -= step;
@@ -104,12 +109,12 @@ fn voxels_march<F>(
             (1.0 - (-env.abs_coeff() * step).exp()) / env.abs_coeff()
         };
 
-        assert!(effective_step > 0.0, "Step size must be positive non-zero");
+        debug_assert!(effective_step > 0.0, "Step size must be positive non-zero");
 
         // Step temporal photon to the next voxel
         travel(&mut tmp_phot, &env, step + bump_dist);
 
-        assert!(tmp_phot.ray() != phot.ray());
+        debug_assert!(tmp_phot.ray() != phot.ray());
 
         vol.data_mut()[index] += delta_fn(voxel_in_power, effective_step);
     }
