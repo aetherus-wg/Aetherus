@@ -234,7 +234,7 @@ mod tests {
         assert_eq!(orient.right(), &Dir3::new(0.0, -1.0, 0.0));
         assert_eq!(orient.up(), &Dir3::new(0.0, 0.0, 1.0));
 
-        // Now check that inverse directions return the inverse of their calculated counterparts. 
+        // Now check that inverse directions return the inverse of their calculated counterparts.
         assert_eq!(orient.back(), Dir3::new(-1.0, 0.0, 0.0));
         assert_eq!(orient.left(), Dir3::new(0.0, 1.0, 0.0));
         assert_eq!(orient.down(), Dir3::new(0.0, 0.0, -1.0));
@@ -263,8 +263,8 @@ mod tests {
         assert_eq!(orient.down_ray(), Ray::new(Point3::new(0., 0., 0.), Dir3::new(0., 0., -1.)));
     }
 
-    /// Check that we can correctly handle the contructor case where the ray is facing along the z-axis. 
-    /// In this case, we should take the up direction as being the x-axis. 
+    /// Check that we can correctly handle the contructor case where the ray is facing along the z-axis.
+    /// In this case, we should take the up direction as being the x-axis.
     #[test]
     fn ray_along_z_test() {
         let ray = Ray::new(Point3::new(0., 0., 0.), Dir3::new(0., 0., 1.));

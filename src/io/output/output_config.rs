@@ -1,31 +1,64 @@
-use std::{
-    collections::BTreeMap,
-    fmt
-};
+use std::{collections::BTreeMap, fmt};
 
-use arctk_attr::file;
 use crate::{
-    fmt_report,
     data::HistogramBuilder,
     err::Error,
+    fmt_report,
+    geom::{Orient, Ray},
     img::ImageBuilder,
-    io::output::{OutputPlaneBuilder, OutputVolumeBuilder, PhotonCollectorBuilder, Output},
-    ord::{Build, Name}
+    io::output::{Detector, DetectorType, Output, OutputPlaneBuilder, OutputVolumeBuilder, PhotonCollector},
+    math::{Dir3, Point3},
+    ord::{Build, Name},
+    tools::Binner
 };
+use arctk_attr::file;
+use serde::Deserialize;
 
 use super::{CcdBuilder, OutputRegistry};
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct OrientBuilder {
+    pos: Point3,
+    forward: Dir3,
+    up: Option<Dir3>,
+    right: Option<Dir3>,
+}
+
+impl Build for OrientBuilder {
+    type Inst = Orient;
+    fn build(self) -> Result<Self::Inst, Error> {
+        if self.up.is_none() && self.right.is_none() {
+        }
+        if let Some(up) = self.up {
+            let _right = if let Some(right) = self.right {
+                if up.dot(&right) == 0.0 {
+                    return Err(Error::Build("Up and right vectors must be orthogonal for Orient".to_string()));
+                }
+                right
+            } else {
+                let right = up.cross(&self.forward);
+                Dir3::new(right.x(), right.y(), right.z())
+            };
+            Ok(Orient::new_up(Ray::new(self.pos, self.forward), &up))
+        } else if let Some(right) = self.right {
+            let up = self.forward.cross(&right);
+            let up_dir = Dir3::new(up.x(), up.y(), up.z());
+            Ok(Orient::new_up(Ray::new(self.pos, self.forward), &up_dir))
+        } else {
+            return Err(Error::Build("At least one of \"up\" or \"right\" must be provided for Orient".to_string()));
+        }
+    }
+}
 
 #[file]
 #[derive(Clone)]
 pub struct OutputConfig {
     pub volumes: Option<BTreeMap<Name, OutputVolumeBuilder>>,
     pub planes: Option<BTreeMap<Name, OutputPlaneBuilder>>,
-    pub photon_collectors: Option<BTreeMap<Name, PhotonCollectorBuilder>>,
+    pub photon_collectors: Option<BTreeMap<Name, PhotonCollector>>,
     pub spectra: Option<BTreeMap<Name, HistogramBuilder>>,
     pub images: Option<BTreeMap<Name, ImageBuilder>>,
     pub ccds: Option<BTreeMap<Name, CcdBuilder>>,
-    pub photos: Option<BTreeMap<Name, ImageBuilder>>,
 }
 
 impl Build for OutputConfig {
@@ -43,64 +76,93 @@ impl Build for OutputConfig {
             None => vec![],
         };
 
+        // Detectors
+        // ---------
+
+        let mut det_id = 0;
+        let mut detectors: Vec<Detector> = vec![];
+
         let phot_cols = match &self.photon_collectors {
             Some(pcs) => {
-                pcs.values().map(|conf| {
-                    conf.build()
-                })
-                .collect()
-            },
-            None => vec![]
+                for (_key, _conf) in pcs.iter() {
+                    detectors.push(Detector {
+                        id: det_id,
+                        det_type: DetectorType::PhotonCollector,
+                    });
+                    det_id += 1;
+                }
+                pcs.values().map(|conf| conf.clone()).collect()
+            }
+            None => vec![],
         };
 
         let specs = match &self.spectra {
             Some(specs) => {
-                specs.values().map(|conf| {
-                    conf.build()
-                })
-                .collect()
+                for (_key, _conf) in specs.iter() {
+                    detectors.push(Detector {
+                        id: det_id,
+                        det_type: DetectorType::Spectrometer
+                    });
+                    det_id += 1;
+                }
+                specs.values()
+                    .map(|conf| conf.build())
+                    .collect()
             },
-            None => vec![]
+            None => vec![],
         };
 
-        let imgs = match &self.images {
-            Some(imgs) => {
-                imgs.values().map(|conf| {
-                    conf.build()
-                })
-                .collect()
-            },
-            None => vec![]
+        let images = match &self.images {
+            Some(images) => {
+                for (_key, conf) in images.iter() {
+                    detectors.push(Detector {
+                        id: det_id,
+                        det_type: DetectorType::Imager {
+                            width: conf.width(),
+                            height: conf.height(),
+                            orient: conf.orient().clone().build()?,
+                        }
+                    });
+                    det_id += 1;
+                }
+                images.values()
+                    .map(|conf| conf.build())
+                    .collect()
+            }
+            None => vec![],
         };
 
         let ccds = match &self.ccds {
             Some(ccds) => {
-                ccds.values().map(|conf| {
-                    conf.build()
-                })
-                .collect()
-            },
-            None => vec![]
-        };
-
-        let photos = match &self.photos {
-            Some(phots) => {
-                phots.values().map(|conf| {
-                    conf.build()
-                })
-                .collect()
-            },
-            None => vec![]
+                for (_key, conf) in ccds.iter() {
+                    let orient = conf.orient().clone().build()?;
+                    let binner = Binner::new(conf.range()?, conf.bins());
+                    detectors.push( Detector {
+                        id: det_id,
+                        det_type: DetectorType::Ccd {
+                            width: conf.width(),
+                            height: conf.height(),
+                            orient,
+                            binner,
+                        }
+                    });
+                    det_id += 1;
+                }
+                ccds.values()
+                    .map(|conf| conf.build())
+                    .collect()
+            }
+            None => vec![],
         };
 
         Ok(Output {
             vol,
             plane,
+            detectors,
             phot_cols,
             specs,
-            imgs,
+            images,
             ccds,
-            photos,
             reg,
         })
     }
@@ -145,13 +207,6 @@ impl OutputConfig {
     pub fn n_ccds(&self) -> usize {
         match &self.ccds {
             Some(ccd) => ccd.iter().count(),
-            None => 0,
-        }
-    }
-
-    pub fn n_photos(&self) -> usize {
-        match &self.photos {
-            Some(phot) => phot.iter().count(),
             None => 0,
         }
     }
@@ -219,16 +274,6 @@ impl fmt::Display for OutputConfig {
                 }
             },
             None => fmt_report!(fmt, "none", "ccds"),
-        }
-
-        match &self.photos {
-            Some(photos) => {
-                fmt_report!(fmt, "...", "photos");
-                for (key, photo) in photos {
-                    fmt_report!(fmt, photo, key);
-                }
-            },
-            None => fmt_report!(fmt, "none", "photos")
         }
 
         Ok(())
@@ -305,11 +350,6 @@ mod tests {
                     },
                 },
             },
-            photos: {
-                small_image: { res: [1024, 768] },
-                larger_image: { res: [1920, 1080] },
-                uhd_image: { res: [3840, 2160] },
-            }
         }
         "#;
 
@@ -323,7 +363,6 @@ mod tests {
         assert_eq!(conf.n_spectra(), 1);
         assert_eq!(conf.n_images(), 3);
         assert_eq!(conf.n_ccds(), 1);
-        assert_eq!(conf.n_photos(), 3);
     }
 
     #[test]
@@ -390,11 +429,6 @@ mod tests {
                     },
                 },
             },
-            photos: {
-                small_image: { res: [1024, 768] },
-                larger_image: { res: [1920, 1080] },
-                uhd_image: { res: [3840, 2160] },
-            }
         }
         "#;
         // Deserialise from the provided string above.

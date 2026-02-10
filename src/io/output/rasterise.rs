@@ -1,5 +1,4 @@
 use crate::{fmt_report, phys::{synphot::Transmission, Photon}};
-use rand::{Rng, RngExt};
 use super::OutputPlane;
 use std::fmt::{Display, Formatter};
 
@@ -15,20 +14,17 @@ pub enum Rasteriser {
 }
 
 impl Rasteriser {
-    pub fn rasterise<R: Rng>(&self, rng: &mut R, phot: &Photon, plane: &mut OutputPlane) {
+    pub fn rasterise(&self, phot: &Photon, plane: &mut OutputPlane) {
         match self {
             Self::Illuminance(ref trans) => {
                 let trans_prob = trans.sample(phot);
-                let should_transmit = rng.random::<f64>() < trans_prob;
 
-                if should_transmit {
-                    let xy = plane.project(phot.ray().pos());
-                    let area = plane.pix_area();
-                    match plane.at_mut(xy.0, xy.1) {
-                        Some(pix) => *pix += phot.weight() * phot.power() / area,
-                        None => panic!("Illuminance rasterisation outside raster"),
-                    }
-                };
+                let xy = plane.project(phot.ray().pos());
+                let area = plane.pix_area();
+                match plane.at_mut(xy.0, xy.1) {
+                    Some(pix) => *pix += phot.weight() * phot.power() * trans_prob / area,
+                    None => panic!("Illuminance rasterisation outside raster"),
+                }
             }
             Self::PhotonCount => {
                 let xy = plane.project(phot.ray().pos());

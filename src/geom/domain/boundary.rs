@@ -275,7 +275,7 @@ pub enum BoundaryDirection {
     East,
     /// The boundary at the minimum y-value.
     South,
-    /// The boundary at the minimum y-value.
+    /// The boundary at the minimum x-value.
     West,
 }
 

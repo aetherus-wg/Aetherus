@@ -72,7 +72,7 @@ pub fn photo(
                 travel(&mut phot, &env, dist);
 
                 // Capture.
-                for (frame, photo) in frames.iter().zip(data.photos.iter_mut()) {
+                for (frame, photo) in frames.iter().zip(data.images.iter_mut()) {
                     if let Some([x, y]) = frame.transform(phot.ray().pos()) {
                         if let Some(weight) = peel_off(input, phot.clone(), &env, *frame.pos()) {
                             photo.pixels_mut()[[x, y]] +=
