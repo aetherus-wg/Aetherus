@@ -36,12 +36,11 @@
   surfs: { Here: {
       cube_object: {
         attr: "cube_material",
-        mesh: [["./objs/DiffusionCube.obj"], null]
+        mesh: ["./objs/DiffusionCube.obj", null]
       },
       spad_sensor: {
         attr: "spad_sensor",
-        mesh: [
-          ["./objs/square.obj"],
+        mesh: ["./objs/square.obj",
           {
             trans: [0.050, 0.050, 0.050],
             scale: 0.050,
@@ -56,7 +55,7 @@
         Interface: ["cube_material", "cube_material"],
     },
     spad_sensor: {
-      PhotonCollector: ["spad_sensor", false]
+        Detector: "spad_sensor",
     },
   }},
 

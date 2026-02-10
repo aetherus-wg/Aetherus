@@ -1,12 +1,15 @@
 use crate::{err::Error, fmt_report, fs::Save, phys::Photon, tools::ProgressBar};
 use std::{fmt::Display, fs::File, io::Write, ops::AddAssign, path::Path};
+use serde::Deserialize;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug, Deserialize)]
 pub struct PhotonCollector {
     /// The vector of collected photons.
+    #[serde(default, skip_deserializing)]
     pub photons: Vec<Photon>,
     /// Whether the collector should kill the photon when it has been collected.
-    pub kill_photon: bool,
+    #[serde(default)]
+    pub kill_photons: bool,
 }
 
 impl PhotonCollector {
@@ -19,7 +22,7 @@ impl PhotonCollector {
     pub fn collect_photon(&mut self, phot: &mut Photon) {
         self.photons.push(phot.clone());
 
-        if self.kill_photon {
+        if self.kill_photons {
             phot.kill();
         }
     }
@@ -89,7 +92,7 @@ impl AddAssign<&Self> for PhotonCollector {
 impl Display for PhotonCollector {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(fmt, "PhotonCollector: ")?;
-        fmt_report!(fmt, self.kill_photon, "kill on collect");
+        fmt_report!(fmt, self.kill_photons, "kill on collect");
         Ok(())
     }
 }
@@ -102,6 +105,22 @@ mod tests {
         math::{Dir3, Point3},
         phys::Photon,
     };
+
+    #[test]
+    fn test_deserialise_default() {
+        let input = "{}";
+        let photcol: PhotonCollector= json5::from_str(&input).unwrap();
+        assert_eq!(photcol.kill_photons, false);
+        assert_eq!(photcol.nphoton(), 0);
+    }
+
+    #[test]
+    fn test_deserialise_kill_photons() {
+        let input = "{ kill_photons: true }";
+        let photcol: PhotonCollector= json5::from_str(&input).unwrap();
+        assert_eq!(photcol.kill_photons, true);
+        assert_eq!(photcol.nphoton(), 0);
+    }
 
     #[test]
     fn test_photon_collect() {
@@ -124,7 +143,7 @@ mod tests {
     fn test_clone_photon_collector() {
         let mut col = PhotonCollector::new();
         // This time we will get it to kill the photon when we collect it.
-        col.kill_photon = true;
+        col.kill_photons = true;
         let pos = Point3::new(0.0, 0.0, 0.0);
         let dir = Dir3::new(1.0, 0.0, 0.0);
         let mut test_phot = Photon::new(Ray::new(pos.clone(), dir.clone()), 5.0E-7, 1.0);

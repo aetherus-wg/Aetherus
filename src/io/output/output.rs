@@ -3,11 +3,14 @@ use crate::{
     err::Error,
     fmt_report,
     fs::Save,
-    geom::properties::Trace,
-    img::Image,
-    io::output::{OutputPlane, OutputRegistry, OutputVolume, PhotonCollector},
+    geom::{Orient, properties::Trace},
+    img::{Colour, Image},
+    io::output::{AxisAlignedPlane, OutputPlane, OutputRegistry, OutputVolume, PhotonCollector, Rasteriser},
+    math::Point3,
+    ord::cartesian::{X, Y},
     phys::{Local, Photon},
     sim::travel,
+    tools::Binner
 };
 use ndarray::Array3;
 use std::{
@@ -20,22 +23,52 @@ use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 
 use super::OutputParameter;
 
+#[derive(Default, Debug, Clone)]
+pub enum DetectorType {
+    #[default]
+    PhotonCollector,
+    Spectrometer,
+    Imager {
+        width:  f64,
+        height: f64,
+        orient: Orient,
+    },
+    Ccd {
+        width:  f64,
+        height: f64,
+        orient: Orient,
+        binner: Binner,
+    },
+    Rasterise {
+        rasteriser: Rasteriser,
+    },
+    Hyperspectral {
+        plane: AxisAlignedPlane,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub struct Detector {
+    pub id: usize,
+    pub det_type: DetectorType,
+}
+
 #[derive(Clone)]
 pub struct Output {
     /// Output volumes.
     pub vol: Vec<OutputVolume>,
     /// Output planes.
     pub plane: Vec<OutputPlane>,
+    /// Detectors.
+    pub detectors: Vec<Detector>,
     /// Photon Collectors.
     pub phot_cols: Vec<PhotonCollector>,
     /// Spectral.
     pub specs: Vec<Histogram>,
     /// Image data.
-    pub imgs: Vec<Image>,
+    pub images: Vec<Image>,
     /// CCD Data.
     pub ccds: Vec<Array3<f64>>,
-    /// Photo data.
-    pub photos: Vec<Image>,
 
     /// Contains the mapping between index and name for
     /// each of the output types.
@@ -52,7 +85,10 @@ fn voxels_march<F>(
 ) where
     F: Fn(f64, f64) -> f64,
 {
-    assert!(dist > 0.0, "Photon travel distance must be positive non-zero");
+    assert!(
+        dist > 0.0,
+        "Photon travel distance must be positive non-zero"
+    );
 
     let mut tmp_phot = phot.clone();
 
@@ -87,8 +123,8 @@ fn voxels_march<F>(
             println!("Investigate voxel at index {:?}", index);
         }
 
-        debug_assert!(voxel_dist>= 0.0, "Cannot travel backwards");
-        debug_assert!(tmp_dist>= 0.0, "Cannot travel backwards");
+        debug_assert!(voxel_dist >= 0.0, "Cannot travel backwards");
+        debug_assert!(tmp_dist >= 0.0, "Cannot travel backwards");
 
         let mut step = voxel_dist.min(tmp_dist);
         debug_assert!(step > 0.0, "Step size must be positive non-zero");
@@ -133,7 +169,8 @@ impl Output {
 
         // Absorption.
         let absorption_fn = |voxel_in_power: f64, effective_step: f64| {
-            voxel_in_power * effective_step * env.abs_coeff() * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM
+            voxel_in_power * effective_step * env.abs_coeff() * env.ref_index()
+                / SPEED_OF_LIGHT_IN_VACUUM
         };
         self.get_volumes_for_param_mut(OutputParameter::Absorption)
             .iter_mut()
@@ -143,13 +180,89 @@ impl Output {
 
         // Shifts.
         let shift_fn = |voxel_in_power: f64, effective_step: f64| {
-            voxel_in_power * effective_step * env.shift_coeff() * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM
+            voxel_in_power * effective_step * env.shift_coeff() * env.ref_index()
+                / SPEED_OF_LIGHT_IN_VACUUM
         };
         self.get_volumes_for_param_mut(OutputParameter::Shift)
             .iter_mut()
             .for_each(|vol| {
                 voxels_march(vol, env, phot, dist, bump_dist, &shift_fn);
             });
+    }
+
+    pub fn collect_photon(&mut self, phot: &mut Photon, id: usize) {
+        let inner_id = self.detectors[id].id;
+        match &self.detectors[id].det_type {
+            DetectorType::PhotonCollector => {
+                self.phot_cols[inner_id].collect_photon(phot);
+            }
+            DetectorType::Spectrometer => {
+                self.specs[inner_id].try_collect_weight(phot.wavelength(), phot.weight());
+                phot.kill();
+            }
+            DetectorType::Imager {width, height, orient} => {
+                let projection = orient.pos() - phot.ray().pos();
+                let x = ((orient.right().dot_vec(&projection) / width) + 1.0) / 2.0;
+                let y = ((orient.up().dot_vec(&projection) / height) + 1.0) / 2.0;
+
+                if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y) {
+                    let res = self.images[inner_id].pixels().raw_dim();
+                    self.images[inner_id].pixels_mut()
+                        [[(res[X] as f64 * x) as usize, (res[Y] as f64 * y) as usize]] +=
+                        wavelength_to_col(phot.wavelength())
+                            * (phot.weight() * phot.power()) as f32;
+                }
+
+                phot.kill();
+            }
+            DetectorType::Ccd {
+                width,
+                height,
+                orient,
+                binner,
+            } => {
+                let projection = orient.pos() - phot.ray().pos();
+                let x = ((orient.right().dot_vec(&projection) / width) + 1.0) / 2.0;
+                let y = ((orient.up().dot_vec(&projection) / height) + 1.0) / 2.0;
+
+                if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y) {
+                    let res = self.ccds[inner_id].raw_dim();
+                    if let Some(bin) = binner.try_bin(phot.wavelength()) {
+                        self.ccds[inner_id][[
+                            (res[X] as f64 * x) as usize,
+                            (res[Y] as f64 * y) as usize,
+                            bin,
+                        ]] += phot.weight() * phot.power();
+                    }
+                }
+
+                phot.kill();
+            }
+            DetectorType::Rasterise { rasteriser } => {
+                rasteriser.rasterise(phot, &mut self.plane[inner_id]);
+            }
+            DetectorType::Hyperspectral { plane } => {
+                assert_eq!(
+                    *self.vol[inner_id].param(),
+                    OutputParameter::Hyperspectral,
+                    "Hyperspectral output target not set to 'hyperspectral' param. "
+                );
+
+                // FIXME: Maybe use Array3 instead of Point3, to make obvious the difference to a point
+                // in space and a (x, y, lambda) vector
+                let projected_xy = plane.project_onto_plane(phot.ray().pos());
+                let hp_loc = Point3::new(projected_xy.0, projected_xy.1, phot.wavelength());
+                let projected_area = plane.projected_pix_area(&self.vol[inner_id]);
+                let spec_binsize = plane.hyperspectral_bin_size(&self.vol[inner_id]);
+                match self.vol[inner_id].gen_index(&hp_loc) {
+                    Some(index) => {
+                        self.vol[inner_id].data_mut()[index] +=
+                            phot.power() * phot.weight() / (projected_area * spec_binsize)
+                    }
+                    None => {}
+                }
+            }
+        }
     }
 
     /// This function polls each of the output volumes in the output object to
@@ -198,15 +311,11 @@ impl AddAssign for Output {
             *a += b;
         }
 
-        for (a, b) in self.imgs.iter_mut().zip(&rhs.imgs) {
+        for (a, b) in self.images.iter_mut().zip(&rhs.images) {
             *a += b;
         }
 
         for (a, b) in self.ccds.iter_mut().zip(&rhs.ccds) {
-            *a += b;
-        }
-
-        for (a, b) in self.photos.iter_mut().zip(&rhs.photos) {
             *a += b;
         }
     }
@@ -228,16 +337,12 @@ impl Save for Output {
             self.specs[*index].save(&out_dir.join(format!("spectrometer_{name}.csv")))?;
         }
 
-        for (name, index) in self.reg.img_reg.set().map().iter() {
-            self.imgs[*index].save(&out_dir.join(format!("img_{name}.png")))?;
+        for (name, index) in self.reg.images_reg.set().map().iter() {
+            self.images[*index].save(&out_dir.join(format!("img_{name}.png")))?;
         }
 
         for (name, index) in self.reg.ccd_reg.set().map().iter() {
             self.ccds[*index].save(&out_dir.join(format!("ccd_{name}.nc")))?;
-        }
-
-        for (n, photo) in self.photos.iter().enumerate() {
-            photo.save(&out_dir.join(format!("photo_{n:03}.png")))?;
         }
 
         for (name, index) in self.reg.phot_cols_reg.set().map().iter() {
@@ -257,15 +362,65 @@ impl Display for Output {
         fmt_report!(fmt, self.reg.plane_reg, "output plane register");
         fmt_report!(fmt, self.reg.phot_cols_reg, "photon collector register");
         fmt_report!(fmt, self.reg.spec_reg, "spectrometer register");
-        fmt_report!(fmt, self.reg.img_reg, "imager register");
+        fmt_report!(fmt, self.reg.images_reg, "imager register");
         fmt_report!(fmt, self.reg.ccd_reg, "ccd register");
 
         fmt_report!(fmt, self.specs.len(), "spectrometers");
-        fmt_report!(fmt, self.imgs.len(), "images");
+        fmt_report!(fmt, self.images.len(), "images");
         fmt_report!(fmt, self.ccds.len(), "ccds");
 
-        fmt_report!(fmt, self.photos.len(), "photos");
         fmt_report!(fmt, self.phot_cols.len(), "photon collectors");
         Ok(())
     }
+}
+
+// ------------------------------------
+// Utils
+// ------------------------------------
+
+/// Determine the colour for a given wavelength.
+fn wavelength_to_col(wavelength: f64) -> Colour {
+    debug_assert!(wavelength > 0.0);
+
+    let gamma = 0.8;
+
+    let (r, g, b) = if (380.0e-9..=440.0e-9).contains(&wavelength) {
+        let attenuation = 0.7_f64.mul_add((wavelength - 380.0e-9) / (440.0e-9 - 380.0e-9), 0.3);
+        (
+            ((-(wavelength - 440.0e-9) / (440.0e-9 - 380.0e-9)) * attenuation).powf(gamma),
+            0.0,
+            attenuation.powf(gamma),
+        )
+    } else if (440.0e-9..=490.0e-9).contains(&wavelength) {
+        (
+            0.0,
+            ((wavelength - 440.0e-9) / (490.0e-9 - 440.0e-9)).powf(gamma),
+            1.0,
+        )
+    } else if (490.0e-9..=510.0e-9).contains(&wavelength) {
+        (
+            0.0,
+            1.0,
+            (-(wavelength - 510.0e-9) / (510.0e-9 - 490.0e-9)).powf(gamma),
+        )
+    } else if (510.0e-9..=580.0e-9).contains(&wavelength) {
+        (
+            ((wavelength - 510.0e-9) / (580.0e-9 - 510.0e-9)).powf(gamma),
+            1.0,
+            0.0,
+        )
+    } else if (580.0e-9..=645.0e-9).contains(&wavelength) {
+        (
+            1.0,
+            (-(wavelength - 645.0e-9) / (645.0e-9 - 580.0e-9)).powf(gamma),
+            0.0,
+        )
+    } else if (645.0e-9..=750.0e-9).contains(&wavelength) {
+        let attenuation = 0.7_f64.mul_add((750.0e-9 - wavelength) / (750.0e-9 - 645.0e-9), 0.3);
+        (attenuation.powf(gamma), 0.0, 0.0)
+    } else {
+        (0.0, 0.0, 0.0)
+    };
+
+    Colour::new(r as f32, g as f32, b as f32, 1.0)
 }

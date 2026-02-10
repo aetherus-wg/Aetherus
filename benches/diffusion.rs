@@ -95,7 +95,7 @@ fn build_objects(params: &Parameters, base_output: &Output, mats: &Set<Material>
         .expect("Failed to link photon collectors to attributes.")
         .link(base_output.reg.ccd_reg.set())
         .expect("Failed to link ccds to attributes.")
-        .link(base_output.reg.img_reg.set())
+        .link(base_output.reg.images_reg.set())
         .expect("Failed to link imagers to attributes.")
         .link(base_output.reg.spec_reg.set())
         .expect("Failed to link spectrometers to attributes.")

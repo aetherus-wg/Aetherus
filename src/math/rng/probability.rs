@@ -338,6 +338,30 @@ impl Probability {
         }
     }
 
+    pub fn min(&self) -> f64 {
+        match *self {
+            Self::Point { c } => c,
+            Self::Points { ref cs } => cs.iter().fold(f64::INFINITY, |a, &b| a.min(b)),
+            Self::Uniform { min, .. } => min,
+            Self::Linear { .. } => todo!(),
+            Self::Gaussian { mu, sigma } => mu - 5.0 * sigma,
+            Self::ConstantSpline { .. } => todo!(),
+            Self::LinearSpline { ref xs, .. } => xs[0],
+        }
+    }
+
+    pub fn max(&self) -> f64 {
+        match *self {
+            Self::Point { c } => c,
+            Self::Points { ref cs } => cs.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b)),
+            Self::Uniform { max, .. } => max,
+            Self::Linear { .. } => todo!(),
+            Self::Gaussian { mu, sigma } => mu + 5.0 * sigma,
+            Self::ConstantSpline { .. } => todo!(),
+            Self::LinearSpline { ref xs, .. } => xs[xs.len() - 1],
+        }
+    }
+
     /// Outputs the PDF currently contained in this instance to a file at the provided path.
     ///
     /// **Note:** this is only implemented for `LinearSpline` variants.

@@ -34,7 +34,7 @@
   surfs: { Here: {
       cube_object: {
         attr: "cube_material",
-        mesh: [["./objs/DiffusionCube.obj"], null]
+        mesh: ["./objs/DiffusionCube.obj", null]
       },
   }},
 

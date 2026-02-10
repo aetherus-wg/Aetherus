@@ -17,8 +17,8 @@ use std::path::{Path, PathBuf};
 /// Loadable triangle mesh conglomerate structure.
 #[file]
 pub struct MeshLoader(
-    /// List of object files.
-    Vec<PathBuf>,
+    /// Wavefront object file.
+    PathBuf,
     /// Optional transformation.
     Option<Trans3Builder>,
 );
@@ -30,13 +30,11 @@ impl Load for MeshLoader {
         let trans = self.1.map(Build::build).transpose()?;
 
         let mut tris = Vec::new();
-        for name in self.0 {
-            let mut obj = Self::Inst::new_from_file(&in_dir.join(name))?;
-            if let Some(t) = trans {
-                obj.transform(&t);
-            }
-            tris.extend(obj.into_tris());
+        let mut obj = Self::Inst::new_from_file(&in_dir.join(self.0))?;
+        if let Some(t) = trans {
+            obj.transform(&t);
         }
+        tris.extend(obj.into_tris());
 
         Ok(Self::Inst::new(tris))
     }

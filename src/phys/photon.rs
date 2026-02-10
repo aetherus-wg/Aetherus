@@ -13,7 +13,7 @@ use mpi::{
 use memoffset::offset_of;
 
 /// Photon.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Photon {
     /// Ray of travel.
     ray: Ray,
