@@ -1,6 +1,6 @@
 use std::{env, path::Path, process::Command, sync::{Arc, Mutex}};
 use aetherus::{
-    err::Error, fs::{File, Load}, geom::{Surface, Tree, object::Object}, io::output::Output, ord::{Build, Link, Name, Set}, phys::{Light, Material}, sim::{
+    err::Error, fs::{File, Load}, geom::{Tree, object::Object}, io::output::Output, ord::{Build, Link, Name, Set}, phys::{Light, Material}, sim::{
         Attribute, Parameters, ParametersBuilderLoader
     }
 };

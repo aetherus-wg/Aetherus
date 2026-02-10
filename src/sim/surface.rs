@@ -92,7 +92,7 @@ pub fn surface<R: Rng>(
             }
             EventType::Detection
         }
-        Attribute::AttributeChain(ref attrs) => {
+        Attribute::AttributeChain(ref _attrs) => {
             // FIXME: For some reason this is not working
             //for attr in attrs {
             //    let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());

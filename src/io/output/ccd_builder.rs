@@ -55,7 +55,7 @@ impl CcdBuilder {
         if let Some(range) = self.range {
             Ok(Range::new(range[0], range[1]))
         } else {
-            Err(Error::Build("Range must be provided for Ccd if not linked to any light sources.".to_string()))
+            Err(Error::Linking("Range must be provided for Ccd if not linked to any light sources.".to_string()))
         }
     }
 
