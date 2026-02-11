@@ -7,7 +7,7 @@ use crate::{
     tools::linear_to_three_dim,
 };
 use ndarray::Array3;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::{
     f64::consts::PI,
     fmt::{Display, Error, Formatter},
@@ -118,16 +118,16 @@ impl Emitter {
                     let sin_theta = Probability::new_gaussian(0.0, (div_half_angle as Real).sin()).sample(rng);
                     (sin_theta as Real).abs().asin()
                 };
-                let phi = rng.gen_range(0.0..2.0 * PI);
+                let phi = rng.random_range(0.0..2.0 * PI);
                 let mut beam_ray = ray.clone();
                 beam_ray.rotate(theta, phi);
                 beam_ray
             }
             Self::Points(ref ps) => {
-                Ray::new(ps[rng.gen_range(0..ps.len())], rand_isotropic_dir(rng))
+                Ray::new(ps[rng.random_range(0..ps.len())], rand_isotropic_dir(rng))
             }
             Self::WeightedPoints(ref ps, ref ws) => {
-                let r: f64 = rng.gen();
+                let r: f64 = rng.random();
                 for (p, w) in ps.iter().zip(ws) {
                     if r <= *w {
                         return Ray::new(*p, rand_isotropic_dir(rng));
@@ -137,7 +137,7 @@ impl Emitter {
             }
             Self::Surface(ref mesh) => mesh.cast(rng),
             Self::Volume(ref map, ref grid) => {
-                let r = rng.gen_range(0.0..map.sum());
+                let r = rng.random_range(0.0..map.sum());
                 let mut total = 0.0;
                 for n in 0..map.len() {
                     let index = linear_to_three_dim(n, grid.res());
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn test_beam_emitter() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let emit_ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
         let emitter = Emitter::new_beam(emit_ray.clone());
 
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_gaussian_emitter() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let emit_ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
         let emitter = Emitter::new_gaussian(emit_ray.clone(), 0.1);
 
@@ -232,7 +232,7 @@ mod tests {
         let mut ave_x = Average::new();
         let mut ave_y = Average::new();
         let mut ave_z = Average::new();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100_000 {
             let emitted_ray = emitter.emit(&mut rng);
             assert!(points.contains(emitted_ray.pos()));
@@ -260,7 +260,7 @@ mod tests {
         let mut ave_dir_x = Average::new();
         let mut ave_dir_y = Average::new();
         let mut ave_dir_z = Average::new();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..100_000 {
             let emitted_ray = emitter.emit(&mut rng);
 
@@ -286,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_surface_emitter() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let norm = Dir3::new(0.0, 0.0, 1.0);
 
         // Make a single upward facing triangle to emit from.

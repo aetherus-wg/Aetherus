@@ -4,7 +4,7 @@ use crate::{
     geom::Ray,
     math::{Dir3, Point3},
 };
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::f64::consts::PI;
 
 /// Emit trait implementation.
@@ -21,8 +21,8 @@ pub trait Emit {
 impl Emit for Point3 {
     #[inline]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
-        let theta = rng.gen_range(0.0..(2.0 * PI));
-        let z = rng.gen_range(-1.0..1.0);
+        let theta = rng.random_range(0.0..(2.0 * PI));
+        let z = rng.random_range(-1.0..1.0);
 
         Ray::new(
             *self,
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn point_emission_test() {
         let p = Point3::new(0.0, 0.0, 0.0);
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let mut x_ave = Average::new();
         let mut y_ave = Average::new();

@@ -18,7 +18,7 @@ use crate::{
     math::{Dir3, Point3, Trans3, Vec3},
     ord::{ALPHA, BETA, GAMMA},
 };
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 /// Triangle.
 #[derive(Clone)]
@@ -263,8 +263,8 @@ impl Transformable for Triangle {
 
 impl Emit for Triangle {
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
-        let mut u = rng.gen::<f64>();
-        let mut v = rng.gen::<f64>();
+        let mut u = rng.random::<f64>();
+        let mut v = rng.random::<f64>();
 
         if (u + v) > 1.0 {
             u = 1.0 - u;

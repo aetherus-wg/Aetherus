@@ -1,5 +1,5 @@
 use crate::{fmt_report, phys::{synphot::Transmission, Photon}};
-use rand::Rng;
+use rand::{Rng, RngExt};
 use super::OutputPlane;
 use std::fmt::{Display, Formatter};
 
@@ -19,7 +19,7 @@ impl Rasteriser {
         match self {
             Self::Illuminance(ref trans) => {
                 let trans_prob = trans.sample(phot);
-                let should_transmit = rng.gen_range(0.0..1.0) < trans_prob;
+                let should_transmit = rng.random::<f64>() < trans_prob;
 
                 if should_transmit {
                     let xy = plane.project(phot.ray().pos());

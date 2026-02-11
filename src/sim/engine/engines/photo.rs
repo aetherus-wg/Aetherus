@@ -9,7 +9,7 @@ use crate::{
         Input,
     },
 };
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::ThreadRng, RngExt};
 
 /// Photograph the life of a single photon.
 #[allow(clippy::expect_used)]
@@ -51,7 +51,7 @@ pub fn photo(
 
         // Roulette.
         if phot.weight() < min_weight {
-            let r = rng.gen::<f64>();
+            let r = rng.random::<f64>();
             if r > roulette_survive_prob {
                 break;
             }
@@ -60,7 +60,7 @@ pub fn photo(
 
         // Interaction distances.
         let voxel_dist = data.voxel_dist(&phot);
-        let scat_dist = -(rng.gen::<f64>()).ln() / env.inter_coeff();
+        let scat_dist = -(rng.random::<f64>()).ln() / env.inter_coeff();
         let surf_hit = input
             .tree
             .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist));

@@ -8,7 +8,7 @@ use crate::{
     math::Trans3,
     ord::{ALPHA, cartesian::X},
 };
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::{
     fmt::{Display, Formatter},
     path::Path
@@ -110,7 +110,7 @@ impl Transformable for Mesh {
 
 impl Emit for Mesh {
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
-        let r = rng.gen_range(0.0..self.area);
+        let r = rng.random_range(0.0..self.area);
         let mut total_area = 0.0;
         for tri in &self.tris {
             total_area += tri.tri().squared_area().sqrt();

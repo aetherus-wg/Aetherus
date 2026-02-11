@@ -3,12 +3,12 @@
 use crate::{
     geom::Hit, img::Colour, io::output::{Output, OutputParameter}, math::Point3, ord::cartesian::{X, Y}, phys::{Crossing, Local, Photon}, sim::Attribute
 };
-use rand::{rngs::ThreadRng, Rng};
+use rand::{Rng, RngExt};
 
 /// Handle a surface collision.
 #[allow(clippy::expect_used)]
-pub fn surface(
-    rng: &mut ThreadRng,
+pub fn surface<R: Rng>(
+    rng: &mut R,
     hit: &Hit<Attribute>,
     phot: &mut Photon,
     env: &mut Local,
@@ -40,7 +40,7 @@ pub fn surface(
             );
 
             // Determine if a reflection or transmission occurs.
-            let r = rng.gen::<f64>();
+            let r = rng.random::<f64>();
             if r <= crossing.ref_prob() {
                 // Reflect.
                 phot.ray_mut().update_dir(*crossing.ref_dir());

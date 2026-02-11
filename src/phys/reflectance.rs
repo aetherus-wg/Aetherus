@@ -5,7 +5,7 @@ use crate::{
     phys::{Spectrum, Photon},
     sim::Attribute,
 };
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::{f64::consts::PI, fmt::Display};
 
 /// A small utility function that checks that the provided spectrum is valid as a
@@ -139,12 +139,12 @@ impl Reflectance {
                 match refspec.value_at(incident_photon.wavelength()) {
                     None => None,
                     Some(ref_prob) => {
-                        let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
+                        let should_reflect = rng.random_range(0.0..1.0) < ref_prob;
 
                         if should_reflect {
-                            let theta = rng.gen_range(0.0..2.0 * PI);
+                            let theta = rng.random_range(0.0..2.0 * PI);
                             // We sample the phi angle using PDF = sin(theta)
-                            let phi = (rng.gen_range(0.0..1.0) as Real).asin();
+                            let phi = (rng.random_range(0.0..1.0) as Real).asin();
 
                             let mut reflected_ray = Ray::new(
                                 incident_photon.ray().pos().clone(),
@@ -163,7 +163,7 @@ impl Reflectance {
                 match refspec.value_at(incident_photon.wavelength()) {
                     None => None,
                     Some(ref_prob) => {
-                        let should_reflect = rng.gen_range(0.0..1.0) < ref_prob;
+                        let should_reflect = rng.random_range(0.0..1.0) < ref_prob;
 
                         if should_reflect {
                             // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
@@ -187,7 +187,7 @@ impl Reflectance {
             } => {
                 // This random draw determines, based on the specularity, whether the reflection for the
                 // current photon should be diffuse (Lambertian) or specular.
-                let is_specular = rng.gen_range(0.0..1.0) <= *specularity;
+                let is_specular = rng.random_range(0.0..1.0) <= *specularity;
 
                 // Then we just delegate handling of the reflection to the respective model.
                 if is_specular {
@@ -239,8 +239,8 @@ mod tests {
         phys::{Photon, Spectrum},
         sim::Attribute,
     };
+    use rand::RngExt;
     use assert_approx_eq::assert_approx_eq;
-    use rand::Rng;
     use statrs::statistics::Statistics;
     use std::f64::consts::PI;
 
@@ -248,7 +248,7 @@ mod tests {
     fn test_lambertian_reflectance_perfect_reflector() {
         // Create an incoming ray.
         let incoming_ray = Ray::new(Point3::new(1., 1., 0.0), Dir3::new(-1.0, -1.0, 0.0));
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
@@ -324,7 +324,7 @@ mod tests {
     fn test_lambertian_reflectance_semi_reflective() {
         // Create an incoming ray.
         let incoming_ray = Ray::new(Point3::new(1., 1., 0.0), Dir3::new(-1.0, -1.0, 0.0));
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
@@ -407,7 +407,7 @@ mod tests {
     fn test_specular_reflectance_perfect_reflector() {
         // Create an incoming ray.
         let incoming_ray = Ray::new(Point3::new(1., 0., 1.0), Dir3::new(1.0, 0.0, -1.0));
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
@@ -432,7 +432,7 @@ mod tests {
     fn test_specular_reflectance_semi_reflective() {
         // Create an incoming ray.
         let incoming_ray = Ray::new(Point3::new(1., 0., 1.0), Dir3::new(1.0, 0.0, -1.0));
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
@@ -470,7 +470,7 @@ mod tests {
     fn test_composite_reflectance() {
         // Create an incoming ray.
         let incoming_ray = Ray::new(Point3::new(0., 1., 1.0), Dir3::new(0.0, 1.0, -1.0));
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Simulate a hit on a surface.
         let norm = Dir3::new(0.0, 0.0, 1.0);
@@ -571,7 +571,7 @@ mod tests {
     fn test_reflectance_spectrum() {
         // Create an incoming ray.
         let incoming_ray = Ray::new(Point3::new(1., 0., 1.0), Dir3::new(1.0, 0.0, -1.0));
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let lower = 500.0;
         let upper = 550.0;
 
@@ -583,7 +583,7 @@ mod tests {
 
         for _ in 0..100_000 {
             let incoming_photon =
-                Photon::new(incoming_ray.clone(), rng.gen_range(300.0..900.0), 1.0);
+                Photon::new(incoming_ray.clone(), rng.random_range(300.0..900.0), 1.0);
             println!("{}", incoming_photon.wavelength());
             match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(_) => assert!(

@@ -26,7 +26,7 @@ fn main() {
     if rank == 0 {
 
         // Create light source
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
         let emitter = Emitter::new_beam(ray.clone());
         let mat = get_air_material();

@@ -1,5 +1,5 @@
 use assert_approx_eq::assert_approx_eq;
-use rand::Rng;
+use rand::RngExt;
 use std::f64::consts::FRAC_PI_4;
 use aetherus as aether;
 
@@ -20,12 +20,12 @@ fn pi_estimator() {
     // The maximum difference allowable from pi for the test to pass.
     let max_delta = 0.001;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mut a = aether::data::Average::new();
     for _ in 0..samples {
-        let x: f64 = rng.gen();
-        let y: f64 = rng.gen();
+        let x: f64 = rng.random();
+        let y: f64 = rng.random();
 
         if (x.powi(2) + y.powi(2)) <= 1.0 {
             a += 1.0;

@@ -65,7 +65,7 @@ TILT=INCLUDE
                 assert_eq!(cdf.planes().iter().count(), 8);
 
                 // Now test the sampling of the CDF
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 //let mut test_file = std::fs::File::create("samples.dat").unwrap();
                 for _ in 0..10_000 {
                     let (_azim, _pol) = cdf.sample(&mut rng);

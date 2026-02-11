@@ -8,7 +8,7 @@ use crate::{
     tools::Range,
 };
 use arctk_attr::file;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::{
     fmt::{Display, Formatter},
 };
@@ -216,9 +216,9 @@ impl Cube {
     pub fn rand_pos<R: Rng>(&self, rng: &mut R) -> Point3 {
         let widths = self.widths();
 
-        let x = self.mins.x() + rng.gen_range(0.0..widths.x());
-        let y = self.mins.y() + rng.gen_range(0.0..widths.y());
-        let z = self.mins.z() + rng.gen_range(0.0..widths.z());
+        let x = self.mins.x() + rng.random_range(0.0..widths.x());
+        let y = self.mins.y() + rng.random_range(0.0..widths.y());
+        let z = self.mins.z() + rng.random_range(0.0..widths.z());
 
         Point3::new(x, y, z)
     }
@@ -419,7 +419,7 @@ mod tests {
     fn test_random_pos() {
         let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut count = 0;
         let mut sum = 0.0;
         let mut sum_sq = 0.0;

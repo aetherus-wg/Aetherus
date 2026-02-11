@@ -6,7 +6,7 @@ use crate::{
     tools::ProgressBar,
     io::output::Output,
 };
-use rand::thread_rng;
+use rand::rng;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
@@ -51,7 +51,7 @@ fn thread<'a>(
     mut output: Output,
     pb: &Arc<Mutex<ProgressBar>>,
 ) -> Output {
-    let mut rng = thread_rng();
+    let mut rng = rng();
 
     let phot_energy = input.light.power() / input.sett.num_phot() as f64;
 

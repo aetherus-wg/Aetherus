@@ -5,14 +5,14 @@ use crate::{
     phys::Photon,
     sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
 };
-use rand::{rngs::ThreadRng, Rng};
+use rand::{Rng, RngExt};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
-pub fn standard(
+pub fn standard<R: Rng>(
     input: &Input,
     mut data: &mut Output,
-    mut rng: &mut ThreadRng,
+    mut rng: &mut R,
     mut phot: Photon,
 ) {
     // Add to the emission variables in which the photon is present.
@@ -50,7 +50,7 @@ pub fn standard(
 
         // Roulette.
         if phot.weight() < min_weight {
-            let r = rng.gen::<f64>();
+            let r = rng.random::<f64>();
             if r > roulette_survive_prob {
                 break;
             }
@@ -60,7 +60,7 @@ pub fn standard(
         // Interaction distances.
         let voxel_dist = data.voxel_dist(&phot);
         if scat_dist.is_none() {
-            scat_dist = Some(-(rng.gen::<f64>()).ln() / env.inter_coeff());
+            scat_dist = Some(-(rng.random::<f64>()).ln() / env.inter_coeff());
         }
         let surf_hit = input
             .tree

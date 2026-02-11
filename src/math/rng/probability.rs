@@ -5,7 +5,7 @@ use crate::{
     math::{distribution, Formula},
 };
 use ndarray::Array1;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::{
     fmt::{Display, Formatter},
     fs::File,
@@ -216,15 +216,15 @@ impl Probability {
     pub fn sample<R: Rng>(&self, rng: &mut R) -> f64 {
         match *self {
             Self::Point { ref c } => *c,
-            Self::Points { ref cs } => cs[rng.gen_range(0..cs.len())],
-            Self::Uniform { ref min, ref max } => rng.gen_range(*min..*max),
+            Self::Points { ref cs } => cs[rng.random_range(0..cs.len())],
+            Self::Uniform { ref min, ref max } => rng.random_range(*min..*max),
             Self::Linear {
                 grad,
                 intercept,
                 offset,
                 area,
             } => {
-                let r = rng.gen_range(0.0..1.0_f64);
+                let r = rng.random_range(0.0..1.0_f64);
                 ((2.0 * grad)
                     .mul_add(r.mul_add(area, offset), intercept * intercept)
                     .sqrt()
@@ -232,7 +232,7 @@ impl Probability {
                     / grad
             }
             Self::Gaussian { ref mu, ref sigma } => distribution::sample_gaussian(rng, *mu, *sigma),
-            Self::ConstantSpline { ref cdf } => cdf.y(rng.gen()),
+            Self::ConstantSpline { ref cdf } => cdf.y(rng.random()),
             Self::LinearSpline {
                 ref grads,
                 ref intercepts,
@@ -241,7 +241,7 @@ impl Probability {
                 ref cdf,
                 xs: _,
             } => {
-                let a = rng.gen_range(0.0..1.0);
+                let a = rng.random_range(0.0..1.0);
                 for (index, c) in cdf.iter().enumerate() {
                     if a < *c {
                         let grad = grads[index];
@@ -249,7 +249,7 @@ impl Probability {
                         let offset = offsets[index];
                         let area = areas[index];
 
-                        let r = rng.gen_range(0.0..1.0_f64);
+                        let r = rng.random_range(0.0..1.0_f64);
                         // Check to see if we have converged toward 0, then compensate by assuming zero gradient across the bin.
                         if grad.abs() > 1E-9 {
                             return ((2.0 * grad)

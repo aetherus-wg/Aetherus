@@ -7,7 +7,7 @@ use crate::{
     sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
 };
 use ndarray::Array3;
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::ThreadRng, RngExt};
 
 /// Lifetime of a single photon capable of participating in fluorescence.
 #[allow(clippy::expect_used)]
@@ -52,7 +52,7 @@ pub fn fluorescence(
 
         // Roulette.
         if phot.weight() < min_weight {
-            let r = rng.gen::<f64>();
+            let r = rng.random::<f64>();
             if r > roulette_survive_prob {
                 break;
             }
@@ -72,7 +72,7 @@ pub fn fluorescence(
 
         // Interaction distances.
         let voxel_dist = data.voxel_dist(&phot);
-        let scat_dist = -(rng.gen::<f64>()).ln() / env.inter_coeff();
+        let scat_dist = -(rng.random::<f64>()).ln() / env.inter_coeff();
         let surf_hit = input
             .tree
             .scan(phot.ray().clone(), bump_dist, voxel_dist.min(scat_dist));

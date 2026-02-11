@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_beam_light() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Dir3::new(1.0, 0.0, 0.0));
         let emitter = Emitter::new_beam(ray.clone());
         let mat = get_air_material();
@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn test_points_light() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let points = vec![Point3::new(1.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 0.0, 1.0)];
         let emitter = Emitter::new_points(points.clone());
         let mat = get_air_material();
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_weighted_points() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let points = vec![Point3::new(1.0, 0.0, 0.0), Point3::new(0.0, 1.0, 0.0), Point3::new(0.0, 0.0, 1.0)];
         let weights = [1.0, 2.0, 3.0];
         let emitter = Emitter::new_weighted_points(points.clone(), &weights);
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_surface_light() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Make a single upward facing triangle to emit from.
         let norm = Dir3::new(0.0, 0.0, 1.0);

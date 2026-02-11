@@ -6,7 +6,7 @@ use crate::{
     sim::Attribute,
     ord::cartesian::{X, Y, Z},
 };
-use rand::rngs::ThreadRng;
+use rand::Rng;
 use std::fmt::{Display, Formatter};
 
 /// Struct that represents a boundary.
@@ -80,7 +80,7 @@ impl Boundary {
         }
     }
 
-    pub fn apply<'a>(&self, rng: &mut ThreadRng, hit: &'a BoundaryHit<'a>, phot: &mut Photon) {
+    pub fn apply<'a, R: Rng>(&self, rng: &mut R, hit: &'a BoundaryHit<'a>, phot: &mut Photon) {
         match hit.condition() {
             BoundaryCondition::Kill => {
                 // Handle Kill variant
@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn test_periodic_boundary() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Setup a basic boundary to the simulation.
         // Each side is a different length, and is periodic.

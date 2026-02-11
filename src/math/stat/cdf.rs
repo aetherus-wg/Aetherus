@@ -1,6 +1,6 @@
 //! Cumulative Density Function Implementation.
 use crate::{core::Real, err::Error};
-use rand::Rng;
+use rand::{Rng, RngExt};
 use serde::{Deserialize, Serialize};
 use splines::{Interpolation, Key, Spline};
 use std::{default::Default, fs::File, io::Write};
@@ -72,7 +72,7 @@ impl CumulativeDistributionFunction {
 
     /// Takes a random sample from the CDF.
     pub fn sample<R: Rng>(&self, rng: &mut R) -> Real {
-        let rand_sample = rng.gen_range(0.0..1.0);
+        let rand_sample = rng.random_range(0.0..1.0);
 
         match self {
             Self::Bins(ref bins) => {
@@ -157,7 +157,7 @@ mod tests {
         let cdf = CumulativeDistributionFunction::from_pdf(probs, vals);
 
         let ntest = 10000;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut ave = Average::new();
         for _ in 0..ntest {
             ave += cdf.sample(&mut rng);

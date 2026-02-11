@@ -100,12 +100,12 @@ impl SphericalCdf {
                 .iter()
                 .position(|pl| pl.azimuthal_angle_in_plane(azim_draw));
             // Some searches come back with a `None`. To avoid this crashing the code, let's instead perform an iteration
-            if iplane.is_none() { 
+            if iplane.is_none() {
                 println!("Unable to find plane for azimuthal angle: {} rad. Trying again. ", azim_draw);
-                continue; 
+                continue;
             }
 
-            // Now that we know we have a plane, let's draw the polare coordinate from it. 
+            // Now that we know we have a plane, let's draw the polare coordinate from it.
             polar_draw = self.planes[iplane.unwrap()].sample(rng);
             break;
         }
@@ -269,7 +269,7 @@ mod tests {
         assert_eq!(cdf.planes().iter().count(), 36);
 
         // Now sample the distribution.
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut az_ave = Average::new();
         let mut pol_ave = Average::new();
 
@@ -321,7 +321,7 @@ mod tests {
         let cdf: SphericalCdf = photweb.into();
 
         // Now sample the distribution.
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut az_ave = Average::new();
 
         for _ in 0..10_000 {
@@ -374,7 +374,7 @@ mod tests {
         let cdf: SphericalCdf = photweb.into();
 
         // Now sample the distribution.
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut az_ave = Average::new();
         let mut pol_ave = Average::new();
 
@@ -453,7 +453,7 @@ mod tests {
         }
 
         // Now sample the distribution.
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut az_ave = Average::new();
         let mut pol_ave = Average::new();
 
@@ -522,7 +522,7 @@ mod tests {
     }
 
     /// In this test case, the number of angles is above TARGET_NANGLES, so the
-    /// code path where we don't perform an interpolation is tested. 
+    /// code path where we don't perform an interpolation is tested.
     #[test]
     fn spherical_cdf_well_sampled_case() {
         // For this test case, we only have a single, axially symmetric plane.

@@ -490,7 +490,7 @@ mod tests {
     fn test_deserialise_attribute_chain() {
         let desr_str = r#"
         { AttributeChain: [
-            { PhotonCollector: ['pc', true]},
+            { PhotonCollector: ['pc', false] },
             { Reflector: [null, {Tophat: [550e-9, 575e-9, 0.5]}, null]},
         ]}
         "#;

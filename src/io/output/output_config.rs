@@ -267,12 +267,50 @@ mod tests {
                 spec: {min: 400E-9, max: 800E-9, bins: 500},
             },
             images: {
-                small_image: { res: [1024, 768] },
-                larger_image: { res: [1920, 1080] },
-                uhd_image: { res: [3840, 2160] },
+                small_image: {
+                    res: [1024, 768],
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
+                larger_image: {
+                    res: [1920, 1080],
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
+                uhd_image: {
+                    res: [3840, 2160],
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
             },
             ccds: {
-                default_ccd: { res: [1024, 768], bins: 10},
+                default_ccd: {
+                    res: [1024, 768],
+                    range: [400E-9, 800E-9],
+                    bins: 10,
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
             },
             photos: {
                 small_image: { res: [1024, 768] },
@@ -314,12 +352,50 @@ mod tests {
                 spec: {min: 400E-9, max: 800E-9, bins: 500},
             },
             images: {
-                small_image: { res: [1024, 768] },
-                larger_image: { res: [1920, 1080] },
-                uhd_image: { res: [3840, 2160] },
+                small_image: {
+                    res: [1024, 768],
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
+                larger_image: {
+                    res: [1920, 1080],
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
+                uhd_image: {
+                    res: [3840, 2160],
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
             },
             ccds: {
-                default_ccd: { res: [1024, 768], bins: 10},
+                default_ccd: {
+                    res: [1024, 768],
+                    range: [400E-9, 800E-9],
+                    bins: 10,
+                    width: 0.05,
+                    height: 0.05,
+                    orient: {
+                        pos: [0.0, 0.0, 0.0],
+                        forward: [0.0, 0.0, 1.0],
+                        up: [0.0, 1.0, 0.0],
+                    },
+                },
             },
             photos: {
                 small_image: { res: [1024, 768] },
