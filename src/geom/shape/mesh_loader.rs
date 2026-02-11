@@ -26,7 +26,6 @@ pub struct MeshLoader(
 impl Load for MeshLoader {
     type Inst = Mesh;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         let trans = self.1.map(Build::build).transpose()?;
 

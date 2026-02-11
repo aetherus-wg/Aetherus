@@ -10,7 +10,6 @@ pub struct SilentProgressBar {
 
 impl SilentProgressBar {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(total: usize) -> Self {
         debug_assert!(total > 0);
@@ -22,7 +21,6 @@ impl SilentProgressBar {
     /// Return the requested block if available.
     /// If there is not enough, return the remaining block.
     /// If there are none at all, return None.
-    #[inline]
     pub fn block(&mut self, size: usize) -> Option<(usize, usize)> {
         debug_assert!(size > 0);
 
@@ -42,7 +40,6 @@ impl SilentProgressBar {
     }
 
     /// Check if the progress bar is complete.
-    #[inline]
     #[must_use]
     pub const fn is_done(&self) -> bool {
         self.count >= self.total

@@ -31,7 +31,6 @@ pub enum Attribute {
 }
 
 impl Display for Attribute {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         match self {
             Self::Interface(in_mat, out_mat) => {

@@ -21,7 +21,6 @@ impl TreeSettings {
     clone!(padding: f64);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(tar_tris: usize, max_depth: u32, padding: f64) -> Self {
         debug_assert!(tar_tris > 0);
@@ -37,7 +36,6 @@ impl TreeSettings {
 }
 
 impl Display for TreeSettings {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.tar_tris, "target triangles");

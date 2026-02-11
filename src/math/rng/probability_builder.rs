@@ -28,7 +28,6 @@ pub enum ProbabilityBuilder {
 impl Build for ProbabilityBuilder {
     type Inst = Probability;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Point(p) => Self::Inst::new_point(p),
@@ -47,7 +46,6 @@ impl Build for ProbabilityBuilder {
 }
 
 impl Display for ProbabilityBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         let kind = match *self {
             Self::Point { .. } => "Constant",

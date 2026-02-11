@@ -24,7 +24,6 @@ pub struct LightLinkerBuilder {
 
 impl LightLinkerBuilder {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub const fn new(power: f64, emit: Emitter, spec: ProbabilityBuilder, mat: Name) -> Self {
         Self {
@@ -39,7 +38,6 @@ impl LightLinkerBuilder {
 impl Build for LightLinkerBuilder {
     type Inst = LightLinker;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         let power = self.power;
         let emit = self.emit;
@@ -51,7 +49,6 @@ impl Build for LightLinkerBuilder {
 }
 
 impl Display for LightLinkerBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.power, "power (J/s)");

@@ -87,14 +87,12 @@ pub enum Probability {
 
 impl Probability {
     /// Construct a new point instance.
-    #[inline]
     #[must_use]
     pub const fn new_point(c: f64) -> Self {
         Self::Point { c }
     }
 
     /// Construct a new points instance.
-    #[inline]
     #[must_use]
     pub fn new_points(cs: Array1<f64>) -> Self {
         debug_assert!(cs.len() > 1);
@@ -102,7 +100,6 @@ impl Probability {
     }
 
     /// Construct a new uniform instance.
-    #[inline]
     #[must_use]
     pub fn new_uniform(min: f64, max: f64) -> Self {
         debug_assert!(min < max);
@@ -110,7 +107,6 @@ impl Probability {
     }
 
     /// Construct a new linear instance.
-    #[inline]
     #[must_use]
     pub fn new_linear([x0, x1]: [f64; 2], [p0, p1]: [f64; 2]) -> Self {
         let dx = x1 - x0;
@@ -135,7 +131,6 @@ impl Probability {
     }
 
     /// Construct a new gaussian instance.
-    #[inline]
     #[must_use]
     pub fn new_gaussian(mu: f64, sigma: f64) -> Self {
         debug_assert!(sigma > 0.0);
@@ -143,7 +138,6 @@ impl Probability {
     }
 
     /// Construct a new constant spline instance.
-    #[inline]
     #[must_use]
     pub fn new_constant_spline(xs: Array1<f64>, ps: &Array1<f64>) -> Self {
         debug_assert!(xs.len() > 1);
@@ -167,7 +161,6 @@ impl Probability {
     }
 
     /// Construct a new linear spline instance.
-    #[inline]
     #[must_use]
     pub fn new_linear_spline(xs: &Array1<f64>, ps: &Array1<f64>) -> Self {
         debug_assert!(xs.len() > 1);
@@ -219,7 +212,6 @@ impl Probability {
     }
 
     /// Sample a number from the described distribution.
-    #[inline]
     #[must_use]
     pub fn sample<R: Rng>(&self, rng: &mut R) -> f64 {
         match *self {
@@ -349,7 +341,6 @@ impl Probability {
     /// Outputs the PDF currently contained in this instance to a file at the provided path.
     ///
     /// **Note:** this is only implemented for `LinearSpline` variants.
-    #[inline]
     #[must_use]
     pub fn pdf_to_file(&self, filename: &str) -> Result<(), Error> {
         let mut outfile = File::create(filename)?;
@@ -379,7 +370,6 @@ impl Probability {
     /// Outputs the CDF currently contained in this instance to a file at the provided path.
     ///
     /// **Note:** this is only implemented for `LinearSpline` variants.
-    #[inline]
     #[must_use]
     pub fn cdf_to_file(&self, filename: &str) -> Result<(), Error> {
         let mut outfile = File::create(filename)?;
@@ -406,7 +396,6 @@ impl Probability {
 }
 
 impl Display for Probability {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         let kind = match *self {
             Self::Point { .. } => "Point",

@@ -34,7 +34,6 @@ impl Triangle {
     access!(plane_norm: Dir3);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(verts: [Point3; 3]) -> Self {
         let plane_norm = Self::init_plane_norm(&verts);
@@ -43,7 +42,6 @@ impl Triangle {
     }
 
     /// Initialise the plane normal.
-    #[inline]
     #[must_use]
     fn init_plane_norm(verts: &[Point3; 3]) -> Dir3 {
         Dir3::from((verts[ALPHA] - verts[GAMMA]).cross(&(verts[BETA] - verts[ALPHA])))
@@ -71,10 +69,10 @@ impl Triangle {
     /// Calculate the surface area.
     #[inline]
     #[must_use]
-    pub fn area(&self) -> f64 {
+    pub fn squared_area(&self) -> f64 {
         let [ab, bc, ca] = self.side_lengths();
         let s = (ab + bc + ca) * 0.5;
-        (s * (s - ab) * (s - bc) * (s - ca)).sqrt()
+        s * (s - ab) * (s - bc) * (s - ca)
     }
 
     /// Centre point.
@@ -92,7 +90,6 @@ impl Triangle {
 
     /// Determine the intersection distance along a `Ray`'s direction.
     /// Also return the barycentric intersection coordinates.
-    #[inline]
     #[must_use]
     pub fn intersection_coors(&self, ray: &Ray) -> Option<(f64, [f64; 3])> {
         let verts = self.verts;
@@ -135,7 +132,6 @@ impl Triangle {
 }
 
 impl Collide for Triangle {
-    #[inline]
     fn overlap(&self, cube: &Cube) -> bool {
         let c = cube.centre();
         let e = cube.half_widths();
@@ -266,7 +262,6 @@ impl Transformable for Triangle {
 }
 
 impl Emit for Triangle {
-    #[inline]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let mut u = rng.gen::<f64>();
         let mut v = rng.gen::<f64>();
@@ -403,7 +398,7 @@ mod tests {
     #[test]
     fn area_test() {
         let tri = unit_triangle();
-        assert_approx_eq!(tri.area(), 0.5);
+        assert_approx_eq!(tri.squared_area(), 0.25);
     }
 
     #[test]

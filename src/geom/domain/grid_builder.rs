@@ -21,7 +21,6 @@ impl GridBuilder {
     access!(res: [usize; 3]);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(boundary: Cube, res: [usize; 3]) -> Self {
         debug_assert!(res[X] > 0);
@@ -32,7 +31,6 @@ impl GridBuilder {
     }
 
     /// Determine the total number of cells.
-    #[inline]
     #[must_use]
     pub const fn num_cells(&self) -> usize {
         self.res[X] * self.res[Y] * self.res[Z]
@@ -42,14 +40,12 @@ impl GridBuilder {
 impl Build for GridBuilder {
     type Inst = Grid;
 
-    #[inline]
     fn build(self) -> Result<Grid, Error> {
         Ok(Grid::new(self.boundary, self.res))
     }
 }
 
 impl Display for GridBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.boundary, "boundary");

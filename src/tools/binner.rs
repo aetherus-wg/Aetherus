@@ -54,7 +54,6 @@ impl Binner {
 }
 
 impl Display for Binner {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         write!(fmt, "[{}] ({})", self.range, self.bins)
     }

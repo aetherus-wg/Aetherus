@@ -69,7 +69,6 @@ impl Output {
 }
 
 impl AddAssign for Output {
-    #[inline]
     fn add_assign(&mut self, rhs: Self) {
         for (a, b) in self.vol.iter_mut().zip(&rhs.vol) {
             *a += b;

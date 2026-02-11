@@ -35,10 +35,9 @@ impl Mesh {
     clone!(area: f64);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(tris: Vec<SmoothTriangle>) -> Self {
-        let area = tris.iter().map(|tri| tri.tri().area()).sum();
+        let area = tris.iter().map(|tri| tri.tri().squared_area().sqrt()).sum();
 
         Self {
             boundary: Self::init_boundary(&tris),
@@ -48,7 +47,6 @@ impl Mesh {
     }
 
     /// Initialise the bounding box for the mesh.
-    #[inline]
     #[must_use]
     fn init_boundary(tris: &[SmoothTriangle]) -> Cube {
         let mut mins = tris[X].tri().verts()[ALPHA];
@@ -76,7 +74,6 @@ impl Mesh {
 
     /// Destruct the instance and retrieve the list of triangles.
     #[allow(clippy::missing_const_for_fn)]
-    #[inline]
     #[must_use]
     pub fn into_tris(self) -> Vec<SmoothTriangle> {
         self.tris
@@ -112,12 +109,11 @@ impl Transformable for Mesh {
 }
 
 impl Emit for Mesh {
-    #[inline]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let r = rng.gen_range(0.0..self.area);
         let mut total_area = 0.0;
         for tri in &self.tris {
-            total_area += tri.tri().area();
+            total_area += tri.tri().squared_area().sqrt();
             if total_area >= r {
                 return tri.cast(rng);
             }
@@ -163,7 +159,6 @@ impl Trace for Mesh {
 }
 
 impl Display for Mesh {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.boundary, "boundary");

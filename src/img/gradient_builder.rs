@@ -18,7 +18,6 @@ pub struct GradientBuilder(
 impl Build for GradientBuilder {
     type Inst = Gradient;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         let mut cols = Vec::with_capacity(self.0.len());
 
@@ -39,7 +38,6 @@ impl Build for GradientBuilder {
 }
 
 impl Display for GradientBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         if self.0.is_empty() {
             write!(fmt, "[]")?;

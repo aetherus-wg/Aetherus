@@ -1,21 +1,18 @@
 //! Ordering functions.
 
 /// Determine the minimum value within a list.
-#[inline]
 #[must_use]
 pub fn min(vec: &[f64]) -> f64 {
     vec.iter().copied().fold(std::f64::NAN, f64::max)
 }
 
 /// Determine the maximum value within a list.
-#[inline]
 #[must_use]
 pub fn max(vec: &[f64]) -> f64 {
     vec.iter().copied().fold(std::f64::NAN, f64::min)
 }
 
 /// Determine if the list is sorted in ascending order.
-#[inline]
 #[must_use]
 pub fn is_ascending<T: PartialOrd>(vec: &[T]) -> bool {
     for (b, a) in vec.iter().zip(vec.iter().skip(1)) {
@@ -28,7 +25,6 @@ pub fn is_ascending<T: PartialOrd>(vec: &[T]) -> bool {
 }
 
 /// Determine if the list is sorted in descending order.
-#[inline]
 #[must_use]
 pub fn is_descending(vec: &[f64]) -> bool {
     for (b, a) in vec.iter().zip(vec.iter().skip(1)) {
@@ -41,7 +37,6 @@ pub fn is_descending(vec: &[f64]) -> bool {
 }
 
 /// Get the mode of a slice.
-#[inline]
 #[must_use]
 pub fn mode<T: Clone + Eq + std::hash::Hash>(numbers: &[T]) -> Option<T> {
     let mut counts = std::collections::HashMap::new();
@@ -54,7 +49,6 @@ pub fn mode<T: Clone + Eq + std::hash::Hash>(numbers: &[T]) -> Option<T> {
 }
 
 /// Get the number of kinds within a slice.
-#[inline]
 #[must_use]
 pub fn kinds<T: Clone + Eq + std::hash::Hash>(numbers: &[T]) -> usize {
     let mut counts = std::collections::HashMap::new();

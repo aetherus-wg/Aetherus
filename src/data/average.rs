@@ -23,7 +23,6 @@ impl Average {
 
     /// This constructs a new instance of the Average struct, setting all fields
     /// to zero.
-    #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -33,7 +32,6 @@ impl Average {
     }
 
     /// Returns the mean value of all accumulated samples.
-    #[inline]
     #[must_use]
     pub fn ave(&self) -> Real {
         if self.counts > 0 {

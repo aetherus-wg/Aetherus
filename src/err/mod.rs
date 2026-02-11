@@ -61,14 +61,12 @@ unsafe impl Send for Error {}
 unsafe impl Sync for Error {}
 
 impl From<&str> for Error {
-    #[inline]
     fn from(err: &str) -> Self {
         Self::Text(err.to_owned())
     }
 }
 
 impl<T> From<std::sync::PoisonError<T>> for Error {
-    #[inline]
     fn from(_e: std::sync::PoisonError<T>) -> Self {
         Self::Parallel
     }

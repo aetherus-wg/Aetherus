@@ -28,7 +28,6 @@ pub struct MaterialBuilder {
 impl Build for MaterialBuilder {
     type Inst = Material;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         let ref_index   = self.ref_index.build()?;
         let scat_coeff  = self.scat_coeff.build()?;
@@ -41,7 +40,6 @@ impl Build for MaterialBuilder {
 }
 
 impl Display for MaterialBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.ref_index, "refractive index");

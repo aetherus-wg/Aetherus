@@ -59,7 +59,6 @@ pub enum Formula {
 
 impl Formula {
     /// Construct a constant spline instance.
-    #[inline]
     #[must_use]
     pub fn new_constant_spline(xs: Array1<f64>, ys: Array1<f64>) -> Self {
         debug_assert!(xs.len() >= 2);
@@ -70,7 +69,6 @@ impl Formula {
     }
 
     /// Construct a linear spline instance.
-    #[inline]
     #[must_use]
     pub fn new_linear_spline(xs: Array1<f64>, ys: Array1<f64>, grads: Array1<f64>) -> Self {
         debug_assert!(xs.len() >= 2);
@@ -82,7 +80,6 @@ impl Formula {
     }
 
     /// Construct a linear spline instance.
-    #[inline]
     #[must_use]
     pub fn new_linear_spline_auto(xs: Array1<f64>, ys: Array1<f64>) -> Self {
         debug_assert!(xs.len() >= 2);
@@ -102,7 +99,6 @@ impl Formula {
     }
 
     /// Construct a quadratic spline instance.
-    #[inline]
     #[must_use]
     pub fn new_quadratic_spline(
         xs: Array1<f64>,
@@ -194,7 +190,6 @@ impl Formula {
 }
 
 impl Display for Formula {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         let kind = match *self {
             Self::Constant { .. } => "Constant",

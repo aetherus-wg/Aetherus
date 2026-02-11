@@ -101,7 +101,6 @@ impl OutputVolume {
 
     /// If the given position is contained within the grid,
     /// generate the index for the given position within the grid.
-    #[inline]
     #[must_use]
     pub fn gen_index(&self, p: &Point3) -> Option<[usize; 3]> {
         self.boundary.contains(p).then(|| {
@@ -118,7 +117,6 @@ impl OutputVolume {
 
     /// If the given position is contained within the grid,
     /// generate the index and voxel for the given position within the grid.
-    #[inline]
     #[must_use]
     pub fn gen_index_voxel(&self, p: &Point3) -> Option<([usize; 3], Cube)> {
         if let Some(index) = self.gen_index(p) {
@@ -137,7 +135,6 @@ impl OutputVolume {
     }
 
     /// Returns the distance to the nearest voxel boundary, if one exists.
-    #[inline]
     #[must_use]
     pub fn voxel_dist(&self, phot: &Photon) -> Option<f64> {
         let (_index, voxel) = self.gen_index_voxel(phot.ray().pos())?;

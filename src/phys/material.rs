@@ -26,7 +26,6 @@ impl Material {
     access!(asym_fact: Formula);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub const fn new(
         ref_index: Formula,
@@ -68,7 +67,6 @@ impl Material {
 }
 
 impl Display for Material {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.ref_index, "refractive index");

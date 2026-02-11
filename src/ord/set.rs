@@ -35,7 +35,6 @@ impl<T> Set<T> {
     /// Construct an instance from a vector of pairs.
     /// # Errors
     /// if a the list contains a duplicate entry.
-    #[inline]
     pub fn from_pairs(list: Vec<(Name, T)>) -> Result<Self, Error> {
         let mut map = Map::new();
 
@@ -50,7 +49,6 @@ impl<T> Set<T> {
         Ok(Self::new(map))
     }
 
-    #[inline]
     pub fn combine(self, rhs: Self) -> Result<Self, Error> {
         let combined_pairs = self
             .into_iter()
@@ -76,7 +74,6 @@ impl<T> Set<T> {
     }
 
     /// Get a list of the names.
-    #[inline]
     #[must_use]
     pub fn names_list(&self) -> Vec<Name> {
         self.0.keys().cloned().collect()
@@ -125,7 +122,6 @@ impl<T> File for Set<T>
 where
     for<'de> T: Deserialize<'de>,
 {
-    #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         Ok(from_json(path).context(format!("Loading Set from file {}", path.display()))?)
     }
@@ -164,7 +160,6 @@ impl<T: Build> Build for Set<T> {
 impl<'a, T, S: Link<'a, T>> Link<'a, T> for Set<S> {
     type Inst = Set<S::Inst>;
 
-    #[inline]
     fn requires(&self) -> Vec<Name> {
         self.0
             .values()
@@ -175,7 +170,6 @@ impl<'a, T, S: Link<'a, T>> Link<'a, T> for Set<S> {
             .collect()
     }
 
-    #[inline]
     fn link(self, set: &'a Set<T>) -> Result<Self::Inst, Error> {
         let mut list = Vec::with_capacity(self.0.len());
         for (name, val) in self.0 {
@@ -186,7 +180,6 @@ impl<'a, T, S: Link<'a, T>> Link<'a, T> for Set<S> {
 }
 
 impl<T: Display> Display for Set<T> {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         for (key, val) in &self.0 {

@@ -137,7 +137,6 @@ impl Orient {
 }
 
 impl Display for Orient {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(

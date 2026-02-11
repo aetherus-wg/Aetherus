@@ -2,7 +2,6 @@ use crate::{err::Error, fs::File, math::stat::SphericalCdf};
 use std::path::Path;
 
 impl File for SphericalCdf {
-    #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         // Load the photometric web from the file into a SphericalCDF
         println!("[LOAD] {}", path.display());
@@ -19,24 +18,24 @@ mod tests {
 
     use crate::{fs::File, math::stat::SphericalCdf};
 
-    const IES_STR: &str = "IESNA: LM-63-2002 
-[TEST] ABC1234 
-[TESTLAB] ABC Laboratories 
-[ISSUEDATE] 18-FEB-2001 
-[MANUFAC] Aardvark lighting Inc. 
-[LUMCAT] SKYVIEW 123-XYZ-abs-400 
-[LUMINAIRE] Wide beam flood to be used without tilt 
-[LAMPCAT] MH-400-CLEAR 
-[LAMP] 400 Watt Metal Halide 
-[BALLASTCAT] Global 16G6031-17R 
-[BALLAST] 400W 277V MH Magnetic 
-[MAINTCAT] 4 
-[OTHER] This luminaire is useful as an indirect flood 
-[MORE] and to reduce light pollution in down light applications. 
-[LAMPPOSITION] 0,0 
-[SEARCH] POLLUTION SPORTS INDIRECT 
-[_NEMATYPE] 4h x 6v 
-[_PRICE] Make us an offer 
+    const IES_STR: &str = "IESNA: LM-63-2002
+[TEST] ABC1234
+[TESTLAB] ABC Laboratories
+[ISSUEDATE] 18-FEB-2001
+[MANUFAC] Aardvark lighting Inc.
+[LUMCAT] SKYVIEW 123-XYZ-abs-400
+[LUMINAIRE] Wide beam flood to be used without tilt
+[LAMPCAT] MH-400-CLEAR
+[LAMP] 400 Watt Metal Halide
+[BALLASTCAT] Global 16G6031-17R
+[BALLAST] 400W 277V MH Magnetic
+[MAINTCAT] 4
+[OTHER] This luminaire is useful as an indirect flood
+[MORE] and to reduce light pollution in down light applications.
+[LAMPPOSITION] 0,0
+[SEARCH] POLLUTION SPORTS INDIRECT
+[_NEMATYPE] 4h x 6v
+[_PRICE] Make us an offer
 TILT=INCLUDE
 1
 13

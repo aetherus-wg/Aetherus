@@ -48,7 +48,6 @@ impl Cube {
     }
 
     /// Initialise the boundary encompassing all of the mesh vertices.
-    #[inline]
     #[must_use]
     pub fn new_shrink(surfs: &[Mesh]) -> Self {
         let mut mins = None;
@@ -112,7 +111,6 @@ impl Cube {
     }
 
     /// Calculate the surface area.
-    #[inline]
     #[must_use]
     pub fn area(&self) -> f64 {
         let ws = self.widths();
@@ -160,7 +158,6 @@ impl Cube {
     }
 
     /// Determine the intersection distances along a ray's direction.
-    #[inline]
     #[must_use]
     fn intersections(&self, ray: &Ray) -> (f64, f64) {
         // TODO: Precompute 1/ray.dir() as it's used at every Voxel transition and f64 div
@@ -213,7 +210,6 @@ impl Cube {
     }
 
     /// Generate a random position within the cube's volume.
-    #[inline]
     #[must_use]
     pub fn rand_pos<R: Rng>(&self, rng: &mut R) -> Point3 {
         let widths = self.widths();
@@ -313,7 +309,6 @@ impl Trace for Cube {
 }
 
 impl Display for Cube {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(

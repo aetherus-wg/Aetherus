@@ -22,7 +22,6 @@ impl SmoothTriangle {
     access!(norms: [Dir3; 3]);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(tri: Triangle, norms: [Dir3; 3]) -> Self {
         if !norms.iter().all(|&n| n.dot(tri.plane_norm()) > 0.0) {
@@ -33,7 +32,6 @@ impl SmoothTriangle {
     }
 
     /// Construct a new instance from vertices.
-    #[inline]
     #[must_use]
     pub fn new_from_verts(verts: [Point3; 3], norms: [Dir3; 3]) -> Self {
         Self::new(Triangle::new(verts), norms)
@@ -58,7 +56,6 @@ impl Trace for SmoothTriangle {
         self.tri.dist(ray)
     }
 
-    #[inline]
     fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
         if let Some((dist, [u, v, w])) = self.tri.intersection_coors(ray) {
             Some((
@@ -77,7 +74,6 @@ impl Trace for SmoothTriangle {
 }
 
 impl Transformable for SmoothTriangle {
-    #[inline]
     fn transform(&mut self, trans: &Trans3) {
         self.tri.transform(trans);
 
@@ -88,7 +84,6 @@ impl Transformable for SmoothTriangle {
 }
 
 impl Emit for SmoothTriangle {
-    #[inline]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let mut u = rng.gen::<f64>();
         let mut v = rng.gen::<f64>();

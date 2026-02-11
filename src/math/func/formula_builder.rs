@@ -27,7 +27,6 @@ pub enum FormulaBuilder {
 impl Build for FormulaBuilder {
     type Inst = crate::math::Formula;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Constant(c) => Self::Inst::Constant { c },
@@ -55,7 +54,6 @@ impl Build for FormulaBuilder {
 }
 
 impl Display for FormulaBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         let kind = match *self {
             Self::Constant { .. } => "Constant",

@@ -11,20 +11,17 @@ use std::{
 /// Environment variable must be set.
 /// # Errors
 /// if the environment variable `ARCTK_DIR` is not set.
-#[inline]
 pub fn root() -> Result<PathBuf, std::env::VarError> {
     Ok(Path::new(&var("ARCTK_DIR")?).to_path_buf())
 }
 
 /// Initialise the current working directory.
-#[inline]
 fn input_dir(dir: &Path) -> Result<PathBuf, std::io::Error> {
     set_current_dir(dir)?;
     current_dir()
 }
 
 /// Create an output directory.
-#[inline]
 fn output_dir(dir: &Path) -> Result<PathBuf, std::io::Error> {
     create_dir_all(dir)?;
     Ok(dir.to_path_buf())
@@ -35,7 +32,6 @@ fn output_dir(dir: &Path) -> Result<PathBuf, std::io::Error> {
 /// # Errors
 /// if the root installation directory can not be determined,
 /// or if one of the input or output directories could not be created.
-#[inline]
 pub fn io_dirs(
     input: Option<PathBuf>,
     output: Option<PathBuf>,

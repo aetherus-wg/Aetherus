@@ -30,7 +30,6 @@ pub enum AspectRatio {
 
 impl AspectRatio {
     /// Get the pixel ratios.
-    #[inline]
     #[must_use]
     pub fn ratio(&self) -> f64 {
         match *self {
@@ -48,7 +47,6 @@ impl AspectRatio {
 
     /// Determine a resolution for the target number of pixels.
     /// Resulting resolution target will contain at least this many pixels.
-    #[inline]
     #[must_use]
     pub fn resolution(&self, total_target: u64, mult: (u64, u64)) -> (u64, u64) {
         debug_assert!(total_target > 0);
@@ -73,7 +71,6 @@ impl AspectRatio {
 
     /// Calculate the vertical resolution for a given horizontal resolution.
     /// Rounded up to the nearest pixel.
-    #[inline]
     #[must_use]
     pub fn vt_res(&self, hr_res: u64) -> u64 {
         debug_assert!(hr_res > 0);
@@ -83,7 +80,6 @@ impl AspectRatio {
 }
 
 impl Display for AspectRatio {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result {
         match *self {
             Self::Square { .. } => write!(fmt, "Square"),

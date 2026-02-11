@@ -13,7 +13,6 @@ use rand::{rngs::ThreadRng, Rng};
 
 /// Photograph the life of a single photon.
 #[allow(clippy::expect_used)]
-#[inline]
 pub fn photo(
     frames: &[Frame],
     input: &Input,
@@ -112,7 +111,6 @@ pub fn photo(
 }
 
 /// Generate the RGB components of a given wavelength.
-#[inline]
 #[must_use]
 pub fn wavelength_to_rbg(mut wavelength: f64) -> [f64; 3] {
     let gamma = 0.8;

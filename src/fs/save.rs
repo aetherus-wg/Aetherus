@@ -17,7 +17,6 @@ pub trait Save {
     /// Report the saving of a file (if it is a filepath) and save the data.
     /// # Errors
     /// if the instance can not be serialised or if the file can't be written to.
-    #[inline]
     fn save(&self, path: &Path) -> Result<(), Error> {
         println!("[SAVE] {}", path.display());
 
@@ -28,7 +27,6 @@ pub trait Save {
 /// Serialise the type in json format.
 /// # Errors
 /// if the instance can not be serialised into json or if the file can't be written to.
-#[inline]
 pub fn as_json<T: Serialize>(instance: &T, path: &Path) -> Result<(), Error> {
     println!("[SAVE] {}", path.display());
     let s = to_string(instance)?;

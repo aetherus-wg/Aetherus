@@ -80,7 +80,6 @@ impl Boundary {
         }
     }
 
-    #[inline]
     pub fn apply<'a>(&self, rng: &mut ThreadRng, hit: &'a BoundaryHit<'a>, phot: &mut Photon) {
         match hit.condition() {
             BoundaryCondition::Kill => {
@@ -114,7 +113,6 @@ impl Boundary {
     /// Provides the translation to a Point3 (+/- a padding) to move it from one
     /// boundary to the opposing boundary. The primary intended use of this code is
     /// in the application of a periodic boundary on a single compute node.
-    #[inline]
     pub fn get_periodic_translation(&self, bound: &BoundaryDirection, padding: &f64) -> Vec3 {
         // First determine the vector component that we need to translate.
         let trans_vec = match bound {
@@ -144,7 +142,6 @@ impl Boundary {
         }
     }
 
-    #[inline]
     pub fn set_ray_to_opposite_boundary(
         &self,
         ray: &mut Ray,
@@ -185,7 +182,6 @@ impl Boundary {
         None
     }
 
-    #[inline]
     pub fn condition_for_boundary(&self, dir: &BoundaryDirection) -> &BoundaryCondition {
         match &dir {
             BoundaryDirection::Bottom => self.bottom(),
@@ -197,7 +193,6 @@ impl Boundary {
         }
     }
 
-    #[inline]
     pub fn contains(&self, p: &Point3) -> bool {
         self.bounding_box.contains(p)
     }

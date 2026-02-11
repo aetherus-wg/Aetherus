@@ -85,7 +85,6 @@ impl Range {
 }
 
 impl Display for Range {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result {
         write!(fmt, "{} -> {}", self.min, self.max)
     }

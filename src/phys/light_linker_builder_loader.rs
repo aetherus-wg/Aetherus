@@ -31,7 +31,6 @@ pub struct LightLinkerBuilderLoader {
 impl Load for LightLinkerBuilderLoader {
     type Inst = LightLinkerBuilder;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         let power = self.power;
         let emit = self.emit.load(in_dir)?;
@@ -43,7 +42,6 @@ impl Load for LightLinkerBuilderLoader {
 }
 
 impl Display for LightLinkerBuilderLoader {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.power, "power (J/s)");

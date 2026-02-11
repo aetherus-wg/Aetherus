@@ -14,7 +14,6 @@ use std::sync::{Arc, Mutex};
 /// # Errors
 /// if the progress bar can not be locked.
 #[allow(clippy::expect_used)]
-#[inline]
 pub fn multi_thread<'a>(
     engine: &Engine,
     input: Input<'a>,
@@ -45,7 +44,6 @@ pub fn multi_thread<'a>(
 
 /// Thread control function.
 #[allow(clippy::expect_used)]
-#[inline]
 #[must_use]
 fn thread<'a>(
     engine: &Engine,
