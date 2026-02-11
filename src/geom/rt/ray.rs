@@ -30,7 +30,6 @@ impl Ray {
     }
 
     /// Destruct self into components.
-    #[inline]
     #[must_use]
     pub const fn destruct(self) -> (Point3, Dir3) {
         (self.pos, self.dir)

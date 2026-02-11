@@ -9,7 +9,7 @@ use crate::{
     geom::Cube,
     img::Image,
     ord::{
-        Register, 
+        Register,
         cartesian::{X, Y, Z}
     },
     util::fmt::DataCube,
@@ -72,7 +72,6 @@ impl<'a> Output<'a> {
 
     /// Construct a new instance.
     #[allow(clippy::too_many_arguments)]
-    #[inline]
     #[must_use]
     pub fn new(
         boundary: Cube,
@@ -115,7 +114,6 @@ impl<'a> Output<'a> {
 }
 
 impl AddAssign<&Self> for Output<'_> {
-    #[inline]
     fn add_assign(&mut self, rhs: &Self) {
         self.emission += &rhs.emission;
         self.energy += &rhs.energy;
@@ -145,7 +143,6 @@ impl AddAssign<&Self> for Output<'_> {
 }
 
 impl Save for Output<'_> {
-    #[inline]
     fn save_data(&self, out_dir: &Path) -> Result<(), Error> {
         let path = out_dir.join("emission_density.nc");
         (&self.emission / self.cell_vol).save(&path)?;
@@ -185,7 +182,6 @@ impl Save for Output<'_> {
 }
 
 impl Display for Output<'_> {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.boundary, "boundary");

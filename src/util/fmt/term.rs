@@ -6,7 +6,6 @@ use terminal_size::terminal_size;
 /// Return the fallback size if the width could not be determined.
 /// # Errors
 /// if the terminal width can not be determined.
-#[inline]
 #[must_use]
 pub fn width(default: usize) -> usize {
     if let Some((width, _)) = terminal_size() {

@@ -25,7 +25,6 @@ impl Camera {
     clone!(ss_power: usize);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(orient: Orient, fov: f64, res: [usize; 2], ss_power: usize) -> Self {
         debug_assert!(fov > 0.0);
@@ -72,7 +71,6 @@ impl Camera {
     }
 
     /// Emit a ray for the given pixel and super-sample.
-    #[inline]
     #[must_use]
     pub fn emit(&self, pixel: [usize; 2], ss: [usize; 2]) -> Ray {
         debug_assert!(pixel[X] < self.res[X]);
@@ -98,7 +96,6 @@ impl Camera {
 }
 
 impl Display for Camera {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.orient, "orientation");

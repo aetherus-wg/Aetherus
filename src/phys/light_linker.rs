@@ -24,7 +24,6 @@ pub struct LightLinker {
 
 impl LightLinker {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(power: f64, emitter: Emitter, spec: Probability, mat: Name) -> Self {
         debug_assert!(power > 0.0);

@@ -20,7 +20,6 @@ impl HistogramBuilder {
 }
 
 impl Display for HistogramBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         fmt_report!(fmt, self.min, "min");
         fmt_report!(fmt, self.min, "max");

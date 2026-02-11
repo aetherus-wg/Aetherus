@@ -38,7 +38,6 @@ impl Frame {
     }
 
     /// Transform a position in real-space to a pixel element.
-    #[inline]
     #[must_use]
     pub fn transform(&self, pos: &Point3) -> Option<[usize; 2]> {
         let p = self.proj * self.view * pos.to_homogeneous();

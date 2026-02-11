@@ -89,7 +89,6 @@ impl Display for DataCube {
 impl Analyze for Array3<f64> {
     type Inst = DataCube;
 
-    #[inline]
     fn display(&self) -> Self::Inst {
         Self::Inst::new(self)
     }

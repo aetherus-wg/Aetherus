@@ -21,7 +21,6 @@ impl Mat4 {
     clone!(data: Matrix4<Real>);
 
     /// Construct a new instance from component row vectors.
-    #[inline]
     #[must_use]
     pub fn new_from_rows(row_x: &Vec4, row_y: &Vec4, row_z: &Vec4, row_w: &Vec4) -> Self {
         Self {
@@ -47,7 +46,6 @@ impl Mat4 {
     }
 
     /// Construct a new instance from component column vectors.
-    #[inline]
     #[must_use]
     pub fn new_from_cols(col_x: &Vec4, col_y: &Vec4, col_z: &Vec4, col_w: &Vec4) -> Self {
         Self {

@@ -11,7 +11,6 @@ use rand::{rngs::ThreadRng, Rng};
 
 /// Lifetime of a single photon capable of participating in fluorescence.
 #[allow(clippy::expect_used)]
-#[inline]
 pub fn fluorescence(
     flu_concs: &Array3<f64>,
     flu_spec: &Formula,

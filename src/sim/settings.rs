@@ -36,7 +36,6 @@ impl Settings {
     clone!(output_individual_lights: Option<bool>);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(
         num_threads: Option<usize>,

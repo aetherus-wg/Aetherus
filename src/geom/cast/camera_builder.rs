@@ -28,7 +28,6 @@ pub struct CameraBuilder {
 
 impl CameraBuilder {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(
         pos: Point3,
@@ -52,7 +51,6 @@ impl CameraBuilder {
     }
 
     /// Move the camera.
-    #[inline]
     pub fn travel(&mut self, d: Vec3) {
         self.pos += d;
     }
@@ -61,7 +59,6 @@ impl CameraBuilder {
 impl Build for CameraBuilder {
     type Inst = Camera;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         Ok(Self::Inst::new(
             Orient::new_tar(self.pos, &self.tar),
@@ -73,7 +70,6 @@ impl Build for CameraBuilder {
 }
 
 impl Display for CameraBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(

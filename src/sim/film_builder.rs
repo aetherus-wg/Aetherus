@@ -41,7 +41,6 @@ impl FilmBuilder {
 impl Build for FilmBuilder {
     type Inst = Vec<Frame>;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         debug_assert!(self.frames > 0);
 

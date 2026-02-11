@@ -126,7 +126,6 @@ impl Grid {
 }
 
 impl Display for Grid {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.boundary, "boundary");

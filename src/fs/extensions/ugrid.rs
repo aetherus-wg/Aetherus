@@ -11,7 +11,6 @@ use std::{path::Path,
 
 #[allow(clippy::use_self)]
 
-#[inline]
 pub fn mesh_from_ugrid(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
 
     let file = netcdf::open(path)?;

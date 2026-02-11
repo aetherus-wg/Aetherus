@@ -12,7 +12,6 @@ const THRESHOLD: f64 = 1.0e-6;
 
 /// Perform a peel-off event.
 /// Calculate the change in weight over a give flight towards a given point.
-#[inline]
 #[must_use]
 pub fn peel_off(input: &Input, mut phot: Photon, env: &Local, pos: Point3) -> Option<f64> {
     let g = env.asym();

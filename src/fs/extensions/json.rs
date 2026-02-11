@@ -11,7 +11,6 @@ use anyhow::Context;
 /// Deserialise the type in json format.
 /// # Errors
 /// if file can not be opened or read string can not be serialised into an instance of the required type.
-#[inline]
 pub fn from_json<T>(path: &Path) -> Result<T, Error>
 where
     for<'de> T: Deserialize<'de>,
@@ -24,7 +23,6 @@ where
 /// Deserialise the type in json format.
 /// # Errors
 /// if string can not be serialised into an instance of the required type.
-#[inline]
 pub fn from_json_str<T>(s: &str) -> Result<T, Error>
 where
     for<'de> T: Deserialize<'de>,

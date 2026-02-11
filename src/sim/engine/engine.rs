@@ -40,7 +40,6 @@ impl Engine {
 }
 
 impl Display for Engine {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         match *self {
             Self::Standard => write!(fmt, "Standard"),

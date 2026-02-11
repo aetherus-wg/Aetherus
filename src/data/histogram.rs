@@ -31,7 +31,6 @@ impl Histogram {
     access!(counts: Array1<f64>);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(min: f64, max: f64, bins: usize) -> Self {
         debug_assert!(min < max);
@@ -44,7 +43,6 @@ impl Histogram {
     }
 
     /// Construct a new instance using a range.
-    #[inline]
     #[must_use]
     pub fn new_range(range: Range, bins: usize) -> Self {
         Self {

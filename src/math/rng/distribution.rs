@@ -39,7 +39,6 @@ pub fn sample_normal<R: Rng>(rng: &mut R) -> f64 {
 }
 
 /// Sample a gaussian distribution.
-#[inline]
 #[must_use]
 pub fn sample_gaussian<R: Rng>(rng: &mut R, mu: f64, sigma: f64) -> f64 {
     debug_assert!(sigma > 0.0);
@@ -61,6 +60,8 @@ pub fn rand_isotropic_dir<R: Rng>(rng: &mut R) -> Dir3 {
 
     Dir3::new(x, y, z)
 }
+
+// FIXME: How are the following getting random numbers since no Rng is used?
 
 /// Sample points within a circle using the golden ratio.
 #[inline]
@@ -90,7 +91,6 @@ pub fn rand_sphere_point(n: i32, max: i32) -> (f64, f64) {
 }
 
 /// Sample points on a hemisphere's surface using the golden ratio.
-#[inline]
 #[must_use]
 pub fn rand_hemisphere_point(n: i32, max: i32) -> (f64, f64) {
     debug_assert!(n >= 0);

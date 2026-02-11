@@ -12,7 +12,6 @@ pub struct ProgressBar {
 
 impl ProgressBar {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(msg: &'static str, total: usize) -> Self {
         debug_assert!(total > 0);
@@ -45,7 +44,6 @@ impl ProgressBar {
     /// Return the requested block if available.
     /// If there is not enough, return the remaining block.
     /// If there are none at all, return None.
-    #[inline]
     pub fn block(&mut self, size: usize) -> Option<(usize, usize)> {
         debug_assert!(size > 0);
 
@@ -73,7 +71,6 @@ impl ProgressBar {
     }
 
     /// Finish with a message.
-    #[inline]
     pub fn finish_with_message(&mut self, msg: &'static str) {
         self.pb.finish_with_message(msg);
     }

@@ -118,7 +118,6 @@ impl Spectrum {
 }
 
 impl Display for Spectrum {
-    #[inline]
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(fmt, "Spectrum: ")?;
 

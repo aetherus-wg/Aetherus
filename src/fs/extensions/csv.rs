@@ -8,7 +8,6 @@ use std::{
 };
 
 impl<T: FromStr> File for Table<T> {
-    #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         // Load all of the lines into a vector of lines.
         let mut lines: Vec<_> = BufReader::new(std::fs::File::open(path)?)

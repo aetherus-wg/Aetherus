@@ -194,7 +194,6 @@ pub enum AttributeFuture {
 
 impl<'a> Link<'a, usize> for AttributeFuture {
     type Inst = Self;
-    #[inline]
     fn requires(&self) -> Vec<Name> {
         vec![]
     }
@@ -281,7 +280,6 @@ impl<'a> Link<'a, usize> for AttributeFuture {
 impl<'a> Link<'a, Material> for AttributeFuture {
     type Inst = Self;
 
-    #[inline]
     fn requires(&self) -> Vec<Name> {
         vec![]
     }

@@ -37,7 +37,6 @@ impl ParametersBuilder {
     /// Construct a new instance.
     #[allow(clippy::too_many_arguments)]
     #[must_use]
-    #[inline]
     pub const fn new(
         sett: Settings,
         boundary: BoundaryBuilder,
@@ -66,7 +65,6 @@ impl ParametersBuilder {
 impl Build for ParametersBuilder {
     type Inst = Parameters;
 
-    #[inline]
     fn build(self) -> Result<Self::Inst, Error> {
         let sett = self.sett;
         let boundary = self.boundary.build();
@@ -85,7 +83,6 @@ impl Build for ParametersBuilder {
 }
 
 impl Display for ParametersBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.sett, "settings");

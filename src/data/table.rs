@@ -22,7 +22,6 @@ impl<T> Table<T> {
     access!(rows: Vec<Vec<T>>);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(headings: Vec<String>, rows: Vec<Vec<T>>) -> Self {
         debug_assert!(!headings.is_empty());
@@ -84,7 +83,6 @@ impl<T: AddAssign + Clone> AddAssign<&Self> for Table<T> {
 }
 
 impl<T: Display> Save for Table<T> {
-    #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = File::create(path)?;
         write!(file, "{}", self)?;

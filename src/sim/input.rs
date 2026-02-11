@@ -30,7 +30,6 @@ pub struct Input<'a> {
 
 impl<'a> Input<'a> {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub const fn new(
         spec_reg: &'a Register,
@@ -54,7 +53,6 @@ impl<'a> Input<'a> {
 }
 
 impl Display for Input<'_> {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.spec_reg, "spectrometer register");

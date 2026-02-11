@@ -24,7 +24,6 @@ impl SpectrumBuilder {
 }
 
 impl Display for SpectrumBuilder {
-    #[inline]
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             Self::Constant(ref value) => {
@@ -111,7 +110,7 @@ mod tests {
         file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
-        // Now read in using serde_json. 
+        // Now read in using serde_json.
         let json_str = std::fs::read_to_string(infile.path()).unwrap();
         let builder: SpectrumBuilder = json5::from_str(&json_str).unwrap();
         assert_eq!(builder, SpectrumBuilder::Constant(1.0));
@@ -127,7 +126,7 @@ mod tests {
         file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
-        // Now read in using serde_json. 
+        // Now read in using serde_json.
         let json_str = std::fs::read_to_string(infile.path()).unwrap();
         let builder: SpectrumBuilder = json5::from_str(&json_str).unwrap();
         assert_eq!(builder, SpectrumBuilder::Tophat(0.0, 1.0, 1.0));
@@ -143,7 +142,7 @@ mod tests {
         file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
-        // Now read in using serde_json. 
+        // Now read in using serde_json.
         let json_str = std::fs::read_to_string(infile.path()).unwrap();
         let builder: SpectrumBuilder = json5::from_str(&json_str).unwrap();
         assert_eq!(builder, SpectrumBuilder::Linear(0.0, 1.0, 0.0, 1.0));
@@ -159,7 +158,7 @@ mod tests {
         file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
-        // Now read in using serde_json. 
+        // Now read in using serde_json.
         let json_str = std::fs::read_to_string(infile.path()).unwrap();
         let builder: SpectrumBuilder = json5::from_str(&json_str).unwrap();
         assert_eq!(builder, SpectrumBuilder::Spectrum("test_spectrum.csv".to_string()));

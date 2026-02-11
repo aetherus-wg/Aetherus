@@ -19,14 +19,12 @@ impl Image {
     access!(pixels, pixels_mut: Array2<Colour>);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub const fn new(pixels: Array2<Colour>) -> Self {
         Self { pixels }
     }
 
     /// Construct a new blank instance.
-    #[inline]
     #[must_use]
     pub fn new_blank(res: [usize; 2], base: Colour) -> Self {
         debug_assert!(res[X] > 0);

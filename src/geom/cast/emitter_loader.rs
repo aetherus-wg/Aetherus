@@ -38,7 +38,6 @@ pub enum EmitterLoader {
 impl Load for EmitterLoader {
     type Inst = Emitter;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Point(pos) => Self::Inst::Point(pos),
@@ -83,7 +82,6 @@ impl Load for EmitterLoader {
 }
 
 impl Display for EmitterLoader {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         let kind = match *self {
             Self::Point { .. }         => "Point",

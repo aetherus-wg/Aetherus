@@ -23,7 +23,6 @@ pub trait Link<'a, T> {
 impl<'a, T, S: Link<'a, T>> Link<'a, T> for Vec<S> {
     type Inst = Vec<S::Inst>;
 
-    #[inline]
     fn requires(&self) -> Vec<Name> {
         self.iter()
             .map(|v| v.requires())
@@ -33,7 +32,6 @@ impl<'a, T, S: Link<'a, T>> Link<'a, T> for Vec<S> {
             .collect()
     }
 
-    #[inline]
     fn link(self, set: &'a Set<T>) -> Result<Self::Inst, Error> {
         let mut list = Vec::with_capacity(self.len());
 

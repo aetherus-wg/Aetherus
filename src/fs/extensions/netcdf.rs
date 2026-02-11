@@ -11,7 +11,6 @@ use std::path::Path;
 
 #[allow(clippy::use_self)]
 impl<T: NcTypeDescriptor + Copy> File for Array2<T> {
-    #[inline]
     fn load(path: &Path) -> Result<Array2<T>, Error> {
         let file = netcdf::open(path)?;
         let data = &file.variable("data").ok_or("Missing variable 'data'.")?;
@@ -28,7 +27,6 @@ impl<T: NcTypeDescriptor + Copy> File for Array2<T> {
 
 #[allow(clippy::use_self)]
 impl<T: NcTypeDescriptor + Copy> File for Array3<T> {
-    #[inline]
     fn load(path: &Path) -> Result<Array3<T>, Error> {
         let file = netcdf::open(path)?;
         let data = &file.variable("data").ok_or("Missing variable 'data'.")?;

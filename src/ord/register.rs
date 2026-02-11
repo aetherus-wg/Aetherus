@@ -12,7 +12,6 @@ pub struct Register(Set<usize>);
 
 impl Register {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(mut names: Vec<Name>) -> Self {
         // debug_assert!(!names.is_empty());
@@ -58,7 +57,6 @@ impl Register {
 }
 
 impl Display for Register {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         for (key, val) in self.0.map() {

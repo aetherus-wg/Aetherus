@@ -29,7 +29,6 @@ pub enum Tree<'a, T> {
 
 impl<'a, T> Tree<'a, T> {
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(sett: &TreeSettings, surfs: &'a Set<Surface<T>>) -> Self {
         let mut boundary = Self::init_boundary(surfs);
@@ -62,7 +61,6 @@ impl<'a, T> Tree<'a, T> {
     }
 
     /// Initialise the boundary encompassing all of the mesh vertices.
-    #[inline]
     #[must_use]
     fn init_boundary(surfs: &Set<Surface<T>>) -> Cube {
         let mut mins = None;
@@ -99,7 +97,6 @@ impl<'a, T> Tree<'a, T> {
 
     /// Initialise the children of a branching cell.
     #[allow(clippy::similar_names)]
-    #[inline]
     #[must_use]
     fn init_children(
         mut pb: &mut ProgressBar,
@@ -138,7 +135,6 @@ impl<'a, T> Tree<'a, T> {
     }
 
     /// Initialise a child cell.
-    #[inline]
     #[must_use]
     fn init_child(
         mut pb: &mut ProgressBar,
@@ -187,7 +183,6 @@ impl<'a, T> Tree<'a, T> {
 
     /// Determine the total number of cells used by this cell.
     /// This cell is included in the count.
-    #[inline]
     #[must_use]
     pub fn num_cells(&self) -> usize {
         match *self {
@@ -200,7 +195,6 @@ impl<'a, T> Tree<'a, T> {
 
     /// Determine the number leaf of cells contained used by this cell.
     /// This cell is potentially included in the count.
-    #[inline]
     #[must_use]
     pub fn num_leaves(&self) -> usize {
         match *self {
@@ -212,7 +206,6 @@ impl<'a, T> Tree<'a, T> {
     }
 
     /// Determine the number of triangle collision references used by this cell.
-    #[inline]
     #[must_use]
     pub fn num_tris(&self) -> usize {
         match *self {
@@ -222,7 +215,6 @@ impl<'a, T> Tree<'a, T> {
     }
 
     /// Determine the maximum depth from this cell to a terminal cell.
-    #[inline]
     #[must_use]
     pub fn depth(&self) -> usize {
         match *self {
@@ -247,7 +239,6 @@ impl<'a, T> Tree<'a, T> {
 
     /// Determine the terminal leaf cell containing the given position.
     #[must_use]
-    #[inline]
     pub fn find_leaf(&self, pos: &Point3) -> &Self {
         debug_assert!(self.boundary().contains(pos));
 
@@ -275,7 +266,6 @@ impl<'a, T> Tree<'a, T> {
     }
 
     /// Scan for what a given Ray, known to be within the cell, would observe.
-    #[inline]
     #[must_use]
     fn leaf_scan(&self, ray: &Ray, bump_dist: f64) -> Scan<'_, T> {
         debug_assert!(self.boundary().contains(ray.pos()));
@@ -320,7 +310,6 @@ impl<'a, T> Tree<'a, T> {
 
     /// Determine what a given Ray would observe.
     /// The maximum distance provided does not guarantee that any hit retrieved is less than the given distance.
-    #[inline]
     #[must_use]
     pub fn scan(&self, mut ray: Ray, bump_dist: f64, max_dist: f64) -> Option<Hit<'_, T>> {
         debug_assert!(bump_dist > 0.0);
@@ -362,7 +351,6 @@ impl<'a, T> Tree<'a, T> {
 }
 
 impl<T> Display for Tree<'_, T> {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.boundary(), "boundary");

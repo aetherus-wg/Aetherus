@@ -39,7 +39,6 @@
 //! impl Load for TestStructBuilder {
 //!     type Inst = TestStruct;
 //!
-//!     #[inline]
 //!     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
 //!         let struct1 = self.struct1.load(in_dir)?;
 //!         let struct2 = self.struct2.load(in_dir)?;
@@ -86,14 +85,12 @@ impl<T: File> File for Redirect<T>
 where
     for<'de> T: Deserialize<'de>,
 {
-    #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         from_json(path)
     }
 }
 
 impl<T: Serialize> Save for Redirect<T> {
-    #[inline]
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         as_json(self, path)
     }
@@ -102,7 +99,6 @@ impl<T: Serialize> Save for Redirect<T> {
 impl<T: File> Load for Redirect<T> {
     type Inst = T;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         match self {
             Self::There(path) => {
@@ -115,7 +111,6 @@ impl<T: File> Load for Redirect<T> {
 }
 
 impl<T: Display> Display for Redirect<T> {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         match *self {
             Self::There(ref path) => write!(fmt, "-> {}", path),
@@ -159,7 +154,6 @@ mod tests {
         impl Load for TestStructBuilder {
             type Inst = TestStruct;
 
-            #[inline]
             fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
                 let struct1 = self.struct1.load(in_dir)?;
                 let struct2 = self.struct2.load(in_dir)?;

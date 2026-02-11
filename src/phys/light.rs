@@ -28,7 +28,6 @@ impl<'a> Light<'a> {
     access!(mat: Material);
 
     /// Construct a new instance.
-    #[inline]
     #[must_use]
     pub fn new(power: f64, emitter: Emitter, spec: Probability, mat: &'a Material) -> Self {
         debug_assert!(power > 0.0);
@@ -55,7 +54,6 @@ impl<'a> Light<'a> {
 }
 
 impl<'a> Display for Light<'a> {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.power, "power (J/s)");

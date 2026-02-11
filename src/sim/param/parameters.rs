@@ -31,7 +31,6 @@ impl Parameters {
     /// Construct a new instance.
     #[allow(clippy::too_many_arguments)]
     #[must_use]
-    #[inline]
     pub const fn new(
         sett: Settings,
         boundary: Boundary,
@@ -58,7 +57,6 @@ impl Parameters {
 }
 
 impl Display for Parameters {
-    #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.sett, "settings");
