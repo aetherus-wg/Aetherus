@@ -4,5 +4,6 @@ pub mod progress_bar;
 pub mod range;
 pub mod silent_progress_bar;
 pub mod valid;
+pub mod obj_export;
 
 pub use {binner::*, index::*, progress_bar::*, range::*, silent_progress_bar::*, valid::*};
