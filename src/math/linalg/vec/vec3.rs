@@ -28,6 +28,10 @@ impl Vec3 {
         }
     }
 
+    pub fn abs(&self) -> Real {
+        self.data.abs().sum()
+    }
+
     /// Construct a x-axis column vector.
     #[inline]
     #[must_use]

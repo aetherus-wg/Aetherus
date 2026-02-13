@@ -555,7 +555,7 @@ mod tests {
         for _ in 0..100_000 {
             let incoming_photon =
                 Photon::new(incoming_ray.clone(), rng.random_range(300.0..900.0), 1.0);
-            println!("{}", incoming_photon.wavelength());
+            //println!("{}", incoming_photon.wavelength());
             match reflect.reflect(&mut rng, &incoming_photon, &hit) {
                 Some(_) => assert!(
                     lower <= incoming_photon.wavelength() && incoming_photon.wavelength() <= upper

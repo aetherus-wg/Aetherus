@@ -80,7 +80,7 @@ impl Mesh {
     }
 }
 
-impl Collide for Mesh {
+impl Collide<Cube> for Mesh {
     #[inline]
     fn overlap(&self, cube: &Cube) -> bool {
         if !self.boundary.overlap(cube) {

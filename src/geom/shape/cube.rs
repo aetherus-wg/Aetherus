@@ -253,7 +253,7 @@ impl Cube {
     }
 }
 
-impl Collide for Cube {
+impl Collide<Cube> for Cube {
     #[inline]
     fn overlap(&self, aabb: &Cube) -> bool {
         self.mins <= aabb.maxs && self.maxs >= aabb.mins

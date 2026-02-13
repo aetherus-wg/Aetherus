@@ -38,7 +38,7 @@ impl SmoothTriangle {
     }
 }
 
-impl Collide for SmoothTriangle {
+impl Collide<Cube> for SmoothTriangle {
     #[inline]
     fn overlap(&self, cube: &Cube) -> bool {
         self.tri.overlap(cube)

@@ -8,7 +8,7 @@ use std::{
 use aetherus::{
     args,
     fs::{File, Load, Save},
-    geom::Tree,
+    geom::{Collide, Tree},
     ord::{Build, Link, Name, Set},
     report,
     sim::{
@@ -97,6 +97,47 @@ fn main() {
 
     //report!(surfs, "surfaces");
     let surfs_names = surfs.names_list();
+
+    section(term_width, "Remeshing");
+    for i in 0..surfs_names.len() {
+        for j in (i+1)..surfs_names.len() {
+            if surfs_names[i] == surfs_names[j] {
+                println!("[WARN] Duplicate surface name: {}", surfs_names[i]);
+            }
+
+            let surf_u = surfs.get(&surfs_names[i]).unwrap();
+            let surf_v = surfs.get(&surfs_names[j]).unwrap();
+            let surf_u_tris: Vec<_> = surf_u.mesh().tris().iter().map(|st| st.tri().clone()).collect();
+            let surf_v_tris: Vec<_> = surf_v.mesh().tris().iter().map(|st| st.tri().clone()).collect();
+
+            println!("Checking for collisions between surfaces: {} and {}", surfs_names[i], surfs_names[j]);
+
+
+            let mut collisions: Vec<(usize, usize)> = Vec::new();
+
+            for (u_idx, u_tri) in surf_u_tris.iter().enumerate() {
+                for (v_idx, v_tri) in surf_v_tris.iter().enumerate() {
+                    if u_tri.overlap(v_tri) {
+                        println!("Overlapping surfaces: {} and {}", surfs_names[i], surfs_names[j]);
+                        println!("Overlapping between: {:?} and {:?}", u_tri, v_tri);
+                        collisions.push((u_idx, v_idx));
+                    }
+                }
+            }
+
+            for (u_idx, v_idx) in collisions {
+                let new_u_tris = surf_u_tris[u_idx].triangle_split(&surf_v_tris[v_idx]);
+                if new_u_tris.len() > 0 {
+                    println!("Splitting triangle {:?}:{} into {} triangles.", surf_u_tris[u_idx], u_idx, new_u_tris.len());
+                }
+                let new_v_tris = surf_v_tris[v_idx].triangle_split(&surf_u_tris[u_idx]);
+                if new_v_tris.len() > 0 {
+                    println!("Splitting triangle {:?}:{} into {} triangles.", surf_v_tris[v_idx], v_idx, new_v_tris.len());
+                }
+            }
+        }
+    }
+
 
     surfs.save(&out_dir.join("export_surfaces.obj"))
         .expect("Failed to save surfaces to output directory.");
