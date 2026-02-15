@@ -96,3 +96,25 @@ impl Segment {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_intersection() {
+        let seg1 = Segment::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 0.0, 0.0));
+        let seg2 = Segment::new(Point3::new(0.0, -1.0, 0.0), Point3::new(0.0, 1.0, 0.0));
+        assert!(matches!(seg1.intersect(&seg2), Some(_)));
+        assert!(matches!(seg1.intersect_open(&seg2), None));
+
+        let seg2 = Segment::new(Point3::new(0.0, -1.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+        assert!(matches!(seg1.intersect(&seg2), Some(_)));
+        assert!(matches!(seg1.intersect_open(&seg2), None));
+
+        let seg2 = Segment::new(Point3::new(1e-9, -1.0, 0.0), Point3::new(1e-9, 1.0, 0.0));
+        assert!(matches!(seg1.intersect(&seg2), Some(_)));
+        assert!(matches!(seg1.intersect_open(&seg2), Some(_)));
+
+    }
+}

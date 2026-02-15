@@ -26,7 +26,7 @@ use rand::{Rng, RngExt};
 
 
 /// Triangle.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Triangle {
     /// Vertex points.
     verts: [Point3; 3],
@@ -175,6 +175,11 @@ impl Triangle {
             let edge_vec = seg.end - seg.start;
             let to_vertex_vec = vertex - seg.start;
             let cross_prod = edge_vec.cross(&to_vertex_vec);
+            // 2. Check if vertex is on an edge of the triangle
+            if cross_prod.abs() < 1e-9 {
+                return false;
+            }
+            // 3. Check that the vertex is on the same side of each segment
             let dir = self.plane_norm.dot_vec(&cross_prod) > 0.0;
             match sign {
                 None => {
@@ -307,6 +312,7 @@ impl Triangle {
             let mut segs_inter = Vec::new();
             let intersections: Vec<_> = segs_v.iter()
                 // TODO: Check if order of interesect call matters?
+                // TODO: Should be intersect_open
                 .map(|(v1, v2)| (Segment::new(verts[*v1], verts[*v2]).intersect(&seg_u), *v1, *v2))
                 .filter(|(intersection, _v1, _v2)| intersection.is_some())
                 .map(|(intersection, v1, v2)| (intersection.unwrap(), v1, v2))
@@ -330,11 +336,12 @@ impl Triangle {
 
             assert!(segs_inter.len() <=2);
             if let Some(vertex_u) = vertex_u {
-                println!("Vertex {:?} is inside the triangle. Intersections: {}", verts[vertex_u], segs_inter.len());
+                println!("Vertex {:?} is inside the triangle {:?}. Intersections: {}", verts[vertex_u], self.verts(), segs_inter.len());
                 assert_eq!(segs_inter.len(), 1);
                 new_segs.push((vertex_u, segs_inter[0].inter_idx));
             } else {
-                assert!(segs_inter.len() == 0 || segs_inter.len() == 2);
+                assert!(segs_inter.len() == 0 || segs_inter.len() == 2,
+                    "Intersections found: {}", segs_inter.len());
                 if segs_inter.len() == 2 {
                     new_segs.push((segs_inter[0].inter_idx, segs_inter[1].inter_idx));
                 }
@@ -517,6 +524,8 @@ impl Collide<Segment> for Triangle {
             Segment::new(self.verts[GAMMA], self.verts[ALPHA]),
         ];
         for seg_u in segs_u {
+            // FIXME: Should be open intersection, however this seems to not detect any
+            // intersection
             if let Some(_intersection) = seg.intersect(&seg_u) {
                 return true;
             }
@@ -835,6 +844,24 @@ mod tests {
             crate::math::Dir3::new(0.0, 0.0, -1.0),
         );
         assert!(tri.hit(&ray));
+    }
+
+    #[test]
+    fn test_vertex_in() {
+        let tri = Triangle::new([
+            Point3::new(0., 0., 0.),
+            Point3::new(1., 0., 0.),
+            Point3::new(1., 1., 0.),
+        ]);
+
+        assert_eq!(tri.vertex_in(Point3::new(-1e-10, 0.0, 0.0)), false);
+        assert_eq!(tri.vertex_in(Point3::new(0.0, 0.0, 0.0)), false);
+        assert_eq!(tri.vertex_in(Point3::new(1.0, 0.0, 0.0)), false);
+        assert_eq!(tri.vertex_in(Point3::new(1.0, 1.0, 0.0)), false);
+        assert_eq!(tri.vertex_in(Point3::new(0.5, 0.0, 0.0)), false);
+        assert_eq!(tri.vertex_in(Point3::new(0.5, 0.5, 0.0)), false);
+        assert_eq!(tri.vertex_in(Point3::new(0.0, 0.0, 1e-10)), false);
+        assert_eq!(tri.vertex_in(Point3::new(0.5, 0.3, 0.0)), true);
     }
 
     #[test]
