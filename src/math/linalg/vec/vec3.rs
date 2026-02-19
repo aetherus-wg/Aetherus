@@ -81,6 +81,10 @@ impl Vec3 {
         self.data.magnitude()
     }
 
+    pub fn norm1(&self) -> Real {
+        self.data.abs().sum()
+    }
+
     /// Calculate the unit vector.
     #[inline]
     #[must_use]

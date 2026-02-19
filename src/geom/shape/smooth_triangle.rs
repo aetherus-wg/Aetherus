@@ -38,6 +38,13 @@ impl SmoothTriangle {
     }
 }
 
+impl From<Triangle> for SmoothTriangle {
+    fn from(tri: Triangle) -> Self {
+        let norms: [Dir3; 3] = [*tri.plane_norm(), *tri.plane_norm(), *tri.plane_norm()];
+        Self::new(tri, norms)
+    }
+}
+
 impl Collide<Cube> for SmoothTriangle {
     #[inline]
     fn overlap(&self, cube: &Cube) -> bool {

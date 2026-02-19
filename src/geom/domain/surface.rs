@@ -12,7 +12,7 @@ pub struct Surface<'a, T> {
 }
 
 impl<'a, T> Surface<'a, T> {
-    access!(mesh: Mesh);
+    access!(mesh, mesh_mut: Mesh);
     access!(attr: T);
 
     /// Construct a new instance.

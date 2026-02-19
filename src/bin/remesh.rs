@@ -7,7 +7,7 @@ use std::{
 use aetherus::{
     args,
     fs::{File, Load, Save},
-    geom::{Collide, Tree},
+    geom::{Collide, Mesh, SmoothTriangle, Tree},
     ord::{Build, Link, Name, Set},
     report,
     sim::{
@@ -91,7 +91,7 @@ fn main() {
         .map(|obj| (Name::new(&obj.obj_name), obj.get_surface()))
         .collect();
 
-    let surfs = Set::from_pairs(surfs_vec)
+    let mut surfs = Set::from_pairs(surfs_vec)
         .expect("Failed to build surface set.");
 
     //report!(surfs, "surfaces");
@@ -121,16 +121,18 @@ fn main() {
             while !surf_u_tris.is_empty()
             {
                 let u_tri = surf_u_tris.pop_front().unwrap();
+                let mut v_tris_mutated = Vec::new();
                 let mut new_surf_v_tris = Vec::new();
                 let mut u_tri_collision = false;
 
                 println!("Checking for collisions of {}:{:?} to {}", surfs_names[i], u_tri, surfs_names[j]);
                 for (v_idx, v_tri) in surf_v_tris.iter().enumerate() {
+                    let mut v_tri_collision = false;
                     if u_tri.overlap(v_tri) {
                         println!("Overlapping surfaces: {} and {}", surfs_names[i], surfs_names[j]);
                         println!("Overlapping between: {:?} and {:?}", u_tri, v_tri);
                         let new_u_tris = u_tri.triangle_split(&surf_v_tris[v_idx]);
-                        if new_u_tris.len() > 0 {
+                        if new_u_tris.len() > 1 {
                             println!("Splitting triangle {:?}: into {} triangles.", u_tri, new_u_tris.len());
                             new_u_tris
                                 .iter()
@@ -140,7 +142,7 @@ fn main() {
                             u_tri_collision = true;
                         }
                         let new_v_tris = surf_v_tris[v_idx].triangle_split(&u_tri);
-                        if new_v_tris.len() > 0 {
+                        if new_v_tris.len() > 1 {
                             println!("Splitting triangle {:?}:{} into {} triangles.", surf_v_tris[v_idx], v_idx, new_v_tris.len());
                             surf_v_tris.remove(v_idx);
                             new_v_tris
@@ -148,18 +150,35 @@ fn main() {
                                 .for_each(|new_v_tri|
                                     surf_v_tris.push(new_v_tri.clone())
                                 );
+                            v_tri_collision = true;
                         }
                         assert!(new_u_tris.len() > 0 || new_v_tris.len() > 0, "Not a valid triangle collision occured");
                         break;
-                    } else {
-                        new_surf_v_tris.push(v_tri);
+                    }
+
+                    if !v_tri_collision {
+                        v_tris_mutated.push(v_idx);
+                        new_surf_v_tris.push(v_tri.clone());
                     }
                 }
 
                 if !u_tri_collision {
                     final_surf_u_tris.push(u_tri);
                 }
+
+                // TODO
+                let mut offset = 0;
+                for v_idx in v_tris_mutated {
+                    surf_v_tris.remove(v_idx - offset);
+                    offset += 1;
+                }
+                surf_v_tris.extend(new_surf_v_tris);
+
+                *surfs.get_mut(&surfs_names[j]).unwrap().mesh_mut() =
+                    Mesh::new(surf_v_tris.iter().map(|tri| SmoothTriangle::from(tri.clone())).collect());
             }
+            *surfs.get_mut(&surfs_names[i]).unwrap().mesh_mut() =
+                Mesh::new(final_surf_u_tris.iter().map(|tri| SmoothTriangle::from(tri.clone())).collect());
         }
     }
 
