@@ -16,6 +16,7 @@ exclude = ["docs/", "input/", "output/"]
 default = []
 mpi = ["dep:mpi", "dep:memoffset"]
 pyo3 = ['dep:pyo3']
+release-logging = ["log/max_level_info"]
 
 [dependencies]
 # ARCTK Dependencies
@@ -64,6 +65,7 @@ anyhow = "1.0.100"
 thiserror = "2.0.17"
 log = "0.4.29"
 rand_distr = "0.6.0"
+env_logger = "0.11.9"
 aetherus-events = { git = "https://github.com/aetherus-wg/aetherus-events", tag="0.1.5", version = "0.1.5" }
 
 [dev-dependencies]

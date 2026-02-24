@@ -17,11 +17,11 @@ use std::usize;
 
 use crate::{
     access,
-    geom::{Collide, Cube, Emit, Ray, Side, Trace, Transformable, segment::Segment},
+    geom::{Collide, Cube, Emit, Ray, Side, Split, Trace, Transformable, segment::Segment},
     math::{Dir3, Point3, Trans3, Vec3},
     ord::{ALPHA, BETA, GAMMA},
 };
-use log::warn;
+use log::{trace, warn};
 use rand::{Rng, RngExt};
 
 
@@ -167,9 +167,9 @@ impl Triangle {
 
     pub fn edges(&self) -> [Segment; 3] {
         [
-            Segment::new(self.verts[ALPHA], self.verts[BETA]),
             Segment::new(self.verts[BETA], self.verts[GAMMA]),
             Segment::new(self.verts[GAMMA], self.verts[ALPHA]),
+            Segment::new(self.verts[ALPHA], self.verts[BETA]),
         ]
     }
 
@@ -190,6 +190,7 @@ impl Triangle {
             let cross_prod = edge_vec.cross(&to_vertex_vec);
             // 2. Check if vertex is on an edge of the triangle
             if cross_prod.abs() < 1e-9 {
+                trace!("Vertex {:?} is on edge {:?} of triangle.", vertex, seg);
                 return false;
             }
             // 3. Check that the vertex is on the same side of each segment
@@ -207,375 +208,103 @@ impl Triangle {
         }
         true
     }
+}
 
-    // TODO: Test scenario when vertices overlap
-    pub fn triangle_split(&self, other: &Triangle) -> Vec<Triangle> {
-
-        println!("Check intersections of {:?} with {:?}", self, other);
-
-        #[derive(Debug)]
-        struct SegList {
-            segs: Vec<(usize, usize)>,
-        }
-
-        impl SegList {
-            fn new() -> Self {
-                Self { segs: Vec::new() }
-            }
-            fn push(&mut self, seg: (usize, usize)) {
-                let new_seg = if seg.0 < seg.1 { seg } else { (seg.1, seg.0) };
-                if !self.segs.contains(&new_seg) {
-                    self.segs.push(new_seg);
-                }
-            }
-            fn inner(&self) -> &Vec<(usize, usize)> {
-                &self.segs
-            }
-        }
-
-        #[derive(Debug)]
-        struct TriList {
-            tris: Vec<(usize, usize, usize)>,
-        }
-
-        impl TriList {
-            fn new() -> Self {
-                Self { tris: Vec::new() }
-            }
-            fn push(&mut self, tri: (usize, usize, usize)) {
-                let mut tri_vec = vec![tri.0, tri.1, tri.2];
-                tri_vec.sort_unstable();
-                let new_tri = (tri_vec[0], tri_vec[1], tri_vec[2]);
-                if !self.tris.contains(&new_tri) {
-                    self.tris.push(new_tri);
-                }
-            }
-            fn inner(&self) -> &Vec<(usize, usize, usize)> {
-                &self.tris
-            }
-        }
-
-        let mut verts = vec![
-            self.verts[ALPHA],
-            self.verts[BETA],
-            self.verts[GAMMA],
-        ];
-        let mut verts_valid = vec![true, true, true];
-
-        let segs_u: [(usize, usize); 3] = [(0, 1), (1, 2), (2, 0)];
-
-        let mut new_segs = SegList::new();
-
-        let mut verts_in = vec![];
-        let mut verts_out = vec![];
-        let mut segs_v = vec![];
-
-        // Resolve vertices and segments inside the triangle
-        for &v in &other.verts {
-            if self.vertex_in(v) {
-                verts_in.push(verts.len());
-                verts.push(v);
-                verts_valid.push(true);
-            } else {
-                verts_out.push(v);
-            }
-        }
-        for i in 0..verts_in.len() {
-            for j in (i+1)..verts_in.len() {
-                new_segs.push((verts_in[i], verts_in[j]));
-            }
-        }
-        println!("Verts in: {:?}, Verts out: {:?}", verts_in, verts_out);
-        match verts_out.len() {
-            0 => {
-                assert_eq!(verts_in.len(), 3);
-                // No vertices outside. The other triangle is fully contained in this one.
-            }
-            1 => {
-                assert_eq!(verts_in.len(), 2);
-                segs_v.push((Some(verts_in[0]), Segment::new(verts_out[0], verts[verts_in[0]])));
-                segs_v.push((Some(verts_in[1]), Segment::new(verts_out[0], verts[verts_in[1]])));
-            }
-            2 => {
-                assert_eq!(verts_in.len(), 1);
-                segs_v.push((Some(verts_in[0]), Segment::new(verts_out[0], verts[verts_in[0]])));
-                segs_v.push((Some(verts_in[0]), Segment::new(verts_out[1], verts[verts_in[0]])));
-            }
-            3 => {
-                assert_eq!(verts_in.len(), 0);
-                segs_v.push((None, Segment::new(verts_out[0], verts_out[1])));
-                segs_v.push((None, Segment::new(verts_out[1], verts_out[2])));
-                segs_v.push((None, Segment::new(verts_out[2], verts_out[0])));
-            }
-            _ => unreachable!(),
-        }
-
-        println!("Segments in triangle: {:?}", segs_v);
-
-
-        // Find all intersections and segments that need to be included in the new triangles
-        #[derive(Debug, Clone, Copy)]
-        struct SegWithIntersection {
-            start: usize,
-            end: usize,
-            inter_idx: usize,
-            eps: bool,
-        }
-
-        impl SegWithIntersection {
-            fn is_bound(&self) -> bool {
-                self.start == self.inter_idx || self.end == self.inter_idx
-            }
-        }
-
-
-        let mut inters_idx: Vec<SegWithIntersection> = Vec::new();
-
-        for (vertex_v, seg_v) in segs_v {
-            println!("Vertex {:?} is inside the triangle. Segment: {:?}", vertex_v, seg_v);
-            let mut segs_all_inter = Vec::new();
-            let intersections: Vec<_> = segs_u.iter()
-                // TODO: Check if order of interesect call matters?
-                // TODO: Should be intersect_open
-                .map(|(u1, u2)| (Segment::new(verts[*u1], verts[*u2]).intersect_with_eps(&seg_v, 1e-9), *u1, *u2))
-                .filter(|(intersection, _u1, _u2)| intersection.is_some())
-                .map(|(intersection, u1, u2)| (intersection.unwrap(), u1, u2))
-                .collect();
-
-            println!("Intersections: {:?}", intersections);
-
-            let mut inter_indices = Vec::new();
-            for (intersection, u1, u2) in intersections.clone() {
-                let idx =
-                if (verts[u1]-intersection.0).norm1() < 1e-9 {
-                    u1
-                } else if (verts[u2]-intersection.0).norm1() < 1e-9 {
-                    u2
-                } else {
-                    let mut idx = verts.len();
-                    for (i, v) in verts.iter().enumerate() {
-                        if (v-intersection.0).norm1() < 1e-9 {
-                            idx = i; break;
-                        }
-                    }
-                    idx
-                };
-
-                if !inter_indices.contains(&idx) {
-                    // Discard segments that are coming from outside the triangle and are fuzzy
-                    // intersections
-                    inter_indices.push(idx);
-                    if idx != u1 && idx != u2 {
-                        verts.push(intersection.0);
-                        verts_valid.push(false);
-                    }
-                    segs_all_inter.push(
-                        SegWithIntersection {
-                            start: u1,
-                            end: u2,
-                            inter_idx: idx,
-                            eps: intersection.1,
-                        }
-                    );
-                }
-            }
-
-            assert!(segs_all_inter.len() <= 2, "Expected at most 2 intersections, but {} where found.", segs_all_inter.len());
-
-            let segs_inter: Vec<_> = segs_all_inter
-                .iter()
-                .filter(|seg_inter| vertex_v.is_some() || !seg_inter.eps || segs_all_inter.len() == 2)
-                .collect();
-
-            segs_inter.iter().for_each(|seg_inter| {
-                verts_valid[seg_inter.inter_idx] = true;
-            });
-
-            // TODO: Deduplicate inter_idx among segs_inter
-            //while i < segs_inter.len() {
-            //    if inter_indices.contains(&segs_inter[i].inter_idx) {
-            //        segs_inter.remove(i);
-            //    } else {
-            //        inter_indices.push(segs_inter[i].inter_idx);
-            //        i+=1;
-            //    }
-            //}
-
-            println!("Segments with intersections: {:?}, expected max 2", segs_inter);
-            println!("Vertices {:?} with validity {:?}", verts, verts_valid);
-
-            assert!(segs_inter.len() <=2, "Intersections detected {}", segs_inter.len());
-            if let Some(vertex_v) = vertex_v {
-                println!("Vertex {}:{:?} is inside the triangle {:?}. Intersections: {}", vertex_v, verts[vertex_v], self.verts(), segs_inter.len());
-                assert_eq!(segs_inter.len(), 1);
-                new_segs.push((vertex_v, segs_inter[0].inter_idx));
-            } else {
-                if segs_inter.len() == 2 {
-                    new_segs.push((segs_inter[0].inter_idx, segs_inter[1].inter_idx));
-                } else {
-                    // FIXME:
-                    if segs_inter.len() == 1 {
-                        println!("WARN: Outer intersection with eps error must be checked");
-                    }
-                }
-            }
-            inters_idx.extend(segs_inter);
-        }
-
-        // TODO: Deduplicate inter_idx among segs_inter
-        let mut inter_indices = Vec::new();
-        let mut i = 0;
-        while i < inters_idx.len() {
-            if inter_indices.contains(&inters_idx[i].inter_idx) {
-                inters_idx.remove(i);
-            } else {
-                inter_indices.push(inters_idx[i].inter_idx);
-                i+=1;
-            }
-        }
-        println!("Intersections: {:?}", inters_idx);
-
-        println!("New segments after intersection: {:?}", new_segs);
-
-        let mut colinear_verts: Vec<Vec<usize>> = vec![Vec::new(); 9];
-
-        let mut checked = vec![false; 9];
-        for i in 0..inters_idx.len() {
-            println!("Find colinear verts for vertex {}", inters_idx[i].inter_idx);
-            // If the intersection is one of triangle vertices, discard new segments being
-            // created
-            if inters_idx[i].is_bound() {
-                continue;
-            }
-            for j in (i+1)..inters_idx.len() {
-                // TODO: Check how intersection match with triangles vertices affects this branch
-                if inters_idx[i].start == inters_idx[j].start && inters_idx[i].end == inters_idx[j].end && !inters_idx[j].is_bound() {
-                    checked[i] = true;
-                    checked[j] = true;
-                    let idx1 = inters_idx[i].start;
-                    let idx2 = inters_idx[i].end;
-                    let idx_i1 = inters_idx[i].inter_idx;
-                    let idx_i2 = inters_idx[j].inter_idx;
-                    if (verts[idx_i1] - verts[idx1]).mag() < (verts[idx_i2] - verts[idx1]).mag() {
-                        colinear_verts[idx1].push(idx_i2);
-                        colinear_verts[idx1].push(idx2);
-                        colinear_verts[idx_i1].push(idx2);
-                        colinear_verts[idx_i2].push(idx1);
-                        colinear_verts[idx2].push(idx1);
-                        colinear_verts[idx2].push(idx_i1);
-                        new_segs.push((idx1, idx_i1));
-                        new_segs.push((idx_i1, idx_i2));
-                        new_segs.push((idx_i2, idx2));
-                    } else {
-                        colinear_verts[idx1].push(idx_i1);
-                        colinear_verts[idx1].push(idx2);
-                        colinear_verts[idx_i2].push(idx2);
-                        colinear_verts[idx_i1].push(idx1);
-                        colinear_verts[idx2].push(idx1);
-                        colinear_verts[idx2].push(idx_i2);
-                        new_segs.push((idx1, idx_i2));
-                        new_segs.push((idx_i2, idx_i1));
-                        new_segs.push((idx_i1, idx2));
-                    }
-                }
-            }
-            if !checked[i] {
-                colinear_verts[inters_idx[i].start].push(inters_idx[i].end);
-                colinear_verts[inters_idx[i].end].push(inters_idx[i].start);
-                new_segs.push((inters_idx[i].start, inters_idx[i].inter_idx));
-                new_segs.push((inters_idx[i].inter_idx, inters_idx[i].end));
-            }
-        }
-
-        println!("New segments after handling colinearity: {:?}", new_segs);
-        println!("Colinear vertices: {:?}", colinear_verts);
-
-        for (idx, vert) in verts.clone().into_iter().enumerate() {
-            if !verts_valid[idx] {
-                continue;
-            }
-            for (other_idx, other_vert) in verts.clone().into_iter().enumerate() {
-                if !verts_valid[other_idx] {
-                    continue;
-                }
-                if idx == other_idx {
-                    continue;
-                }
-                if colinear_verts[idx].contains(&other_idx) {
-                    continue;
-                }
-                let new_seg = Segment::new(vert, other_vert);
-                let mut clash = false;
-                for seg in new_segs.inner().clone() {
-                    match Segment::new(verts[seg.0], verts[seg.1]).intersect_with_eps(&new_seg, 1e-9){
-                        Some((_intersect, false)) => {
-
-                            clash = true;
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-                if !clash {
-                    new_segs.push((idx, other_idx));
-                }
-            }
-        }
-
-        println!("New segments after adding non-intersecting segments: {:?}", new_segs);
-
-        // Construct triangles from the segments `new_segs`
-        let mut segs_map = vec![Vec::new(); 9];
-        for seg in new_segs.inner() {
-            if !segs_map[seg.0].contains(&seg.1) {
-                segs_map[seg.0].push(seg.1);
-            }
-            if !segs_map[seg.1].contains(&seg.0) {
-                segs_map[seg.1].push(seg.0);
-            }
-        }
-
-        println!("Segment map: {:?}", segs_map);
-
-        let mut tris = TriList::new();
-
-        for i in 0..verts.len() {
-            for j in segs_map[i].clone() {
-                for k in segs_map[j].clone() {
-                    if segs_map[i].contains(&k) {
-                        tris.push((i, j, k));
-                    }
-                }
-            }
-        }
-
-        let tris_vec: Vec<_> = tris.inner().iter().filter(|(i, j, k)| {
-            let tri = Triangle::new_with_norm([verts[*i], verts[*j], verts[*k]], self.plane_norm);
-            let mut checked = true;
-            for (v_idx, v) in verts.iter().enumerate() {
-                if v_idx != *i && v_idx != *j && v_idx != *k && tri.vertex_in(v.clone()) {
-                    checked = false;
-                    break;
-                }
-            }
-            checked
-        }).collect();
-
-
-        // Filter out triangles that contain other vertices
-
-        assert!(tris_vec.len()<=7, "Expected at most 7 triangles, but {} where formed", tris.inner().len());
-
-        println!("Triangles (by vertex indices): {:?}", tris_vec);
-
-        tris_vec.iter().map(|(i, j, k)| Triangle::new_with_norm([verts[*i], verts[*j], verts[*k]], self.plane_norm)).collect()
+impl Trace for Triangle {
+    #[inline]
+    fn hit(&self, ray: &Ray) -> bool {
+        self.intersection_coors(ray).is_some()
     }
 
+    #[inline]
+    fn dist(&self, ray: &Ray) -> Option<f64> {
+        if let Some((dist, _coors)) = self.intersection_coors(ray) {
+            return Some(dist);
+        }
+
+        None
+    }
+
+    #[inline]
+    fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
+        self.dist(ray).map(|dist| {
+            let side = Side::new(ray.dir(), self.plane_norm);
+            (dist, side)
+        })
+    }
+}
+
+impl Transformable for Triangle {
+    #[inline]
+    fn transform(&mut self, trans: &Trans3) {
+        for v in &mut self.verts {
+            *v = trans.transform_point(&v.data()).into();
+        }
+
+        self.plane_norm = Dir3::from(trans.transform_vector(&self.plane_norm.data()));
+    }
+}
+
+impl Emit for Triangle {
+    fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
+        let mut u = rng.random::<f64>();
+        let mut v = rng.random::<f64>();
+
+        if (u + v) > 1.0 {
+            u = 1.0 - u;
+            v = 1.0 - v;
+        }
+
+        let edge_a_b = self.verts[BETA] - self.verts[ALPHA];
+        let edge_a_c = self.verts[GAMMA] - self.verts[ALPHA];
+
+        let pos = self.verts[ALPHA] + (edge_a_b * u) + (edge_a_c * v);
+
+        Ray::new(pos, self.plane_norm)
+    }
 }
 
 impl Collide<Point3> for Triangle {
+    // NOTE: Similar to Triangle.vertex_in, but including coincidence with triangle vertices and
+    // edges
     fn overlap(&self, point: &Point3) -> bool {
-        self.vertex_in(*point)
+        let segs = self.edges();
+        let mut sign: Option<bool> = None;
+
+        // 1. First check that vertex is in the plane of the triangle
+        let vertex_to_tri = point - self.verts[ALPHA];
+        if self.plane_norm.dot_vec(&vertex_to_tri).abs() > 1e-9 {
+            return false;
+        }
+
+        // 2. Then check that vertex is on the same side of all edges of the triangle
+        for seg in &segs {
+            let edge_vec = seg.end - seg.start;
+            let to_vertex_vec = point - seg.start;
+            if to_vertex_vec.norm1() < 1e-9 {
+                // Vertex coincides with triangle vertex
+                break;
+            }
+            let cross_prod = edge_vec.cross(&to_vertex_vec);
+            // 3. Check that the vertex is on the same side of each segment
+            let cross_prod_mag = self.plane_norm.dot_vec(&cross_prod);
+            if cross_prod_mag.abs() < 1e-9 {
+                // Point is on the edge
+                continue;
+            }
+            let dir = self.plane_norm.dot_vec(&cross_prod) > 0.0;
+            match sign {
+                None => {
+                        sign = Some(dir);
+                }
+                Some(sign) => {
+                    if sign != dir {
+                        return false;
+                    }
+                }
+            };
+        }
+        true
     }
 }
 
@@ -586,9 +315,6 @@ impl Collide<Triangle> for Triangle {
         // 1. Check that triangle planes are parallel
         let planes_allignment = self.plane_norm.dot(&other.plane_norm);
         if planes_allignment.abs() < 0.999 {
-            if planes_allignment > 0.0 {
-                warn!("Triangles normals face the same way");
-            }
             return false;
         }
 
@@ -609,25 +335,32 @@ impl Collide<Triangle> for Triangle {
             .unwrap();
         //let cross_triangle_edge = self.verts[ALPHA] - other.verts[ALPHA];
 
+
         // 3. Check that the triangles are coplanar
-        if self.plane_norm.dot_vec(&cross_triangle_edge) > EPS_INTERSECTION {
+        if self.plane_norm.dot_vec(&cross_triangle_edge).abs() > EPS_INTERSECTION {
             false
         } else {
+            if planes_allignment > 0.0 {
+                warn!("Triangles normals face the same way for: {:?} and {:?}", self, other);
+            }
+
             // 4. Check that either at least one vertex is inside the triangle or a cross edge
             //    intersection
-            for &v in &self.verts {
-                if other.vertex_in(v) {
+            for &v in &other.verts {
+                if self.vertex_in(v) {
+                    trace!("Found vertex {:?} inside triangle", v);
                     return true;
                 }
             }
-
             let segs_u = [
                 Segment::new(other.verts[ALPHA], other.verts[BETA]),
                 Segment::new(other.verts[BETA], other.verts[GAMMA]),
                 Segment::new(other.verts[GAMMA], other.verts[ALPHA]),
             ];
             for seg_u in segs_u {
+                // FIXME: This should exclude touching but not overlaping triangles
                 if self.overlap(&seg_u) {
+                    trace!("Found edge {:?} intersection with triangle", seg_u);
                     return true;
                 }
             }
@@ -745,57 +478,367 @@ impl Collide<Cube> for Triangle {
     }
 }
 
-impl Trace for Triangle {
-    #[inline]
-    fn hit(&self, ray: &Ray) -> bool {
-        self.intersection_coors(ray).is_some()
-    }
+impl Split<Triangle> for Triangle {
+    fn split(&self, other: &Triangle) -> Vec<Triangle> {
 
-    #[inline]
-    fn dist(&self, ray: &Ray) -> Option<f64> {
-        if let Some((dist, _coors)) = self.intersection_coors(ray) {
-            return Some(dist);
+        trace!("Check intersections of {:?} with {:?}", self, other);
+
+        #[derive(Debug)]
+        struct SegList {
+            segs: Vec<(usize, usize)>,
         }
 
-        None
-    }
-
-    #[inline]
-    fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
-        self.dist(ray).map(|dist| {
-            let side = Side::new(ray.dir(), self.plane_norm);
-            (dist, side)
-        })
-    }
-}
-
-impl Transformable for Triangle {
-    #[inline]
-    fn transform(&mut self, trans: &Trans3) {
-        for v in &mut self.verts {
-            *v = trans.transform_point(&v.data()).into();
+        impl SegList {
+            fn new() -> Self {
+                Self { segs: Vec::new() }
+            }
+            fn push(&mut self, seg: (usize, usize)) {
+                let new_seg = if seg.0 < seg.1 { seg } else { (seg.1, seg.0) };
+                if !self.segs.contains(&new_seg) {
+                    self.segs.push(new_seg);
+                }
+            }
+            fn inner(&self) -> &Vec<(usize, usize)> {
+                &self.segs
+            }
         }
 
-        self.plane_norm = Dir3::from(trans.transform_vector(&self.plane_norm.data()));
-    }
-}
-
-impl Emit for Triangle {
-    fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
-        let mut u = rng.random::<f64>();
-        let mut v = rng.random::<f64>();
-
-        if (u + v) > 1.0 {
-            u = 1.0 - u;
-            v = 1.0 - v;
+        #[derive(Debug)]
+        struct TriList {
+            tris: Vec<(usize, usize, usize)>,
         }
 
-        let edge_a_b = self.verts[BETA] - self.verts[ALPHA];
-        let edge_a_c = self.verts[GAMMA] - self.verts[ALPHA];
+        impl TriList {
+            fn new() -> Self {
+                Self { tris: Vec::new() }
+            }
+            fn push(&mut self, tri: (usize, usize, usize)) {
+                let mut tri_vec = vec![tri.0, tri.1, tri.2];
+                tri_vec.sort_unstable();
+                let new_tri = (tri_vec[0], tri_vec[1], tri_vec[2]);
+                if !self.tris.contains(&new_tri) {
+                    self.tris.push(new_tri);
+                }
+            }
+            fn inner(&self) -> &Vec<(usize, usize, usize)> {
+                &self.tris
+            }
+        }
 
-        let pos = self.verts[ALPHA] + (edge_a_b * u) + (edge_a_c * v);
+        let mut verts = vec![
+            self.verts[ALPHA],
+            self.verts[BETA],
+            self.verts[GAMMA],
+        ];
+        let mut verts_valid = vec![true, true, true];
 
-        Ray::new(pos, self.plane_norm)
+        let segs_u: [(usize, usize); 3] = [(0, 1), (1, 2), (2, 0)];
+
+        let mut new_segs = SegList::new();
+
+        let mut verts_in = vec![];
+        let mut verts_out = vec![];
+        let mut segs_v = vec![];
+
+        // Resolve vertices and segments inside the triangle
+        for &v in &other.verts {
+            if self.vertex_in(v) {
+                verts_in.push(verts.len());
+                verts.push(v);
+                verts_valid.push(true);
+            } else {
+                verts_out.push(v);
+            }
+        }
+        for i in 0..verts_in.len() {
+            for j in (i+1)..verts_in.len() {
+                new_segs.push((verts_in[i], verts_in[j]));
+            }
+        }
+        trace!("Verts in: {:?}, Verts out: {:?}", verts_in, verts_out);
+        match verts_out.len() {
+            0 => {
+                assert_eq!(verts_in.len(), 3);
+                // No vertices outside. The other triangle is fully contained in this one.
+            }
+            1 => {
+                assert_eq!(verts_in.len(), 2);
+                segs_v.push((Some(verts_in[0]), Segment::new(verts_out[0], verts[verts_in[0]])));
+                segs_v.push((Some(verts_in[1]), Segment::new(verts_out[0], verts[verts_in[1]])));
+            }
+            2 => {
+                assert_eq!(verts_in.len(), 1);
+                segs_v.push((Some(verts_in[0]), Segment::new(verts_out[0], verts[verts_in[0]])));
+                segs_v.push((Some(verts_in[0]), Segment::new(verts_out[1], verts[verts_in[0]])));
+            }
+            3 => {
+                assert_eq!(verts_in.len(), 0);
+                segs_v.push((None, Segment::new(verts_out[0], verts_out[1])));
+                segs_v.push((None, Segment::new(verts_out[1], verts_out[2])));
+                segs_v.push((None, Segment::new(verts_out[2], verts_out[0])));
+            }
+            _ => unreachable!(),
+        }
+
+        trace!("Segments in triangle: {:?}", segs_v);
+
+
+        // Find all intersections and segments that need to be included in the new triangles
+        #[derive(Debug, Clone, Copy)]
+        struct SegWithIntersection {
+            start: usize,
+            end: usize,
+            inter_idx: usize,
+            eps: bool,
+        }
+
+        impl SegWithIntersection {
+            fn is_bound(&self) -> bool {
+                self.start == self.inter_idx || self.end == self.inter_idx
+            }
+        }
+
+
+        let mut inters_idx: Vec<SegWithIntersection> = Vec::new();
+
+        for (vertex_v, seg_v) in segs_v {
+            trace!("Vertex {:?} is inside the triangle. Segment: {:?}", vertex_v, seg_v);
+            let mut segs_all_inter = Vec::new();
+            let intersections: Vec<_> = segs_u.iter()
+                // TODO: Check if order of interesect call matters?
+                // TODO: Should be intersect_open
+                .map(|(u1, u2)| (Segment::new(verts[*u1], verts[*u2]).intersect_with_eps(&seg_v, 1e-9), *u1, *u2))
+                .filter(|(intersection, _u1, _u2)| intersection.is_some())
+                .map(|(intersection, u1, u2)| (intersection.unwrap(), u1, u2))
+                .collect();
+
+            trace!("Intersections: {:?}", intersections);
+
+            let mut inter_indices = Vec::new();
+            for (intersection, u1, u2) in intersections.clone() {
+                let idx =
+                if (verts[u1]-intersection.0).norm1() < 1e-9 {
+                    u1
+                } else if (verts[u2]-intersection.0).norm1() < 1e-9 {
+                    u2
+                } else {
+                    let mut idx = verts.len();
+                    for (i, v) in verts.iter().enumerate() {
+                        if (v-intersection.0).norm1() < 1e-9 {
+                            idx = i; break;
+                        }
+                    }
+                    idx
+                };
+
+                if !inter_indices.contains(&idx) {
+                    // Discard segments that are coming from outside the triangle and are fuzzy
+                    // intersections
+                    inter_indices.push(idx);
+                    if idx != u1 && idx != u2 {
+                        verts.push(intersection.0);
+                        verts_valid.push(false);
+                    }
+                    segs_all_inter.push(
+                        SegWithIntersection {
+                            start: u1,
+                            end: u2,
+                            inter_idx: idx,
+                            eps: intersection.1,
+                        }
+                    );
+                }
+            }
+
+            assert!(segs_all_inter.len() <= 2, "Expected at most 2 intersections, but {} where found.", segs_all_inter.len());
+
+            let segs_inter: Vec<_> = segs_all_inter
+                .iter()
+                .filter(|seg_inter| vertex_v.is_some() || !seg_inter.eps || segs_all_inter.len() == 2)
+                .collect();
+
+            segs_inter.iter().for_each(|seg_inter| {
+                verts_valid[seg_inter.inter_idx] = true;
+            });
+
+            // TODO: Deduplicate inter_idx among segs_inter
+            //while i < segs_inter.len() {
+            //    if inter_indices.contains(&segs_inter[i].inter_idx) {
+            //        segs_inter.remove(i);
+            //    } else {
+            //        inter_indices.push(segs_inter[i].inter_idx);
+            //        i+=1;
+            //    }
+            //}
+
+            trace!("Segments with intersections: {:?}, expected max 2", segs_inter);
+            trace!("Vertices {:?} with validity {:?}", verts, verts_valid);
+
+            assert!(segs_inter.len() <=2, "Intersections detected {}", segs_inter.len());
+            if let Some(vertex_v) = vertex_v {
+                trace!("Vertex {}:{:?} is inside the triangle {:?}. Intersections: {}", vertex_v, verts[vertex_v], self.verts(), segs_inter.len());
+                assert_eq!(segs_inter.len(), 1);
+                new_segs.push((vertex_v, segs_inter[0].inter_idx));
+            } else {
+                if segs_inter.len() == 2 {
+                    new_segs.push((segs_inter[0].inter_idx, segs_inter[1].inter_idx));
+                } else {
+                    // FIXME:
+                    if segs_inter.len() == 1 {
+                        trace!("WARN: Outer intersection with eps error must be checked");
+                    }
+                }
+            }
+            inters_idx.extend(segs_inter);
+        }
+
+        // TODO: Deduplicate inter_idx among segs_inter
+        let mut inter_indices = Vec::new();
+        let mut i = 0;
+        while i < inters_idx.len() {
+            if inter_indices.contains(&inters_idx[i].inter_idx) {
+                inters_idx.remove(i);
+            } else {
+                inter_indices.push(inters_idx[i].inter_idx);
+                i+=1;
+            }
+        }
+        trace!("Intersections: {:?}", inters_idx);
+
+        trace!("New segments after intersection: {:?}", new_segs);
+
+        let mut colinear_verts: Vec<Vec<usize>> = vec![Vec::new(); 9];
+
+        let mut checked = vec![false; 9];
+        for i in 0..inters_idx.len() {
+            trace!("Find colinear verts for vertex {}", inters_idx[i].inter_idx);
+            // If the intersection is one of triangle vertices, discard new segments being
+            // created
+            if inters_idx[i].is_bound() {
+                continue;
+            }
+            for j in (i+1)..inters_idx.len() {
+                // TODO: Check how intersection match with triangles vertices affects this branch
+                if inters_idx[i].start == inters_idx[j].start && inters_idx[i].end == inters_idx[j].end && !inters_idx[j].is_bound() {
+                    checked[i] = true;
+                    checked[j] = true;
+                    let idx1 = inters_idx[i].start;
+                    let idx2 = inters_idx[i].end;
+                    let idx_i1 = inters_idx[i].inter_idx;
+                    let idx_i2 = inters_idx[j].inter_idx;
+                    if (verts[idx_i1] - verts[idx1]).mag() < (verts[idx_i2] - verts[idx1]).mag() {
+                        colinear_verts[idx1].push(idx_i2);
+                        colinear_verts[idx1].push(idx2);
+                        colinear_verts[idx_i1].push(idx2);
+                        colinear_verts[idx_i2].push(idx1);
+                        colinear_verts[idx2].push(idx1);
+                        colinear_verts[idx2].push(idx_i1);
+                        new_segs.push((idx1, idx_i1));
+                        new_segs.push((idx_i1, idx_i2));
+                        new_segs.push((idx_i2, idx2));
+                    } else {
+                        colinear_verts[idx1].push(idx_i1);
+                        colinear_verts[idx1].push(idx2);
+                        colinear_verts[idx_i2].push(idx2);
+                        colinear_verts[idx_i1].push(idx1);
+                        colinear_verts[idx2].push(idx1);
+                        colinear_verts[idx2].push(idx_i2);
+                        new_segs.push((idx1, idx_i2));
+                        new_segs.push((idx_i2, idx_i1));
+                        new_segs.push((idx_i1, idx2));
+                    }
+                }
+            }
+            if !checked[i] {
+                colinear_verts[inters_idx[i].start].push(inters_idx[i].end);
+                colinear_verts[inters_idx[i].end].push(inters_idx[i].start);
+                new_segs.push((inters_idx[i].start, inters_idx[i].inter_idx));
+                new_segs.push((inters_idx[i].inter_idx, inters_idx[i].end));
+            }
+        }
+
+        trace!("New segments after handling colinearity: {:?}", new_segs);
+        trace!("Colinear vertices: {:?}", colinear_verts);
+
+        for (idx, vert) in verts.clone().into_iter().enumerate() {
+            if !verts_valid[idx] {
+                continue;
+            }
+            for (other_idx, other_vert) in verts.clone().into_iter().enumerate() {
+                if !verts_valid[other_idx] {
+                    continue;
+                }
+                if idx == other_idx {
+                    continue;
+                }
+                if colinear_verts[idx].contains(&other_idx) {
+                    continue;
+                }
+                let new_seg = Segment::new(vert, other_vert);
+                let mut clash = false;
+                for seg in new_segs.inner().clone() {
+                    match Segment::new(verts[seg.0], verts[seg.1]).intersect_with_eps(&new_seg, 1e-9){
+                        Some((_intersect, false)) => {
+
+                            clash = true;
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+                if !clash {
+                    new_segs.push((idx, other_idx));
+                }
+            }
+        }
+
+        trace!("New segments after adding non-intersecting segments: {:?}", new_segs);
+
+        // Construct triangles from the segments `new_segs`
+        let mut segs_map = vec![Vec::new(); 9];
+        for seg in new_segs.inner() {
+            if !segs_map[seg.0].contains(&seg.1) {
+                segs_map[seg.0].push(seg.1);
+            }
+            if !segs_map[seg.1].contains(&seg.0) {
+                segs_map[seg.1].push(seg.0);
+            }
+        }
+
+        trace!("Segment map: {:?}", segs_map);
+
+        let mut tris = TriList::new();
+
+        for i in 0..verts.len() {
+            for j in segs_map[i].clone() {
+                for k in segs_map[j].clone() {
+                    if segs_map[i].contains(&k) {
+                        tris.push((i, j, k));
+                    }
+                }
+            }
+        }
+
+        let tris_vec: Vec<_> = tris.inner().iter().filter(|(i, j, k)| {
+            let tri = Triangle::new_with_norm([verts[*i], verts[*j], verts[*k]], self.plane_norm);
+            let mut checked = true;
+            for (v_idx, v) in verts.iter().enumerate() {
+                if v_idx != *i && v_idx != *j && v_idx != *k && tri.vertex_in(v.clone()) {
+                    checked = false;
+                    break;
+                }
+            }
+            checked
+        }).collect();
+
+
+        // Filter out triangles that contain other vertices
+
+        assert!(tris_vec.len()<=7, "Expected at most 7 triangles, but {} where formed", tris.inner().len());
+
+        trace!("Triangles (by vertex indices): {:?}", tris_vec);
+
+        tris_vec.iter().map(|(i, j, k)| Triangle::new_with_norm([verts[*i], verts[*j], verts[*k]], self.plane_norm)).collect()
     }
 }
 
@@ -803,7 +846,7 @@ impl Emit for Triangle {
 mod tests {
     // We implement the transformable for the triangle primitive, so we shall use this for tests.
     use super::{Trans3, Transformable};
-    use crate::{geom::{Collide, Trace, Triangle, segment::Segment}, math::Point3};
+    use crate::{geom::{Collide, Trace, Triangle, segment::Segment, Split}, math::Point3};
     use nalgebra::Vector3;
     use std::f64;
     use assert_approx_eq::assert_approx_eq;
@@ -997,6 +1040,39 @@ mod tests {
     }
 
     #[test]
+    fn test_non_overlaping_triangles() {
+        let tri1 = Triangle::new([
+            Point3::new(0., 0., 0.),
+            Point3::new(1., 0., 0.),
+            Point3::new(1., 1., 0.),
+        ]);
+
+        // Not coplanar
+        let tri2 = Triangle::new([
+            Point3::new(0., 1., 1.),
+            Point3::new(1., 0., 1.),
+            Point3::new(1., 1., 1.),
+        ]);
+        assert!(!tri1.overlap(&tri2));
+
+        // Coplanar but not overlapping
+        let tri2 = Triangle::new([
+            Point3::new(0., 0.1, 0.),
+            Point3::new(0., 1., 0.),
+            Point3::new(0.9, 1., 0.),
+        ]);
+        assert!(!tri1.overlap(&tri2));
+
+        // Intersecting, but not overlapping in the same plane
+        let tri2 = Triangle::new([
+            Point3::new(0., 0., -1.),
+            Point3::new(1., 0., 1.),
+            Point3::new(1., 1., 1.),
+        ]);
+        assert!(!tri1.overlap(&tri2));
+    }
+
+    #[test]
     fn test_segment_intersect() {
         let seg1 = Segment::new(Point3::new(0., 0., 0.), Point3::new(1., 1., 0.));
         let seg2 = Segment::new(Point3::new(0., 1., 0.), Point3::new(1., 0., 0.));
@@ -1049,7 +1125,7 @@ mod tests {
 
         assert!(tri1.overlap(&tri2));
 
-        let new_tri1 = tri1.triangle_split(&tri2);
+        let new_tri1 = tri1.split(&tri2);
 
         println!("New Triangles: {}", new_tri1.len());
         assert_eq!(new_tri1.len(), 5);
@@ -1118,7 +1194,7 @@ mod tests {
         assert!(tri1.overlap(&tri2));
         assert_eq!(count_colinear(&tri1.edges(), &tri2.edges()), 3);
 
-        let new_tri1 = tri1.triangle_split(&tri2);
+        let new_tri1 = tri1.split(&tri2);
         assert_eq!(new_tri1.len(), 1);
         assert_eq!(new_tri1[0], tri1);
     }
@@ -1140,7 +1216,7 @@ mod tests {
         ]);
         let segs_v = tri_v.edges();
         assert_eq!(count_colinear(&segs_u, &segs_v), 2);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 3);
+        assert_eq!(tri_u.split(&tri_v).len(), 3);
         // a) ii)
         let tri_v = Triangle::new([
             Point3::new(0., 0., 1.),
@@ -1149,7 +1225,7 @@ mod tests {
         ]);
         let segs_v = tri_v.edges();
         assert_eq!(count_colinear(&segs_u, &segs_v), 2);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 2);
+        assert_eq!(tri_u.split(&tri_v).len(), 2);
 
         // b)
         let tri_v = Triangle::new([
@@ -1159,7 +1235,7 @@ mod tests {
         ]);
         let segs_v = tri_v.edges();
         assert_eq!(count_colinear(&segs_u, &segs_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 1);
+        assert_eq!(tri_u.split(&tri_v).len(), 1);
 
         // c) vert in
         // i) // WARN: Duplicate of vert_in=1 d)
@@ -1170,7 +1246,7 @@ mod tests {
         ]);
         let segs_v = tri_v.edges();
         assert_eq!(count_colinear(&segs_u, &segs_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 3);
+        assert_eq!(tri_u.split(&tri_v).len(), 3);
 
         // ii) // WARN: Duplicate of vert_in=1 c)
         let tri_v = Triangle::new([
@@ -1180,7 +1256,7 @@ mod tests {
         ]);
         let segs_v = tri_v.edges();
         assert_eq!(count_colinear(&segs_u, &segs_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 4);
+        assert_eq!(tri_u.split(&tri_v).len(), 4);
 
         // iii) // WARN: Duplicate of vert_in=1 b)
         let tri_v = Triangle::new([
@@ -1190,7 +1266,7 @@ mod tests {
         ]);
         let segs_v = tri_v.edges();
         assert_eq!(count_colinear(&segs_u, &segs_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 5);
+        assert_eq!(tri_u.split(&tri_v).len(), 5);
 
 
         // iv) All  vertices of V on edges of U
@@ -1201,7 +1277,7 @@ mod tests {
         ]);
         let segs_v = tri_v.edges();
         assert_eq!(count_colinear(&segs_u, &segs_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 4);
+        assert_eq!(tri_u.split(&tri_v).len(), 4);
     }
 
     #[test]
@@ -1219,7 +1295,7 @@ mod tests {
             Point3::new(0., 0., -1.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 3);
+        assert_eq!(tri_u.split(&tri_v).len(), 3);
 
         // c)
         let tri_v = Triangle::new([
@@ -1228,7 +1304,7 @@ mod tests {
             Point3::new(0., 0., -1.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 4);
+        assert_eq!(tri_u.split(&tri_v).len(), 4);
 
         // a) / b)
         let tri_v = Triangle::new([
@@ -1237,7 +1313,7 @@ mod tests {
             Point3::new(0., 0., -0.5),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 1);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 5);
+        assert_eq!(tri_u.split(&tri_v).len(), 5);
     }
 
     #[test]
@@ -1255,7 +1331,7 @@ mod tests {
             Point3::new(0., -1., 0.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 2);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 7);
+        assert_eq!(tri_u.split(&tri_v).len(), 7);
 
         // a) ii)
         let tri_v = Triangle::new([
@@ -1264,7 +1340,7 @@ mod tests {
             Point3::new(0., 3., 0.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 2);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 7);
+        assert_eq!(tri_u.split(&tri_v).len(), 7);
 
         // b)
         let tri_v = Triangle::new([
@@ -1273,7 +1349,7 @@ mod tests {
             Point3::new(0., 3., 0.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 2);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 6);
+        assert_eq!(tri_u.split(&tri_v).len(), 6);
     }
 
     #[test]
@@ -1291,7 +1367,7 @@ mod tests {
             Point3::new(0., 0., 1.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 0);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 3);
+        assert_eq!(tri_u.split(&tri_v).len(), 3);
 
         // a)
         let tri_v = Triangle::new([
@@ -1300,7 +1376,7 @@ mod tests {
             Point3::new(0., 0., 1.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 0);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 5);
+        assert_eq!(tri_u.split(&tri_v).len(), 5);
 
         // c)
         let tri_v = Triangle::new([
@@ -1309,7 +1385,7 @@ mod tests {
             Point3::new(0., 0., 1.),
         ]);
         assert_eq!(count_verts_in(&tri_u, &tri_v), 0);
-        assert_eq!(tri_u.triangle_split(&tri_v).len(), 7);
+        assert_eq!(tri_u.split(&tri_v).len(), 7);
 
     }
 

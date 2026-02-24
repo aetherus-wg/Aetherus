@@ -1,5 +1,7 @@
 use core::f64;
 
+use log::trace;
+
 use crate::math::Point3;
 
 #[derive(Debug)]
@@ -17,6 +19,7 @@ impl Segment {
         nalgebra::distance(&self.start.data(), &self.end.data())
     }
 
+    #[inline]
     fn at(&self, alpha: f64) -> Point3 {
         self.start + (self.end - self.start) * alpha
     }
@@ -68,23 +71,19 @@ impl Segment {
         let (alpha_u, alpha_v) = self.intersect_unchecked(&other)?;
 
         if alpha_u < 0.0 || alpha_u > 1.0 || alpha_v < 0.0 || alpha_v > 1.0 {
-            println!("Segments do not intersect within their lengths. alpha_self: {}, alpha_other: {}", alpha_u, alpha_v);
+            trace!("Segments do not intersect within their lengths. alpha_self: {}, alpha_other: {}", alpha_u, alpha_v);
             return None;
         }
 
-        // FIXME: This looks wrong, but it works => Revise!!!
-        let u = self.end - self.start;
-        let v = other.end - other.start;
-
-        let p_u = self.start + u * alpha_u;
-        let p_v = other.start + v * alpha_v;
+        let p_u = self.at(alpha_u);
+        let p_v = other.at(alpha_v);
 
         let p_diff = p_u - p_v;
         // Check that closest points actually coincide
         if p_diff.dot(&p_diff) <= EPS_INTERSECT * EPS_INTERSECT {
             Some(p_u)
         } else {
-            println!("Closest points do not coincide. p_self: {:?}, p_other: {:?}, p_diff: {:?}", p_u, p_v, p_diff);
+            trace!("Closest points do not coincide. p_self: {:?}, p_other: {:?}, p_diff: {:?}", p_u, p_v, p_diff);
             None
         }
     }
@@ -101,25 +100,21 @@ impl Segment {
         let (alpha_u, alpha_v) = self.intersect_unchecked(&other)?;
 
         if alpha_u < 0.0 || alpha_u > 1.0 || alpha_v < -eps || alpha_v > 1.0 + eps {
-            println!("Segments do not intersect within their lengths. alpha_self: {}, alpha_other: {}", alpha_u, alpha_v);
+            trace!("Segments do not intersect within their lengths. alpha_self: {}, alpha_other: {}", alpha_u, alpha_v);
             return None;
         }
 
         let fuzzy = alpha_v < eps || alpha_v > 1.0 - eps;
 
-        // FIXME: This looks wrong, but it works => Revise!!!
-        let u = self.end - self.start;
-        let v = other.end - other.start;
-
-        let p_u = self.start + u * alpha_u;
-        let p_v = other.start + v * alpha_v;
+        let p_u = self.at(alpha_u);
+        let p_v = other.at(alpha_v);
 
         let p_diff = p_u - p_v;
         // Check that closest points actually coincide
         if p_diff.dot(&p_diff) <= eps*eps {
             Some((p_u, fuzzy))
         } else {
-            println!("Closest points do not coincide. p_self: {:?}, p_other: {:?}, p_diff: {:?}", p_u, p_v, p_diff);
+            trace!("Closest points do not coincide. p_self: {:?}, p_other: {:?}, p_diff: {:?}", p_u, p_v, p_diff);
             None
         }
     }
@@ -133,11 +128,8 @@ impl Segment {
             return None;
         }
 
-        let u = self.end - self.start;
-        let v = other.end - other.start;
-
-        let p_u = self.start + u * alpha_u;
-        let p_v = other.start + v * alpha_v;
+        let p_u = self.at(alpha_u);
+        let p_v = other.at(alpha_v);
 
         let p_diff = p_u - p_v;
         // Check that closest points actually coincide
