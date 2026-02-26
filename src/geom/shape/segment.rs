@@ -2,7 +2,7 @@ use core::f64;
 
 use log::trace;
 
-use crate::math::Point3;
+use crate::{geom::Collide, math::Point3};
 
 #[derive(Debug)]
 pub struct Segment {
@@ -20,13 +20,20 @@ impl Segment {
     }
 
     #[inline]
-    fn at(&self, alpha: f64) -> Point3 {
+    pub fn at(&self, alpha: f64) -> Point3 {
         self.start + (self.end - self.start) * alpha
+    }
+
+    pub fn parametric_dist(&self, p: &Point3) -> f64 {
+        let e = self.end -self.start;
+        (p - self.start).dot(&e) / e.dot(&e) // alpha
     }
 
     #[inline]
     fn intersect_unchecked(&self, other: &Segment) -> Option<(f64, f64)> {
         const EPS_INTERSECT: f64 = 1e-9;
+
+        // TODO:Check this algorithms matches with the same method used for Barycentric solution
 
         // Check if segments are colinear
         let u = self.end - self.start;
@@ -52,8 +59,6 @@ impl Segment {
 
         let alpha_u = (b * e - c * d) / det;
         let alpha_v = (a * e - b * d) / det;
-        //let s = (b * e - a * d) / det;
-        //let t = (e * c - d * b) / det;
         Some((alpha_u, alpha_v))
     }
 
@@ -151,6 +156,22 @@ impl Segment {
         let u = self.end - self.start;
         let v = other.end - other.start;
         u.cross(&v).abs() <= eps
+    }
+}
+
+impl Collide<Point3> for Segment {
+    // FIXME: Perhaps increase EPS to allow for some numerical precision issues
+    #[inline]
+    fn overlap(&self, other: &Point3) -> bool {
+        let e = self.end -self.start;
+        let alpha = (other - self.start).dot(&e) / e.dot(&e);
+        let closest = self.at(alpha);
+        let diff = closest - other;
+        if diff.dot(&diff) < f64::EPSILON {
+            alpha >= -f64::EPSILON && alpha <= 1.0 + f64::EPSILON
+        } else {
+            false
+        }
     }
 }
 

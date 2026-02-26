@@ -1,7 +1,11 @@
 //! Smooth triangle implementation.
 
 use crate::{
-    access, err::Error, geom::{Collide, Cube, Emit, Ray, Side, Split, Trace, Transformable, Triangle}, math::{Dir3, Point3, Trans3, Vec3}, ord::{ALPHA, BETA, GAMMA}
+    access,
+    err::Error,
+    geom::{Collide, Cube, Emit, Ray, Side, Split, SplitSegments, Trace, Transformable, Triangle},
+    math::{Dir3, Point3, Trans3, Vec3},
+    ord::{ALPHA, BETA, GAMMA},
 };
 use log::{error, warn};
 use rand::{Rng, RngExt};
@@ -31,24 +35,52 @@ impl SmoothTriangle {
     /// Construct a new instance from vertices.
     #[must_use]
     pub fn new_from_verts(verts: [Point3; 3], norms: [Dir3; 3]) -> Self {
-        Self::new(Triangle::new_with_norm(verts, Self::init_plane_norm(&verts, &norms)), norms)
+        Self::new(
+            Triangle::new_with_norm(verts, Self::init_plane_norm(&verts, &norms)),
+            norms,
+        )
+    }
+
+    /// Generate SmoothTriangles by interpolating normals for input Triangles using barycentric coordinates
+    pub fn partition(&self, tris: Vec<Triangle>) -> Vec<Self> {
+        tris.iter().map(|tri| {
+            // Find new normal for each vertex based on
+            // barycentric coordinates of the original triangle
+            let n: Vec<_> = tri.verts().iter().map(|v| {
+                if !self.tri.overlap(v) {
+                    warn!("Split triangle vertex {:?} is outside the original triangle.", v);
+                }
+                self.barycentric_coords(v)
+                    .map(|(u, v, w)| {
+                        Dir3::from(
+                            (self.norms[ALPHA] * u) + (self.norms[BETA] * v) + (self.norms[GAMMA] * w),
+                        )
+                    })
+                    .unwrap_or_else(|err| {
+                        error!("ERROR: {}.\nFailed to calculate barycentric coordinates for vertex {:?}. Using triangle normal instead.", err, v);
+                        *tri.plane_norm()
+                    })
+            }).collect();
+            let n = [n[0], n[1], n[2]];
+            SmoothTriangle::new(tri.clone(), n)
+        }).collect()
     }
 
     /// Initialise the plane normal.
     #[must_use]
     fn init_plane_norm(_verts: &[Point3; 3], norms: &[Dir3; 3]) -> Dir3 {
         let n: Vec<_> = norms.iter().map(|&n| n.into_inner()).collect();
-        Vec3::from((n[0] + n[1] + n[2])/3.0).dir()
+        Vec3::from((n[0] + n[1] + n[2]) / 3.0).dir()
     }
 
     /// Get barycentric_coords of a point in the triangle.
     /// Derived from "Real-Time Collision Detection" - Chapter 3.4
     fn barycentric_coords(&self, point: &Point3) -> Result<(f64, f64, f64), Error> {
-        const EPS: f64 = 1e-18;
+        const EPS: f64 = 1e-9;
         let verts = self.tri().verts();
-        let v0 = verts[BETA]  - verts[ALPHA];
+        let v0 = verts[BETA] - verts[ALPHA];
         let v1 = verts[GAMMA] - verts[ALPHA];
-        let v2 = *point       - verts[ALPHA];
+        let v2 = *point - verts[ALPHA];
         let d00 = v0.dot(&v0);
         let d01 = v0.dot(&v1);
         let d11 = v1.dot(&v1);
@@ -57,20 +89,35 @@ impl SmoothTriangle {
         let denom = (d00 * d11) - (d01 * d01);
         if denom.abs() < f64::EPSILON {
             // Degenerate triangle (colinear edges), can't calculate barycentric coordinates.
-            return Err(Error::Text("Trying to calculate barycentric coordinates for a degenerate triangle.".to_string()));
+            return Err(Error::Text(
+                "Trying to calculate barycentric coordinates for a degenerate triangle."
+                    .to_string(),
+            ));
         }
         let mut v = ((d11 * d20) - (d01 * d21)) / denom;
         let mut w = ((d00 * d21) - (d01 * d20)) / denom;
         let mut u = 1.0 - v - w;
-        if u < -EPS || u > 1.0+EPS || v < -EPS || v > 1.0+EPS || w < -EPS || w > 1.0+EPS {
+        if u < -EPS || u > 1.0 + EPS || v < -EPS || v > 1.0 + EPS || w < -EPS || w > 1.0 + EPS {
             // Invalid barycentric coordinates, point outside the triangle
             return Err(Error::Text(format!("Trying to calculate barycentric coordinates ({},{},{}) for a point outside the triangle.", u,v,w)));
         }
         u = u.max(0.0).min(1.0);
         v = v.max(0.0).min(1.0);
         w = w.max(0.0).min(1.0);
-        assert!((u + v + w - 1.0).abs() < EPS, "Barycentric coordinates do not sum to 1: u={}, v={}, w={}", u, v, w);
-        assert!(u >= 0.0 && u <= 1.0 && v >= 0.0 && v <= 1.0 && w >= 0.0 && w <= 1.0, "Barycentric coordinates out of range after clamping: u={}, v={}, w={}", u, v, w);
+        assert!(
+            (u + v + w - 1.0).abs() < EPS,
+            "Barycentric coordinates do not sum to 1: u={}, v={}, w={}",
+            u,
+            v,
+            w
+        );
+        assert!(
+            u >= 0.0 && u <= 1.0 && v >= 0.0 && v <= 1.0 && w >= 0.0 && w <= 1.0,
+            "Barycentric coordinates out of range after clamping: u={}, v={}, w={}",
+            u,
+            v,
+            w
+        );
         // Clamp barycentric coordinates to [0,1] to handle numerical precision issues
         Ok((u, v, w))
     }
@@ -169,35 +216,47 @@ impl Collide<SmoothTriangle> for SmoothTriangle {
     }
 }
 
-impl Split<Triangle> for SmoothTriangle {
-    fn split(&self, other: &Triangle) -> Vec<Self> {
-        let tris = self.tri.split(other);
-        tris.iter().map(|tri| {
-            // Find new normal for each vertex based on
-            // barycentric coordinates of the original triangle
-            let n: Vec<_> = tri.verts().iter().map(|v| {
-                if !self.tri.overlap(v) {
-                    warn!("Split triangle vertex {:?} is outside the original triangle.", v);
-                }
-                self.barycentric_coords(v)
-                    .map(|(u, v, w)| {
-                        Dir3::from(
-                            (self.norms[ALPHA] * u) + (self.norms[BETA] * v) + (self.norms[GAMMA] * w),
-                        )
-                    })
-                    .unwrap_or_else(|err| {
-                        error!("ERROR: {}.\nFailed to calculate barycentric coordinates for vertex {:?}. Using triangle normal instead.", err, v);
-                        *tri.plane_norm()
-                    })
-            }).collect();
-            let n = [n[0], n[1], n[2]];
-            SmoothTriangle::new(tri.clone(), n)
-        }).collect()
+impl Collide<SplitSegments> for SmoothTriangle {
+    fn overlap(&self, other: &SplitSegments) -> bool {
+        self.tri.overlap(other)
     }
 }
 
-impl Split<SmoothTriangle> for SmoothTriangle {
-    fn split(&self, other: &SmoothTriangle) -> Vec<Self> {
-        self.split(other.tri())
+impl Split<SplitSegments, ()> for SmoothTriangle {
+    type Inst = Vec<Self>;
+    fn split_transparent(&self, other: &SplitSegments) -> (Self::Inst, ()) {
+        // SmoothTriangle doesn't need to be split by segments, so just return itself
+        let (tris, primitives) = self.tri.split_transparent(other);
+        let smooth_tris = self.partition(tris);
+        (smooth_tris, primitives)
+    }
+    fn split(&self, other: &SplitSegments) -> Self::Inst {
+        self.split_transparent(other).0
+    }
+}
+
+impl Split<Triangle, SplitSegments> for SmoothTriangle {
+    type Inst = Vec<Self>;
+    fn split_transparent(&self, other: &Triangle) -> (Self::Inst, SplitSegments) {
+        let (tris, split_segments) = self.tri.split_transparent(other);
+        let smooth_tris = self.partition(tris);
+        (smooth_tris, split_segments)
+    }
+
+    #[inline]
+    fn split(&self, other: &Triangle) -> Self::Inst {
+        self.split_transparent(other).0
+    }
+}
+
+impl Split<SmoothTriangle, SplitSegments> for SmoothTriangle {
+    type Inst = Vec<Self>;
+    #[inline]
+    fn split_transparent(&self, other: &SmoothTriangle) -> (Self::Inst, SplitSegments) {
+        self.split_transparent(other.tri())
+    }
+    #[inline]
+    fn split(&self, other: &SmoothTriangle) -> Self::Inst {
+        self.split_transparent(other.tri()).0
     }
 }

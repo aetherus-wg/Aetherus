@@ -2,12 +2,12 @@
 //! Compute the radiative field for a given set of setup and light source.
 
 use std::{
-    collections::VecDeque, env::current_dir, path::{Path, PathBuf}
+    env::current_dir, path::{Path, PathBuf}
 };
 use aetherus::{
     args,
     fs::{File, Load, Save},
-    geom::{Collide, Mesh, Tree, Split},
+    geom::{Tree, Split},
     ord::{Build, Link, Name, Set},
     report,
     sim::{
@@ -113,73 +113,18 @@ fn main() {
             let surf_u = surfs.get(&surfs_names[i]).unwrap();
             let surf_v = surfs.get(&surfs_names[j]).unwrap();
 
-            let mut surf_u_tris: VecDeque<_> = surf_u.mesh().tris().iter().map(|tri| tri.clone()).collect();
-            let mut surf_v_tris: Vec<_> = surf_v.mesh().tris().iter().map(|tri| tri.clone()).collect();
-
+            let mesh_u = surf_u.mesh();
+            let mesh_v = surf_v.mesh();
 
             // Check that u_tri is free of collisions from surf_v_tris
-
             debug!("Checking for collisions between surfaces: {} and {}", surfs_names[i], surfs_names[j]);
 
-            let mut final_surf_u_tris = Vec::new();
+            let (new_mesh_u, new_mesh_v) = mesh_u.split_transparent(&mesh_v);
 
-            while !surf_u_tris.is_empty()
-            {
-                let u_tri = surf_u_tris.pop_front().unwrap();
-                let mut v_tris_mutated = Vec::new();
-                let mut new_surf_v_tris = Vec::new();
-                let mut u_tri_collision = false;
-
-                debug!("Checking for collisions of {}:{:?} to {} ({} triangles)", surfs_names[i], u_tri, surfs_names[j], surf_v_tris.len());
-                for (v_idx, v_tri) in surf_v_tris.iter().enumerate() {
-                    // FIXME: Triangle overlap should exclude triangles that just share an edge or vertex
-                    if u_tri.overlap(v_tri) {
-                        let new_u_tris = u_tri.split(&surf_v_tris[v_idx]);
-                        if new_u_tris.len() > 1 {
-                            debug!("Splitting triangle {:?}: into {} triangles.", u_tri, new_u_tris.len());
-                            new_u_tris
-                                .iter()
-                                .for_each(|new_u_tri|
-                                    surf_u_tris.push_back(new_u_tri.clone())
-                                );
-                            u_tri_collision = true;
-                        }
-                        let new_v_tris = surf_v_tris[v_idx].split(&u_tri);
-                        if new_v_tris.len() > 1 {
-                            debug!("Splitting triangle {:?}:{} into {} triangles.", surf_v_tris[v_idx], v_idx, new_v_tris.len());
-                            v_tris_mutated.push(v_idx);
-                            new_v_tris
-                                .iter()
-                                .for_each(|new_v_tri|
-                                    new_surf_v_tris.push(new_v_tri.clone())
-                                );
-                        }
-                        assert!(new_u_tris.len() > 0 || new_v_tris.len() > 0, "Not a valid triangle collision occured");
-                        if u_tri_collision {
-                            info!("Overlapping surfaces: {} and {}", surfs_names[i], surfs_names[j]);
-                            debug!("Overlapping between: {:?} and {:?}", u_tri, v_tri);
-                            break;
-                        }
-                    }
-                }
-
-                if !u_tri_collision {
-                    final_surf_u_tris.push(u_tri);
-                }
-
-                let mut offset = 0;
-                for v_idx in v_tris_mutated {
-                    surf_v_tris.remove(v_idx - offset);
-                    offset += 1;
-                }
-                surf_v_tris.extend(new_surf_v_tris);
-            }
             // FIXME: Only tris need be updated, area and boundary should be the same as before
             // splitting
-            *surfs.get_mut(&surfs_names[i]).unwrap().mesh_mut() =
-                Mesh::new(final_surf_u_tris);
-            *surfs.get_mut(&surfs_names[j]).unwrap().mesh_mut() =
-                Mesh::new(surf_v_tris.clone());
+            *surfs.get_mut(&surfs_names[i]).unwrap().mesh_mut() = new_mesh_u;
+            *surfs.get_mut(&surfs_names[j]).unwrap().mesh_mut() = new_mesh_v;
         }
     }
 
