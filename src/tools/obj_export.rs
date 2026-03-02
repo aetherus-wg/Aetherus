@@ -90,7 +90,7 @@ fn mesh_to_obj(mesh: &Mesh, name: String, position_offset: usize, normal_offset:
     (position_vec, normal_vec, object)
 }
 
-impl<T> Save for Set<Surface<'_, T>> {
+impl<T> Save for Set<Surface<T>> {
     fn save_data(&self, path: &std::path::Path) -> Result<(), Error> {
         let mut obj_data = ObjData::default();
         let mut position_offset = 0;

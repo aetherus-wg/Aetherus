@@ -1,28 +1,30 @@
 //! Optical surface structure.
 
-use crate::{access, fmt_report, geom::Mesh};
+use crate::{access, fmt_report, geom::{Collide, Mesh}};
 use std::fmt::{Display, Error, Formatter};
 
 /// Optical surface.
-pub struct Surface<'a, T> {
+#[derive(Clone)]
+pub struct Surface<T> {
     /// Mesh.
     mesh: Mesh,
     /// Object.
-    attr: &'a T,
+    attr: T,
 }
 
-impl<'a, T> Surface<'a, T> {
+impl<T> Surface<T> {
+
     access!(mesh, mesh_mut: Mesh);
     access!(attr: T);
 
     /// Construct a new instance.
     #[must_use]
-    pub const fn new(mesh: Mesh, attr: &'a T) -> Self {
+    pub fn new(mesh: Mesh, attr: T) -> Self {
         Self { mesh, attr }
     }
 }
 
-impl<T: Display> Display for Surface<'_, T> {
+impl<T: Display> Display for Surface<T> {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.mesh, "mesh");
@@ -56,5 +58,12 @@ mod tests {
         let surf = Surface::new(mesh, &Attribute::Mirror(0.5));
 
         assert_approx_eq!(surf.mesh().area(), 0.5);
+    }
+}
+
+impl<T> Collide<Surface<T>> for Surface<T> {
+    #[inline]
+    fn overlap(&self, other: &Surface<T>) -> bool {
+        self.mesh.overlap(&other.mesh)
     }
 }

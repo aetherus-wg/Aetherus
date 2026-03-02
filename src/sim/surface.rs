@@ -1,13 +1,23 @@
 //! Photon scattering function.
 
 use crate::{
-    geom::{object::Object, Hit},
+    geom::{Hit, Split, Surface, object::Object},
     io::output::Output,
     phys::{Crossing, Local, Photon},
     sim::Attribute,
 };
 use aetherus_events::{EventId, EventType, ledger::Uid, mcrt_event};
 use rand::{Rng, RngExt};
+
+impl Split<Surface<Attribute>, ()> for Surface<Attribute> {
+    type Inst = Vec<Self>;
+    fn split_transparent(&self, other: &Surface<Attribute>) -> (Self::Inst, ()) {
+        todo!()
+    }
+    fn split(&self, other: &Surface<Attribute>) -> Self::Inst {
+        self.split_transparent(other).0
+    }
+}
 
 /// Handle a surface collision.
 #[allow(clippy::expect_used)]

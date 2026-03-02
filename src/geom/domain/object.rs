@@ -45,8 +45,8 @@ impl Object {
     pub fn mat_name(&self) -> Option<&str> {
         self.mat_name.as_deref()
     }
-    pub fn get_surface(&self) -> Surface<'_,Object> {
-        Surface::new(self.mesh.clone(), self)
+    pub fn get_surface(&self) -> Surface<Object> {
+        Surface::new(self.mesh.clone(), self.clone())
     }
 
     pub fn with_id(&mut self, src_id: SrcId) -> Result<(), Error> {
