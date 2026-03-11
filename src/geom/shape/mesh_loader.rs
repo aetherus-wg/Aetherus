@@ -10,6 +10,10 @@ use crate::{
 use arctk_attr::file;
 use std::path::{Path, PathBuf};
 
+// TODO: Do we really need to load a list of object files?
+// It would be more useful to do the oposite, of getting multiple objects/meshes
+// from a single obj file as they are normally exported from Blender
+
 /// Loadable triangle mesh conglomerate structure.
 #[file]
 pub struct MeshLoader(
@@ -24,7 +28,7 @@ impl Load for MeshLoader {
 
     #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
-        let trans = self.1.map(Build::build);
+        let trans = self.1.map(Build::build).transpose()?;
 
         let mut tris = Vec::new();
         for name in self.0 {

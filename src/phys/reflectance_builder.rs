@@ -1,3 +1,6 @@
+use serde::{Serialize, Deserialize, Deserializer};
+use serde::de::{SeqAccess, Visitor};
+
 use crate::{
     err::Error,
     phys::SpectrumBuilder
@@ -5,16 +8,45 @@ use crate::{
 
 use super::Reflectance;
 
-pub type ReflectanceBuilderShim = (
-    Option<SpectrumBuilder>, 
-    Option<SpectrumBuilder>, 
-    Option<f64>,
-);
-
+#[derive(Serialize, Clone, Debug)]
 pub struct ReflectanceBuilder {
     pub diff_ref: Option<SpectrumBuilder>,
     pub spec_ref: Option<SpectrumBuilder>,
     pub specularity: Option<f64>,
+}
+
+impl<'de> Deserialize<'de> for ReflectanceBuilder {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ReflectanceBuilderVisitor;
+        impl<'de> Visitor<'de> for ReflectanceBuilderVisitor {
+            type Value = ReflectanceBuilder;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("an array with 3 elements: [diff_ref, spec_ref, specularity]")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let diff_ref: Option<SpectrumBuilder> = seq.next_element()?.unwrap_or(None);
+                let spec_ref: Option<SpectrumBuilder> = seq.next_element()?.unwrap_or(None);
+                let specularity: Option<f64> = seq.next_element()?.unwrap_or(None);
+
+                Ok(ReflectanceBuilder {
+                    diff_ref,
+                    spec_ref,
+                    specularity,
+                })
+            }
+        }
+        deserializer.deserialize_seq(ReflectanceBuilderVisitor)
+    }
+
+
 }
 
 impl ReflectanceBuilder {
@@ -40,15 +72,5 @@ impl ReflectanceBuilder {
         };
 
         Ok(ref_model)
-    }
-}
-
-impl From<ReflectanceBuilderShim> for ReflectanceBuilder {
-    fn from(value: ReflectanceBuilderShim) -> Self {
-        ReflectanceBuilder {
-            diff_ref: value.0,
-            spec_ref: value.1,
-            specularity: value.2,
-        }
     }
 }

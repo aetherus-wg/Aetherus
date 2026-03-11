@@ -6,44 +6,45 @@ use crate::{
     ord::cartesian::{X, Y, Z},
 };
 use ndarray::{Array2, Array3, ArrayView2, ArrayView3};
-use netcdf::NcPutGet;
+use netcdf::NcTypeDescriptor;
 use std::path::Path;
 
 #[allow(clippy::use_self)]
-impl<T: NcPutGet> File for Array2<T> {
+impl<T: NcTypeDescriptor + Copy> File for Array2<T> {
     #[inline]
     fn load(path: &Path) -> Result<Array2<T>, Error> {
         let file = netcdf::open(path)?;
         let data = &file.variable("data").ok_or("Missing variable 'data'.")?;
-        let arr = data.values_arr::<T, _>(..).unwrap();
+        let arr = data.get(..).unwrap();
 
         let xi = arr.shape()[X];
         let yi = arr.shape()[Y];
 
-        let arr = Array2::from_shape_vec([xi, yi], arr.into_raw_vec())?;
+        let (raw_vec, _) = arr.into_raw_vec_and_offset();
+        let arr = Array2::from_shape_vec([xi, yi], raw_vec)?;
         Ok(arr)
     }
 }
 
 #[allow(clippy::use_self)]
-impl<T: NcPutGet> File for Array3<T> {
+impl<T: NcTypeDescriptor + Copy> File for Array3<T> {
     #[inline]
     fn load(path: &Path) -> Result<Array3<T>, Error> {
         let file = netcdf::open(path)?;
         let data = &file.variable("data").ok_or("Missing variable 'data'.")?;
-        let arr = data.values_arr::<T, _>(..).unwrap();
+        let arr = data.get(..).unwrap();
 
         let xi = arr.shape()[X];
         let yi = arr.shape()[Y];
         let zi = arr.shape()[Z];
 
-        let arr = Array3::from_shape_vec([xi, yi, zi], arr.into_raw_vec())?;
+        let (raw_vec, _) = arr.into_raw_vec_and_offset();
+        let arr = Array3::from_shape_vec([xi, yi, zi], raw_vec)?;
         Ok(arr)
     }
 }
 
-impl<T: NcPutGet> Save for Array2<T> {
-    #[inline]
+impl<T: NcTypeDescriptor> Save for Array2<T> {
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -56,14 +57,13 @@ impl<T: NcPutGet> Save for Array2<T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
-impl<T: NcPutGet> Save for ArrayView2<'_, T> {
-    #[inline]
+impl<T: NcTypeDescriptor> Save for ArrayView2<'_, T> {
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -76,14 +76,13 @@ impl<T: NcPutGet> Save for ArrayView2<'_, T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
-impl<T: NcPutGet> Save for Array3<T> {
-    #[inline]
+impl<T: NcTypeDescriptor + std::fmt::Display> Save for Array3<T> {
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -98,14 +97,13 @@ impl<T: NcPutGet> Save for Array3<T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
 }
 
-impl<T: NcPutGet> Save for ArrayView3<'_, T> {
-    #[inline]
+impl<T: NcTypeDescriptor> Save for ArrayView3<'_, T> {
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         let mut file = netcdf::create(path)?;
 
@@ -120,7 +118,7 @@ impl<T: NcPutGet> Save for ArrayView3<'_, T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values::<T, _>(&arr, ..).unwrap();
+        var.put_values(&arr, ..).unwrap();
 
         Ok(())
     }
@@ -164,7 +162,7 @@ mod tests {
 
         let file = netcdf::open(&path).unwrap();
         let data = &file.variable("data").unwrap();
-        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        let loaded_arr = data.get::<i32, _>(..).unwrap().into_dimensionality().unwrap();
         assert_eq!(arr, loaded_arr);
 
         fs::remove_file(&path).unwrap();
@@ -178,7 +176,7 @@ mod tests {
 
         let file = netcdf::open(&path).unwrap();
         let data = &file.variable("data").unwrap();
-        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        let loaded_arr = data.get::<i32, _>(..).unwrap().into_dimensionality().unwrap();
         assert_eq!(arr, loaded_arr);
 
         fs::remove_file(&path).unwrap();
@@ -192,7 +190,7 @@ mod tests {
 
         let file = netcdf::open(&path).unwrap();
         let data = &file.variable("data").unwrap();
-        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        let loaded_arr = data.get::<i32, _>(..).unwrap().into_dimensionality().unwrap();
         assert_eq!(arr, loaded_arr);
 
         fs::remove_file(&path).unwrap();
@@ -206,7 +204,7 @@ mod tests {
 
         let file = netcdf::open(&path).unwrap();
         let data = &file.variable("data").unwrap();
-        let loaded_arr = data.values_arr::<i32, _>(..).unwrap().into_dimensionality().unwrap();
+        let loaded_arr = data.get::<i32, _>(..).unwrap().into_dimensionality().unwrap();
         assert_eq!(arr, loaded_arr);
 
         fs::remove_file(&path).unwrap();

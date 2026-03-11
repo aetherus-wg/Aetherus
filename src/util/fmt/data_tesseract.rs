@@ -93,7 +93,6 @@ impl Analyze for Array4<f64> {
     type Inst = DataTesseract;
 
     #[inline]
-    #[must_use]
     fn display(&self) -> Self::Inst {
         Self::Inst::new(self)
     }

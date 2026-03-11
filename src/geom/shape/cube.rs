@@ -163,11 +163,15 @@ impl Cube {
     #[inline]
     #[must_use]
     fn intersections(&self, ray: &Ray) -> (f64, f64) {
+        // TODO: Precompute 1/ray.dir() as it's used at every Voxel transition and f64 div
+        // takes much longer thatn f64 mul
         let t_0: Vec<_> = self
             .mins
             .iter()
             .zip(ray.pos().iter().zip(ray.dir().iter()))
             .map(|(m, (p, d))| (m - p) / d)
+            .filter(|x| x.is_finite())
+            .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
             .collect();
 
         let t_1: Vec<_> = self
@@ -175,6 +179,8 @@ impl Cube {
             .iter()
             .zip(ray.pos().iter().zip(ray.dir().iter()))
             .map(|(m, (p, d))| (m - p) / d)
+            .filter(|x| x.is_finite())
+            .map(|x| if x== -0.0 {0.0} else {x}) // Handle negative zero case
             .collect();
 
         let t_min = t_0
@@ -253,7 +259,6 @@ impl Cube {
 
 impl Collide for Cube {
     #[inline]
-    #[must_use]
     fn overlap(&self, aabb: &Cube) -> bool {
         self.mins <= aabb.maxs && self.maxs >= aabb.mins
     }
@@ -261,7 +266,6 @@ impl Collide for Cube {
 
 impl Trace for Cube {
     #[inline]
-    #[must_use]
     fn hit(&self, ray: &Ray) -> bool {
         let (t_min, t_max) = self.intersections(ray);
 
@@ -269,11 +273,10 @@ impl Trace for Cube {
     }
 
     #[inline]
-    #[must_use]
     fn dist(&self, ray: &Ray) -> Option<f64> {
         let (t_min, t_max) = self.intersections(ray);
 
-        if t_max <= 0.0 || t_min > t_max {
+        if t_max < 0.0 || t_min > t_max {
             return None;
         }
 
@@ -285,7 +288,6 @@ impl Trace for Cube {
     }
 
     #[inline]
-    #[must_use]
     fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
         if let Some(dist) = self.dist(ray) {
             let hit = *ray.pos() + (dist * ray.dir());
@@ -354,8 +356,8 @@ mod tests {
     #[test]
     fn test_new_centre() {
         let cube = Cube::new_centred(&Point3::new(1.0, 1.0, 1.0), &Vec3::new(1.0, 1.0, 1.0));
-        
-        // Try this using the alternate method so that we can test this in the process. 
+
+        // Try this using the alternate method so that we can test this in the process.
         let (mins, maxs) = cube.mins_maxs();
         assert_eq!(mins, Point3::new(0.0, 0.0, 0.0));
         assert_eq!(maxs, Point3::new(2.0, 2.0, 2.0));
@@ -364,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_new_shrink() {
-        // Make a single upward facing triangle to emit from. 
+        // Make a single upward facing triangle to emit from.
         let tris = vec![ SmoothTriangle::new(
             Triangle::new([
                 Point3::new(0.0, 0.0, 0.0),
@@ -379,7 +381,7 @@ mod tests {
         let (mins, maxs) = cube.mins_maxs();
         assert_eq!(mins, Point3::new(-1.0e-6, -1.0e-6, -1.0e-6));
         assert_eq!(maxs, Point3::new(1.000001, 1.000001, 1e-6));
-        
+
         assert_approx_eq!(cube.centre().x(), 0.5);
         assert_approx_eq!(cube.centre().y(), 0.5);
         assert_approx_eq!(cube.centre().z(), 0.0);
@@ -464,7 +466,7 @@ mod tests {
     fn test_cube_trace_inside() {
         let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
         let ray = Ray::new(Point3::new(0.5, 0.5, 2.0), Dir3::new(0.0, 0.0, -1.0));
-        
+
         // Determine if a Ray hit occurs -- it should.
         let will_hit = cube.hit(&ray);
         assert_eq!(will_hit, true);
@@ -481,7 +483,7 @@ mod tests {
     fn test_cube_trace_outside() {
         let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
         let ray = Ray::new(Point3::new(0.5, 0.5, -2.0), Dir3::new(0.0, 0.0, 1.0));
-        
+
         // Determine if a Ray hit occurs -- it should.
         let will_hit = cube.hit(&ray);
         assert_eq!(will_hit, true);
@@ -497,7 +499,7 @@ mod tests {
     fn test_cube_trace_miss() {
         let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
         let ray = Ray::new(Point3::new(0.5, 0.5, 2.0), Dir3::new(0.0, 0.0, 1.0));
-        
+
         // Determine if a Ray hit occurs -- it should not.
         let will_hit = cube.hit(&ray);
         assert_eq!(will_hit, false);
@@ -511,7 +513,7 @@ mod tests {
         let cube = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(2.0, 2.0, 2.0));
         let res = [10, 10, 10];
 
-        // Try the lower end of the domain. 
+        // Try the lower end of the domain.
         let sample = cube.uniform_pos(&res, &[0, 0, 0]);
         assert_eq!(sample, Point3::new(0.1, 0.1, 0.1));
 

@@ -18,7 +18,6 @@ impl Rot2 {
 
 impl From<Rotation2<f64>> for Rot2 {
     #[inline]
-    #[must_use]
     fn from(r: Rotation2<f64>) -> Self {
         Self { data: r }
     }

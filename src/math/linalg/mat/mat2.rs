@@ -69,7 +69,6 @@ impl Mat2 {
 
 impl From<Matrix2<Real>> for Mat2 {
     #[inline]
-    #[must_use]
     fn from(d: Matrix2<Real>) -> Self {
         Self { data: d }
     }

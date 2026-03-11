@@ -6,8 +6,9 @@ use crate::{
     math::ProbabilityBuilder,
     ord::{Build, Name},
     phys::LightLinker,
+    err::Error,
 };
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Formatter};
 
 /// Buildable light structure.
 pub struct LightLinkerBuilder {
@@ -39,19 +40,19 @@ impl Build for LightLinkerBuilder {
     type Inst = LightLinker;
 
     #[inline]
-    fn build(self) -> Self::Inst {
+    fn build(self) -> Result<Self::Inst, Error> {
         let power = self.power;
         let emit = self.emit;
-        let spec = self.spec.build();
+        let spec = self.spec.build()?;
         let mat = self.mat;
 
-        Self::Inst::new(power, emit, spec, mat)
+        Ok(Self::Inst::new(power, emit, spec, mat))
     }
 }
 
 impl Display for LightLinkerBuilder {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.power, "power (J/s)");
         fmt_report!(fmt, self.emit, "emitter");

@@ -90,7 +90,6 @@ impl Analyze for Array3<f64> {
     type Inst = DataCube;
 
     #[inline]
-    #[must_use]
     fn display(&self) -> Self::Inst {
         Self::Inst::new(self)
     }

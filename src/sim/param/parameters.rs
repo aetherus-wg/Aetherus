@@ -9,7 +9,7 @@ use std::fmt::{Display, Error, Formatter};
 pub struct Parameters {
     /// Simulation specific settings.
     pub sett: Settings,
-    /// Boundary settings. 
+    /// Boundary settings.
     pub boundary: Boundary,
     /// Tree settings.
     pub tree: TreeSettings,

@@ -1,6 +1,6 @@
 //! Formula form implementation.
 
-use crate::ord::Build;
+use crate::{err::Error, ord::Build};
 use arctk_attr::file;
 use ndarray::Array1;
 use std::fmt::{Display, Formatter};
@@ -28,8 +28,8 @@ impl Build for FormulaBuilder {
     type Inst = crate::math::Formula;
 
     #[inline]
-    fn build(self) -> Self::Inst {
-        match self {
+    fn build(self) -> Result<Self::Inst, Error> {
+        Ok(match self {
             Self::Constant(c) => Self::Inst::Constant { c },
             Self::Line(c, m) => Self::Inst::Line { c, m },
             Self::Bifurcation(t, under, over) => Self::Inst::Bifurcation { t, under, over },
@@ -50,7 +50,7 @@ impl Build for FormulaBuilder {
                 Array1::from(grads),
                 Array1::from(quads),
             ),
-        }
+        })
     }
 }
 

@@ -6,21 +6,21 @@ use std::fmt::{Display, Formatter};
 use ndarray::Array3;
 use serde::{Deserialize, Serialize};
 use crate::{
-    access, 
+    access,
     fmt_report,
-    fs::Save, 
-    geom::{Cube, Trace}, 
+    fs::Save,
+    geom::{Cube, Trace},
     math::{Point3, Vec3},
-    ord::cartesian::{X, Y, Z}, 
+    ord::cartesian::{X, Y, Z},
     phys::Photon
 };
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "pyo3", pyclass)]
-#[serde(rename_all = "lowercase")] 
+#[serde(rename_all = "lowercase")]
 pub enum OutputParameter {
     Emission,
-    Energy, 
+    Energy,
     Absorption,
     Shift,
     Hyperspectral,
@@ -55,7 +55,7 @@ impl OutputVolume {
     access!(data, data_mut: Array3<f64>);
 
     pub fn new(boundary: Cube, res: [usize; 3],  param: OutputParameter) -> Self {
-        // Check that we don't have non-zero cell size. 
+        // Check that we don't have non-zero cell size.
         debug_assert!(res[X] > 0);
         debug_assert!(res[Y] > 0);
         debug_assert!(res[Z] > 0);
@@ -93,6 +93,16 @@ impl OutputVolume {
         self.boundary.contains(p)
     }
 
+    #[inline]
+    #[must_use]
+    fn gen_index_axis(min: f64, max: f64, res: usize, coord: f64) -> usize {
+        if coord == max {
+            res - 1
+        } else {
+            (((coord - min) / (max - min)) * res as f64).floor() as usize
+        }
+    }
+
     /// If the given position is contained within the grid,
     /// generate the index for the given position within the grid.
     #[inline]
@@ -103,12 +113,9 @@ impl OutputVolume {
             let maxs = self.boundary.maxs();
 
             [
-                (((p.x() - mins.x()) / (maxs.x() - mins.x())) * self.res[X] as f64).floor()
-                    as usize,
-                (((p.y() - mins.y()) / (maxs.y() - mins.y())) * self.res[Y] as f64).floor()
-                    as usize,
-                (((p.z() - mins.z()) / (maxs.z() - mins.z())) * self.res[Z] as f64).floor()
-                    as usize,
+                Self::gen_index_axis(mins.x(), maxs.x(), self.res[X], p.x()),
+                Self::gen_index_axis(mins.y(), maxs.y(), self.res[Y], p.y()),
+                Self::gen_index_axis(mins.z(), maxs.z(), self.res[Z], p.z()),
             ]
         })
     }
@@ -133,7 +140,7 @@ impl OutputVolume {
         }
     }
 
-    /// Returns the distance to the nearest voxel boundary, if one exists. 
+    /// Returns the distance to the nearest voxel boundary, if one exists.
     #[inline]
     #[must_use]
     pub fn voxel_dist(&self, phot: &Photon) -> Option<f64> {

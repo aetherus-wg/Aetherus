@@ -11,7 +11,7 @@ use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 pub fn travel(data: &mut Output, phot: &mut Photon, env: &Local, dist: f64) {
     debug_assert!(dist > 0.0);
 
-    // Energy Density. 
+    // Energy Density.
     let weight_power_dist = phot.weight() * phot.power() * dist;
     for vol in data.get_volumes_for_param_mut(OutputParameter::Energy) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
@@ -19,14 +19,14 @@ pub fn travel(data: &mut Output, phot: &mut Photon, env: &Local, dist: f64) {
         }
     }
 
-    // Absorption. 
+    // Absorption.
     for vol in data.get_volumes_for_param_mut(OutputParameter::Absorption) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
             vol.data_mut()[index] += weight_power_dist * env.abs_coeff();
         }
     }
 
-    // Shifts. 
+    // Shifts.
     for vol in data.get_volumes_for_param_mut(OutputParameter::Shift) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
             vol.data_mut()[index] += weight_power_dist * env.shift_coeff();

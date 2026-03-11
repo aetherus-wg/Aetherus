@@ -1,11 +1,12 @@
 //! Gradient builder implementation.
 
 use crate::{
+    err::Error,
     img::{Colour, Gradient},
     ord::Build,
 };
 use arctk_attr::file;
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Formatter};
 
 /// Loadable colour gradient structure.
 #[file]
@@ -18,7 +19,7 @@ impl Build for GradientBuilder {
     type Inst = Gradient;
 
     #[inline]
-    fn build(self) -> Self::Inst {
+    fn build(self) -> Result<Self::Inst, Error> {
         let mut cols = Vec::with_capacity(self.0.len());
 
         for col in self.0 {
@@ -33,13 +34,13 @@ impl Build for GradientBuilder {
             cols.push(Colour::new(r, g, b, a));
         }
 
-        Self::Inst::new(cols)
+        Ok(Self::Inst::new(cols))
     }
 }
 
 impl Display for GradientBuilder {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         if self.0.is_empty() {
             write!(fmt, "[]")?;
         } else {

@@ -2,11 +2,12 @@
 
 use crate::{
     clone,
+    err::Error,
     geom::Track,
     math::{Mat4, Vec3},
     ord::{
-        Build, 
-        cartesian::{X, Y}
+        cartesian::{X, Y},
+        Build,
     },
     sim::Frame,
 };
@@ -41,7 +42,7 @@ impl Build for FilmBuilder {
     type Inst = Vec<Frame>;
 
     #[inline]
-    fn build(self) -> Self::Inst {
+    fn build(self) -> Result<Self::Inst, Error> {
         debug_assert!(self.frames > 0);
 
         let aspect_ratio = self.res[X] as f64 / self.res[Y] as f64;
@@ -58,6 +59,6 @@ impl Build for FilmBuilder {
             frames.push(Frame::new(pos, view, proj, self.res));
         }
 
-        frames
+        Ok(frames)
     }
 }

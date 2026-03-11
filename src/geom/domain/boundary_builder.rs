@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
 use std::fmt::{Display, Formatter};
 use arctk_attr::file;
 use crate::{
     fmt_report,
     geom::{Boundary, BoundaryCondition, Cube},
-    math::Vec3, 
-    phys::{ReflectanceBuilder, ReflectanceBuilderShim},
+    math::Vec3,
+    phys::{ReflectanceBuilder},
 };
 
 #[file]
@@ -49,7 +49,7 @@ impl BoundaryBuilder {
         };
 
         Boundary {
-            bounding_box, 
+            bounding_box,
             top,
             bottom,
             north,
@@ -66,7 +66,7 @@ impl Display for BoundaryBuilder {
         fmt_report!(fmt, "...", "boundary");
         fmt_report!(fmt, format!("[{}, {}", self.boundary.0.x(), self.boundary.0.y()), "mins");
         fmt_report!(fmt, format!("[{}, {}", self.boundary.0.x(), self.boundary.0.y()), "maxs");
-        
+
         match &self.top {
             Some(a) => fmt_report!(fmt, a, "top"),
             None => fmt_report!(fmt, "none", "top"),
@@ -76,7 +76,7 @@ impl Display for BoundaryBuilder {
             Some(a) => fmt_report!(fmt, a, "bottom"),
             None => fmt_report!(fmt, "none", "bottom"),
         };
-        
+
         match &self.north {
             Some(a) => fmt_report!(fmt, a, "north"),
             None => fmt_report!(fmt, "none", "north"),
@@ -104,7 +104,7 @@ impl Display for BoundaryBuilder {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BoundaryConditionBuilder {
     Kill,
-    Reflect(ReflectanceBuilderShim),
+    Reflect(ReflectanceBuilder),
     Periodic(f64),
     #[cfg(feature = "mpi")]
     MpiRank(usize),
@@ -119,6 +119,10 @@ impl BoundaryConditionBuilder {
                 let ref_build: ReflectanceBuilder = ref_shim.clone().into();
                 let ref_model = ref_build.build().expect("Unable to load reflectance model for boundary. ");
                 BoundaryCondition::Reflect(ref_model)
+            },
+            #[cfg(feature = "mpi")]
+            Self::MpiRank(rank) => {
+                BoundaryCondition::MpiRank(rank.clone())
             }
         }
     }
@@ -134,7 +138,7 @@ impl Display for BoundaryConditionBuilder {
             }
             Self::Reflect(ref reflectance) => {
                 writeln!(fmt, "Reflector: ...")?;
-                fmt_report!(fmt, format!("{:?}, {:?}, {:?}", reflectance.0, reflectance.1, reflectance.2), "reflectance");
+                fmt_report!(fmt, format!("{:?}, {:?}, {:?}", reflectance.diff_ref, reflectance.spec_ref, reflectance.specularity), "reflectance");
                 Ok(())
             },
             Self::Periodic(padding) => {
@@ -145,7 +149,7 @@ impl Display for BoundaryConditionBuilder {
             #[cfg(feature = "mpi")]
             Self::MpiRank(rank) => {
                 writeln!(fmt, "MPI Rank Transfer: ...")?;
-                fmt_report!(fmt, padding, "destination rank");
+                fmt_report!(fmt, rank, "destination rank");
                 Ok(())
             }
         }

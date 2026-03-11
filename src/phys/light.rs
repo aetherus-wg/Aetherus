@@ -79,10 +79,10 @@ mod tests {
 
     fn get_air_material() -> Material {
         Material::new(
-            Formula::Constant { c: 1.0 }, 
-            Formula::Constant { c: 1.0e-6 }, 
-            None, 
-            None, 
+            Formula::Constant { c: 1.0 },
+            Formula::Constant { c: 1.0e-6 },
+            None,
+            None,
             Formula::Constant { c: 0.1 }
         )
     }
@@ -94,8 +94,8 @@ mod tests {
         let emitter = Emitter::new_beam(ray.clone());
         let mat = get_air_material();
         let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
-        
-        // Now emit a photon and check we get the correct values. 
+
+        // Now emit a photon and check we get the correct values.
         let photon = light.emit(&mut rng, 1.0);
         assert_eq!(photon.power(), 1.0);
         assert_eq!(photon.wavelength(), 1.0);
@@ -109,8 +109,8 @@ mod tests {
         let emitter = Emitter::new_points(points.clone());
         let mat = get_air_material();
         let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
-        
-        // Now emit a photon and check we get the correct values. 
+
+        // Now emit a photon and check we get the correct values.
         let photon = light.emit(&mut rng, 1.0);
         assert_eq!(photon.power(), 1.0);
         assert_eq!(photon.wavelength(), 1.0);
@@ -125,8 +125,8 @@ mod tests {
         let emitter = Emitter::new_weighted_points(points.clone(), &weights);
         let mat = get_air_material();
         let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
-        
-        // Now emit a number of photons and check that the weights are correct. 
+
+        // Now emit a number of photons and check that the weights are correct.
         let mut freqs = vec![0, 0, 0];
         let n_samples = 100_000;
         for _ in 0..n_samples {
@@ -148,7 +148,7 @@ mod tests {
     fn test_surface_light() {
         let mut rng = rand::thread_rng();
 
-        // Make a single upward facing triangle to emit from. 
+        // Make a single upward facing triangle to emit from.
         let norm = Dir3::new(0.0, 0.0, 1.0);
         let triangles = vec![ SmoothTriangle::new(
             Triangle::new([
@@ -163,8 +163,8 @@ mod tests {
         let emitter = Emitter::new_surface(mesh);
         let mat = get_air_material();
         let light = Light::new(1.0, emitter, Probability::new_point(1.0), &mat);
-        
-        // Now emit a photon and check we get the correct values. 
+
+        // Now emit a photon and check we get the correct values.
         let photon = light.emit(&mut rng, 1.0);
         assert_eq!(photon.power(), 1.0);
         assert_eq!(photon.wavelength(), 1.0);

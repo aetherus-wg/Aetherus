@@ -1,9 +1,9 @@
 //! Probability builder.
 
-use crate::{math::Probability, ord::Build};
+use crate::{err::Error, math::Probability, ord::Build};
 use arctk_attr::file;
 use ndarray::Array1;
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Formatter};
 
 /// Probability distribution builders.
 #[file]
@@ -29,8 +29,8 @@ impl Build for ProbabilityBuilder {
     type Inst = Probability;
 
     #[inline]
-    fn build(self) -> Self::Inst {
-        match self {
+    fn build(self) -> Result<Self::Inst, Error> {
+        Ok(match self {
             Self::Point(p) => Self::Inst::new_point(p),
             Self::Points(ps) => Self::Inst::new_points(Array1::from(ps)),
             Self::Linear(xs, ps) => Self::Inst::new_linear(xs, ps),
@@ -42,13 +42,13 @@ impl Build for ProbabilityBuilder {
             Self::LinearSpline(xs, ps) => {
                 Self::Inst::new_linear_spline(&Array1::from(xs), &Array1::from(ps))
             }
-        }
+        })
     }
 }
 
 impl Display for ProbabilityBuilder {
     #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         let kind = match *self {
             Self::Point { .. } => "Constant",
             Self::Points { .. } => "Line",

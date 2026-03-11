@@ -8,8 +8,10 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::btree_map::{IntoIter, Values}, fmt::{Display, Formatter}, ops::Add, path::Path
+    collections::btree_map::{IntoIter, Values}, fmt::{Display, Formatter}, path::Path
 };
+
+use anyhow::Context;
 
 /// Data map.
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -83,7 +85,7 @@ impl<T> Set<T> {
     /// Iterate over the values.
     #[inline]
     #[must_use]
-    pub fn values(&self) -> Values<Name, T> {
+    pub fn values(&self) -> Values<'_, Name, T> {
         self.0.values()
     }
 
@@ -125,7 +127,7 @@ where
 {
     #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
-        from_json(path)
+        Ok(from_json(path).context(format!("Loading Set from file {}", path.display()))?)
     }
 }
 
@@ -133,7 +135,6 @@ where
 impl<T: Load> Load for Set<T> {
     type Inst = Set<T::Inst>;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
         let mut map = Map::new();
 
@@ -150,14 +151,12 @@ impl<T: Build> Build for Set<T> {
     type Inst = Set<T::Inst>;
 
     #[allow(clippy::expect_used)]
-    #[must_use]
-    #[inline]
-    fn build(self) -> Self::Inst {
+    fn build(self) -> Result<Self::Inst, Error> {
         let mut list = Vec::with_capacity(self.0.len());
         for (name, val) in self.0 {
-            list.push((name, val.build()));
+            list.push((name, val.build()?));
         }
-        Self::Inst::from_pairs(list).expect("Failed to build set.")
+        Ok(Self::Inst::from_pairs(list).expect("Failed to build set."))
     }
 }
 
@@ -165,7 +164,6 @@ impl<T: Build> Build for Set<T> {
 impl<'a, T, S: Link<'a, T>> Link<'a, T> for Set<S> {
     type Inst = Set<S::Inst>;
 
-    #[must_use]
     #[inline]
     fn requires(&self) -> Vec<Name> {
         self.0

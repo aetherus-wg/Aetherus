@@ -89,7 +89,7 @@ impl Histogram {
     }
 
     #[inline]
-    pub fn iter(&self) -> HistogramIterator {
+    pub fn iter(&self) -> HistogramIterator<'_> {
         HistogramIterator::new(self)
     }
 }
@@ -143,14 +143,14 @@ mod tests {
         let mut hist = Histogram::new_range(range, 10);
         // Try collecting something in the range.
         hist.try_collect(0.55);
-        // Now try collecting something outputs of the range. 
+        // Now try collecting something outputs of the range.
         hist.try_collect(2.0);
         hist.try_collect(-1.0);
 
-        // Check that we only have one sample in the bin. 
+        // Check that we only have one sample in the bin.
         assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 1.0);
 
-        // Check that it is binned correctly. 
+        // Check that it is binned correctly.
         hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 1.0 } else {0.0}));
     }
 
@@ -163,10 +163,10 @@ mod tests {
         hist.collect(0.75);
         let hist_clone = hist.clone();
 
-        // Check that we only have one sample in the bin. 
+        // Check that we only have one sample in the bin.
         assert_eq!(hist_clone.iter().map(|(_, count)| count).sum::<f64>(), 3.0);
 
-        // Check that it is binned correctly - we do the weird comparison here to avoid rounding problems with larger bins. 
+        // Check that it is binned correctly - we do the weird comparison here to avoid rounding problems with larger bins.
         hist_clone.iter().for_each(|(bin, count)| assert_eq!(count, if (bin - 0.2).abs() < 1E-8 || (bin - 0.5).abs() < 1E-8 || (bin - 0.7).abs() < 1E-8 { 1.0 } else {0.0}));
     }
 
@@ -175,14 +175,14 @@ mod tests {
         let mut hist = Histogram::new(0.0, 1.0, 10);
         // Try collecting something in the range.
         hist.try_collect(0.55);
-        // Now try collecting something outputs of the range. 
+        // Now try collecting something outputs of the range.
         hist.try_collect(2.0);
         hist.try_collect(-1.0);
 
-        // Check that we only have one sample in the bin. 
+        // Check that we only have one sample in the bin.
         assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 1.0);
 
-        // Check that it is binned correctly. 
+        // Check that it is binned correctly.
         hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 1.0 } else {0.0}));
     }
 
@@ -192,10 +192,10 @@ mod tests {
         // Try collecting something in the range.
         hist.collect_weight(0.55, 0.5);
 
-        // Check that we only have one sample, weighted by the correct weight. 
+        // Check that we only have one sample, weighted by the correct weight.
         assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 0.5);
 
-        // Check that it is binned correctly. 
+        // Check that it is binned correctly.
         hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 0.5 } else {0.0}));
     }
 
@@ -204,14 +204,14 @@ mod tests {
         let mut hist = Histogram::new(0.0, 1.0, 10);
         // Try collecting something in the range.
         hist.try_collect_weight(0.55, 0.5);
-        // Now try collecting something outputs of the range. 
+        // Now try collecting something outputs of the range.
         hist.try_collect_weight(2.0, 0.5);
         hist.try_collect_weight(-1.0, 0.5);
 
-        // Check that we only have one sample, weighted by the correct weight. 
+        // Check that we only have one sample, weighted by the correct weight.
         assert_eq!(hist.iter().map(|(_, count)| count).sum::<f64>(), 0.5);
 
-        // Check that it is binned correctly. 
+        // Check that it is binned correctly.
         hist.iter().for_each(|(bin, count)| assert_eq!(count, if bin == 0.5 { 0.5 } else {0.0}));
     }
 
@@ -223,17 +223,17 @@ mod tests {
         hist1.collect(0.25);
         hist1.collect(0.55);
         hist1.collect(0.75);
-        // Populate the second histogram within the valid range. 
+        // Populate the second histogram within the valid range.
         hist2.collect(0.15);
         hist2.collect(0.55);
         hist2.collect(0.75);
 
         hist1 += &hist2;
 
-        // Check that we only have one sample in the bin. 
+        // Check that we only have one sample in the bin.
         assert_eq!(hist1.iter().map(|(_, count)| count).sum::<f64>(), 6.0);
 
-        // Check that it is binned correctly - we do the weird comparison here to avoid rounding problems with larger bins. 
+        // Check that it is binned correctly - we do the weird comparison here to avoid rounding problems with larger bins.
         hist1.iter().for_each(|(bin, count)| assert_eq!(count, if (bin - 0.1).abs() < 1E-8 || (bin - 0.2).abs() < 1E-8 { 1.0 } else if (bin - 0.5).abs() < 1E-8 || (bin - 0.7).abs() < 1E-8 {2.0 } else {0.0}));
     }
 

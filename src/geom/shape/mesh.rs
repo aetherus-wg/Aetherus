@@ -4,7 +4,7 @@ use crate::{
     access, clone, fmt_report,
     err::Error,
     geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Trace, Transformable},
-    fs::{File, mesh_from_obj, mesh_from_ugrid},
+    fs::{File, mesh_from_objfile, mesh_from_ugrid},
     math::Trans3,
     ord::{ALPHA, cartesian::X},
 };
@@ -13,6 +13,7 @@ use std::{
     fmt::{Display, Formatter},
     path::Path
 };
+use anyhow::Context;
 
 /// Boundary padding.
 const PADDING: f64 = 1e-6;
@@ -84,7 +85,6 @@ impl Mesh {
 
 impl Collide for Mesh {
     #[inline]
-    #[must_use]
     fn overlap(&self, cube: &Cube) -> bool {
         if !self.boundary.overlap(cube) {
             return false;
@@ -113,7 +113,6 @@ impl Transformable for Mesh {
 
 impl Emit for Mesh {
     #[inline]
-    #[must_use]
     fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
         let r = rng.gen_range(0.0..self.area);
         let mut total_area = 0.0;
@@ -130,7 +129,6 @@ impl Emit for Mesh {
 
 impl Trace for Mesh {
     #[inline]
-    #[must_use]
     fn hit(&self, ray: &Ray) -> bool {
         if !self.boundary.hit(ray) {
             return false;
@@ -140,7 +138,6 @@ impl Trace for Mesh {
     }
 
     #[inline]
-    #[must_use]
     fn dist(&self, ray: &Ray) -> Option<f64> {
         if !self.boundary.hit(ray) {
             return None;
@@ -153,7 +150,6 @@ impl Trace for Mesh {
     }
 
     #[inline]
-    #[must_use]
     fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
         if !self.boundary.hit(ray) {
             return None;
@@ -178,12 +174,10 @@ impl Display for Mesh {
 }
 
 impl File for Mesh {
-    #[inline]
     fn load(path: &Path) -> Result<Self, Error> {
         if path.extension().unwrap() == "obj" {
-            let mesh_tris = mesh_from_obj(path).unwrap_or_else(|_| {
-                panic!("Unable to read mesh from wavefront file: {}", path.display())
-            });
+            let mesh_tris = mesh_from_objfile(path)
+                .context(format!("Unable to read mesh from wavefront file: {}", path.display()))?;
 
             Ok(Self::new(mesh_tris))
 

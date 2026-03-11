@@ -1,49 +1,64 @@
 //! Error handling.
 
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
+use thiserror;
 
 /// Error enumeration.
+#[derive(Debug, thiserror::Error)]
+//#[error(transparent)]
 pub enum Error {
     /// Description error.
+    #[error("Text error: {0}")]
     Text(String),
     /// Parallelisation poison.
+    #[error("Parallelisation poison.")]
     Parallel,
     /// Formatting error.
-    Format(std::fmt::Error),
+    #[error("Formatting")]
+    Format(#[from] std::fmt::Error),
     /// Missing environment variable error.
-    EnvVar(std::env::VarError),
+    #[error("Missing env var")]
+    EnvVar(#[from] std::env::VarError),
     /// File loading error.
-    LoadFile(std::io::Error),
+    #[error("File loading")]
+    LoadFile(#[from] std::io::Error),
     /// Integer parsing error.
-    ParseInt(std::num::ParseIntError),
+    #[error("Integer parsing")]
+    ParseInt(#[from] std::num::ParseIntError),
     /// Float parsing error.
-    ParseFloat(std::num::ParseFloatError),
+    #[error("Float parsing")]
+    ParseFloat(#[from] std::num::ParseFloatError),
     /// Json reading error.
-    ReadJson(json5::Error),
+    #[error("Json reading")]
+    ReadJson(#[from] json5::Error),
     /// Json writing error.
-    WriteJson(serde_json::Error),
+    #[error("Json writing")]
+    WriteJson(#[from] serde_json::Error),
     /// Png writing error.
-    WritePng(png::EncodingError),
+    #[error("PNG writing")]
+    WritePng(#[from] png::EncodingError),
     /// Shape error.
-    InvalidShape(ndarray::ShapeError),
+    #[error("Invalid array shape")]
+    InvalidShape(#[from] ndarray::ShapeError),
     /// Min/max error.
-    MinMax(ndarray_stats::errors::MinMaxError),
+    #[error("MinMax")]
+    MinMax(#[from] ndarray_stats::errors::MinMaxError),
     /// NetCDF io error.
-    NetCdf(netcdf::error::Error),
+    #[error("NetCDF IO")]
+    NetCdf(#[from] netcdf::Error),
     /// Lidrs Error.
-    Lidrs(lidrs::err::Error),
+    #[error("Lidrs")]
+    Lidrs(#[from] lidrs::err::Error),
+    /// Obj loading
+    #[error("Objfile reading")]
+    ObjLoad(#[from] obj::ObjError),
+    /// Obj loading
+    #[error(transparent)]
+    AnyhowError(#[from] anyhow::Error),
 }
 
-macro_rules! impl_from_for_err {
-    ($enum:path, $error:ty) => {
-        impl From<$error> for Error {
-            #[inline]
-            fn from(e: $error) -> Self {
-                $enum(e)
-            }
-        }
-    };
-}
+unsafe impl Send for Error {}
+unsafe impl Sync for Error {}
 
 impl From<&str> for Error {
     #[inline]
@@ -56,60 +71,5 @@ impl<T> From<std::sync::PoisonError<T>> for Error {
     #[inline]
     fn from(_e: std::sync::PoisonError<T>) -> Self {
         Self::Parallel
-    }
-}
-
-impl_from_for_err!(Self::Format, std::fmt::Error);
-impl_from_for_err!(Self::EnvVar, std::env::VarError);
-impl_from_for_err!(Self::LoadFile, std::io::Error);
-impl_from_for_err!(Self::ParseInt, std::num::ParseIntError);
-impl_from_for_err!(Self::ParseFloat, std::num::ParseFloatError);
-impl_from_for_err!(Self::ReadJson, json5::Error);
-impl_from_for_err!(Self::WriteJson, serde_json::Error);
-impl_from_for_err!(Self::InvalidShape, ndarray::ShapeError);
-impl_from_for_err!(Self::MinMax, ndarray_stats::errors::MinMaxError);
-impl_from_for_err!(Self::NetCdf, netcdf::error::Error);
-impl_from_for_err!(Self::WritePng, png::EncodingError);
-impl_from_for_err!(Self::Lidrs, lidrs::err::Error);
-
-impl Debug for Error {
-    #[inline]
-    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
-        write!(
-            fmt,
-            "{} error: `{}`",
-            match *self {
-                Self::Text { .. } => "Text string",
-                Self::Parallel { .. } => "Parallelisation poison",
-                Self::Format { .. } => "Formatting",
-                Self::EnvVar { .. } => "Environment variable",
-                Self::LoadFile { .. } => "File loading",
-                Self::ParseInt { .. } => "Integer parsing",
-                Self::ParseFloat { .. } => "Float parsing",
-                Self::ReadJson { .. } => "Json reading",
-                Self::WriteJson { .. } => "Json writing",
-                Self::WritePng { .. } => "PNG writing",
-                Self::InvalidShape { .. } => "Invalid array shape",
-                Self::MinMax { .. } => "MinMax",
-                Self::NetCdf { .. } => "NetCDF IO",
-                Self::Lidrs { .. } => "Lidrs",
-            },
-            match *self {
-                Self::Text { 0: ref err } => format!("{:?}", err),
-                Self::Parallel => "Parallelisation fail".to_owned(),
-                Self::Format { 0: ref err } => format!("{:?}", err),
-                Self::EnvVar { 0: ref err } => format!("{:?}", err),
-                Self::LoadFile { 0: ref err } => format!("{:?}", err),
-                Self::ParseInt { 0: ref err } => format!("{:?}", err),
-                Self::ParseFloat { 0: ref err } => format!("{:?}", err),
-                Self::ReadJson { 0: ref err } => format!("{:?}", err),
-                Self::WriteJson { 0: ref err } => format!("{:?}", err),
-                Self::WritePng { 0: ref err } => format!("{:?}", err),
-                Self::InvalidShape { 0: ref err } => format!("{:?}", err),
-                Self::MinMax { 0: ref err } => format!("{:?}", err),
-                Self::NetCdf { 0: ref err } => format!("{:?}", err),
-                Self::Lidrs { 0: ref err } => format!("{:?}", err),
-            }
-        )
     }
 }

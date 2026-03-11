@@ -79,7 +79,9 @@ fn main() {
         .link(base_output.reg.spec_reg.set())
         .expect("Failed to link spectrometers to attributes.")
         .link(&mats)
-        .expect("Failed to link materials to attributes.");
+        .expect("Failed to link materials to attributes.")
+        .build()
+        .expect("Failed to build attributes.");
     report!(attrs, "attributes");
     let surfs = params
         .surfs
@@ -88,9 +90,9 @@ fn main() {
     report!(surfs, "surfaces");
 
     /*
-     * Create a boundary for the simulation with boundary conditions. 
-     * For now we hard-code this to kill, but we can link this to configuration soon. 
-     * TODO: We probably want to implement the MPI adjacent rank transfer here too. 
+     * Create a boundary for the simulation with boundary conditions.
+     * For now we hard-code this to kill, but we can link this to configuration soon.
+     * TODO: We probably want to implement the MPI adjacent rank transfer here too.
      */
 
     sub_section(term_width, "Growing");
@@ -174,7 +176,7 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     report!(builder, "builder");
 
     sub_section(term_width, "Building");
-    let params = builder.build();
+    let params = builder.build().expect("Failed to build parameters.");
     report!(params, "parameters");
 
     params

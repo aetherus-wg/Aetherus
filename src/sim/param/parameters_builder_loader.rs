@@ -1,11 +1,18 @@
 //! Loadable parameters.
 
 use crate::{
-    err::Error, fs::{Load, Redirect}, geom::{boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings}, io::output::OutputConfig, phys::{LightLinkerBuilderLoader, MaterialBuilder}, sim::{
-        AttributeLinkerChainProxy, EngineBuilderLoader, ParametersBuilder, Settings,
-        attribute_chain_resolve_set,
+    err::Error,
+    fs::{Load, Redirect},
+    geom::{
+        boundary_builder::BoundaryBuilder, SurfaceLinkerLoader, TreeSettings,
     },
-    ord::{MultiSet, Set},
+    io::output::OutputConfig,
+    ord::MultiSet,
+    phys::{LightLinkerBuilderLoader, MaterialBuilder},
+    sim::{
+        attribute_chain_resolve_set, AttributeLinkerChainProxy, EngineBuilderLoader,
+        ParametersBuilder, Settings,
+    },
 };
 use arctk_attr::file;
 use std::path::Path;
@@ -15,7 +22,7 @@ use std::path::Path;
 pub struct ParametersBuilderLoader {
     /// Simulation specific settings.
     sett: Redirect<Settings>,
-    // Boundary conditions. 
+    // Boundary conditions.
     boundary: Redirect<BoundaryBuilder>,
     /// Tree settings.
     tree: Redirect<TreeSettings>,
@@ -36,17 +43,17 @@ pub struct ParametersBuilderLoader {
 impl Load for ParametersBuilderLoader {
     type Inst = ParametersBuilder;
 
-    #[inline]
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
-        let sett = self.sett.load(in_dir)?;
+        let sett     = self.sett.load(in_dir)?;
         let boundary = self.boundary.load(in_dir)?;
-        let tree = self.tree.load(in_dir)?;
-        let surfs = self.surfs.load(in_dir)?.load(in_dir)?;
-        let attrs = attribute_chain_resolve_set(self.attrs.load(in_dir)?);
-        let mats = self.mats.load(in_dir)?.load(in_dir)?;
-        let lights = self.lights.load(in_dir)?.load(in_dir)?;
-        let engine = self.engine.load(in_dir)?;
-        let output = self.output.load(in_dir)?;
+        let tree     = self.tree.load(in_dir)?;
+        let surfs    = self.surfs.load(in_dir)?
+                                 .load(in_dir)?;
+        let attrs    = attribute_chain_resolve_set(self.attrs.load(in_dir)?);
+        let mats     = self.mats.load(in_dir)?.load(in_dir)?;
+        let lights   = self.lights.load(in_dir)?.load(in_dir)?;
+        let engine   = self.engine.load(in_dir)?;
+        let output   = self.output.load(in_dir)?;
 
         Ok(Self::Inst::new(
             sett, boundary, tree, surfs, attrs, mats, lights, engine, output,

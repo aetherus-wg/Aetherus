@@ -1,9 +1,7 @@
 //! Regular-Cartesian grid builder.
 
 use crate::{
-    access, fmt_report,
-    geom::{Cube, Grid},
-    ord::{Build, cartesian::{X, Y, Z}},
+    access, err::Error, fmt_report, geom::{Cube, Grid}, ord::{Build, cartesian::{X, Y, Z}}
 };
 use arctk_attr::file;
 use std::fmt::{Display, Formatter};
@@ -45,8 +43,8 @@ impl Build for GridBuilder {
     type Inst = Grid;
 
     #[inline]
-    fn build(self) -> Grid {
-        Grid::new(self.boundary, self.res)
+    fn build(self) -> Result<Grid, Error> {
+        Ok(Grid::new(self.boundary, self.res))
     }
 }
 
@@ -75,7 +73,7 @@ mod tests {
         let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
         let res = [10, 10, 10];
 
-        let grid = GridBuilder::new(boundary.clone(), res).build();
+        let grid = GridBuilder::new(boundary.clone(), res).build().expect("Failed to build Grid");
 
         assert_eq!(grid.boundary(), &boundary);
         assert_eq!(grid.res(), &res);
@@ -132,14 +130,14 @@ mod tests {
 
     #[test]
     fn deserialise_from_file_and_build() {
-        // Write the example JSON to a file. 
+        // Write the example JSON to a file.
         let grid_str = "{ boundary: { mins: [0.0, 0.0, 0.0], maxs: [1.0, 1.0, 1.0] }, res: [10, 10, 10] }";
         let path = Path::new("test_grid_builder.json");
         std::fs::write(path, grid_str).unwrap();
 
         // Read the file.
         let grid_builder = GridBuilder::load(&path).unwrap();
-        let grid = grid_builder.build();
+        let grid = grid_builder.build().expect("Failed to build Grid");
 
         // Check the results.
         assert_eq!(grid.boundary(), &Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0)));
