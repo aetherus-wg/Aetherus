@@ -5,7 +5,7 @@ use crate::{
     img::{Image, Colour}
 };
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ImageBuilder {
     res: [usize; 2],
 }

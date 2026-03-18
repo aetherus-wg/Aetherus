@@ -11,7 +11,7 @@ use crate::{
 /// Configuration for the OutputVolume.
 /// Importantly this can be serialised / deserialised using serde, so that this
 /// can be built from a JSON configuration file.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct OutputVolumeBuilder {
     boundary: (Vec3, Vec3),
     res: [usize; 3],

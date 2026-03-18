@@ -6,7 +6,7 @@ use crate::{
     ord::cartesian::{X, Y}
 };
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CcdBuilder {
     res: [usize; 2],
     bins: usize,

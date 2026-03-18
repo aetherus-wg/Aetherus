@@ -9,6 +9,7 @@ use crate::{
 use std::fmt::{Display, Formatter};
 
 /// Surface with named attribute.
+#[derive(Clone)]
 pub struct SurfaceLinker {
     /// Mesh.
     mesh: Mesh,

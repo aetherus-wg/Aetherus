@@ -11,6 +11,7 @@ use crate::{
 use std::fmt::{Display, Formatter};
 
 /// Photon emission structure linker.
+#[derive(Clone)]
 pub struct LightLinker {
     /// Power [J/s].
     power: f64,

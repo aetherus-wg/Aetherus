@@ -13,6 +13,7 @@ use std::fmt::{Display, Error, Formatter};
 
 /// Engine selection.
 #[allow(clippy::large_enum_variant)]
+#[derive(Clone)]
 pub enum Engine {
     /// Standard sampling engine.
     Standard,

@@ -69,6 +69,7 @@ rand_distr = "0.6.0"
 tempfile = "3.2.*"
 statrs = "0.15.*"
 husky-rs = "0.3.2"
+criterion = { version = "0.8.2", features = ["html_reports", "rayon"] }
 
 [build]
 rustdocflags = [ "--html-in-header", "./src/docs-header.html" ]
@@ -88,3 +89,7 @@ required-features = ["mpi"]
 
 [profile.release]
 debug = true
+
+[[bench]]
+name = "diffusion"
+harness = false

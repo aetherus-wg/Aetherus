@@ -6,6 +6,7 @@ use std::fmt::{Display, Formatter};
 
 /// Tree construction settings.
 #[file]
+#[derive(Clone)]
 pub struct TreeSettings {
     /// Target maximum number of triangles per cell.
     tar_tris: usize,
