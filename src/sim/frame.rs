@@ -7,6 +7,7 @@ use crate::{
 };
 
 /// Real-space to frame-space transformer.
+#[derive(Clone)]
 pub struct Frame {
     /// Position.
     pos: Point3,

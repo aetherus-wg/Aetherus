@@ -6,7 +6,7 @@ use crate::{
 };
 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HistogramBuilder {
     min: f64,
     max: f64,

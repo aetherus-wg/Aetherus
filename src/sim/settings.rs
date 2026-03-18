@@ -6,6 +6,7 @@ use std::fmt::{Display, Error, Formatter};
 
 /// General settings structure.
 #[file]
+#[derive(Clone)]
 pub struct Settings {
     /// Optional limit on number of threads to use.
     num_threads: Option<usize>,

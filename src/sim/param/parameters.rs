@@ -6,6 +6,7 @@ use crate::{
 use std::fmt::{Display, Error, Formatter};
 
 /// Runtime parameters.
+#[derive(Clone)]
 pub struct Parameters {
     /// Simulation specific settings.
     pub sett: Settings,

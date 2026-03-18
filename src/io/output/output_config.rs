@@ -17,7 +17,7 @@ use super::{CcdBuilder, OutputRegistry};
 
 
 #[file]
-#[derive(Serialize)]
+#[derive(Clone)]
 pub struct OutputConfig {
     pub volumes: Option<BTreeMap<Name, OutputVolumeBuilder>>,
     pub planes: Option<BTreeMap<Name, OutputPlaneBuilder>>,

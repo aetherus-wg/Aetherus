@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter};
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 use crate::{fmt_report, io::output::PhotonCollector};
 
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Deserialize, Clone)]
 pub struct PhotonCollectorBuilder {
     kill_photons: Option<bool>,
 }

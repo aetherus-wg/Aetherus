@@ -7,7 +7,7 @@ use crate::{
     ord::cartesian::{X, Y},
 };
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct OutputPlaneBuilder {
     boundary: (Point2, Point2),
     res: [usize; 2],

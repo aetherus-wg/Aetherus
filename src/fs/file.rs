@@ -1,6 +1,8 @@
 //! The trait for the file loading interface.
 //! Types implementing this trait can be loaded from a file by Aetherus.
 
+use log::info;
+
 use crate::err::Error;
 use std::path::Path;
 
@@ -14,7 +16,7 @@ where
     /// if the target file can not be found,
     /// or the read string can not be serialised into an instance of the required type.
     fn new_from_file(path: &Path) -> Result<Self, Error> {
-        println!("[LOAD] {}", path.display());
+        info!("[LOAD] {}", path.display());
         Self::load(path)
     }
 
