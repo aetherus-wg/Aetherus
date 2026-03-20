@@ -1,10 +1,8 @@
-use serde::{Serialize, Deserialize, Deserializer};
 use serde::de::{SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{
-    err::Error,
-    phys::SpectrumBuilder
-};
+use crate::ord::{Build, Name};
+use crate::{err::Error, phys::SpectrumBuilder};
 
 use super::Reflectance;
 
@@ -45,29 +43,29 @@ impl<'de> Deserialize<'de> for ReflectanceBuilder {
         }
         deserializer.deserialize_seq(ReflectanceBuilderVisitor)
     }
-
-
 }
 
-impl ReflectanceBuilder {
-    pub fn build(&self) -> Result<Reflectance, Error> {
+impl Build for ReflectanceBuilder {
+    type Inst = Reflectance;
+    type MetaInfo = Name;
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         let ref_model = if self.diff_ref.is_some() {
             if self.spec_ref.is_some() {
                 // Check that the specularity of the reflector is defined.
                 assert!(self.specularity.is_some());
                 Reflectance::Composite {
-                    diffuse_refspec: self.diff_ref.clone().unwrap().build()?,
-                    specular_refspec: self.spec_ref.clone().unwrap().build()?,
+                    diffuse_refspec: self.diff_ref.clone().unwrap().build(id.clone())?,
+                    specular_refspec: self.spec_ref.clone().unwrap().build(id)?,
                     specularity: self.specularity.unwrap(),
                 }
             } else {
                 Reflectance::Lambertian {
-                    refspec: self.diff_ref.clone().unwrap().build()?,
+                    refspec: self.diff_ref.clone().unwrap().build(id)?,
                 }
             }
         } else {
             Reflectance::Specular {
-                refspec: self.spec_ref.clone().unwrap().build()?,
+                refspec: self.spec_ref.clone().unwrap().build(id)?,
             }
         };
 

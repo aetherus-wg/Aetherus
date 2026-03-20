@@ -240,7 +240,8 @@ impl Link<'_, Material> for MaterialFuture {
 
 impl Build for SceneBuilder {
     type Inst = Scene;
-    fn build(self) -> Result<Self::Inst, Error> {
+    type MetaInfo = Name;
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         let objs = match self.obj {
             ObjFuture::Future(_) => {
                 return Err(Error::LoadFile(
@@ -262,7 +263,7 @@ impl Build for SceneBuilder {
                                 return Err(Error::Linking(format!("Material linking not implemented yet for {}", name)))
                             }
                             MaterialMap::Builder(builder) => {
-                                mats_map.insert(mat_name, builder.build()?);
+                                mats_map.insert(mat_name.clone(), builder.build(mat_name)?);
                             }
                         }
                     }
@@ -281,10 +282,10 @@ impl Build for SceneBuilder {
             }
         }
 
-        let transform = self.transform.map(|transform| transform.build()).transpose()?;
+        let transform = self.transform.map(|transform| transform.build(())).transpose()?;
 
         let scene = Scene {
-            name: "default".to_string(),
+            name: id.to_string(),
             objs,
             transform,
             mats_map: Set::new(mats_map),
@@ -299,7 +300,8 @@ impl Build for SceneBuilder {
 // what is happening, especially with error handling collect.
 impl Build for Scene {
     type Inst = Vec<Object>;
-    fn build(self) -> Result<Self::Inst, Error> {
+    type MetaInfo = Name;
+    fn build(self, _id: Self::MetaInfo) -> Result<Self::Inst, Error> {
 
         // FIXME: Figure out how to properly sort out the mismatched version of `obj` dependency.
         // I.e. don't rely on proxy crates data to be consistent across libraries
@@ -352,11 +354,11 @@ impl Build for Scene {
                 )?
                 .clone()
                 .resolve_material(mat.clone())?
-                .build()
+                .build(Name::new(&object.name))
                 .context(format!("Failed to build Attribute for object {}/{}", self.name, object.name))?;
             objects.push(
                 Object {
-                    scene_name: self.name.to_string(),
+                    scene_name: self.name.to_string(), // Or use `id` parmeter
                     obj_name,
                     mat_name,
                     mat,

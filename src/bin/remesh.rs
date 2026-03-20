@@ -47,7 +47,7 @@ fn main() {
     report!(mats, "materials");
 
     let base_output = params.output
-        .build()
+        .build(())
         .expect("Failed to build base output.");
 
     sub_section(term_width, "Linking");
@@ -75,12 +75,12 @@ fn main() {
         .expect("Failed to link materials to attributes.");
 
     let scenes = objs_builder
-        .build()
+        .build(())
         .expect("Failed to build scene geometries.");
 
     section(term_width, "Objects loading and remeshing");
     let objs: Vec<_> = scenes
-        .build()
+        .build(())
         .expect("Failed to build scene objects.")
         .into_iter()
         .flat_map(|o| o.1.clone())
@@ -147,7 +147,9 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     report!(builder, "builder");
 
     sub_section(term_width, "Building");
-    let params = builder.build().expect("Failed to build parameters.");
+    let params = builder
+        .build(Name::new("simulation"))
+        .expect("Failed to build parameters.");
     report!(params, "parameters");
 
     params

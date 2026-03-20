@@ -126,7 +126,7 @@ mod tests {
         let tar = Point3::new(-1.0, 0.0, 0.0);
         let mut build = CameraBuilder::new(pos, tar, 90.0, [640, 480], Some(2));
         build.travel(Vec3::new(1.0, 0.0, 0.0));
-        let cam = build.build().expect("Failed to build camera");
+        let cam = build.build(()).expect("Failed to build camera");
 
         assert_eq!(*cam.pos(), Point3::new(1.0, 0.0, 0.0));
         assert_eq!(*cam.res(), [640, 480]);
@@ -141,7 +141,7 @@ mod tests {
         let tar = Point3::new(-1.0, 0.0, 0.0);
         let mut build = CameraBuilder::new(pos, tar, 90.0, res, None);
         build.travel(Vec3::new(1.0, 0.0, 0.0));
-        let cam = build.build().expect("Failed to build camera");
+        let cam = build.build(()).expect("Failed to build camera");
 
         let test_dir = Dir3::new(-1.0, 0.0, 0.0);
         for _ in 0..10_000 {

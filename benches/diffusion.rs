@@ -34,7 +34,7 @@ fn criterion_config(c: &mut Criterion) {
     let params = load_parameters(&input_dir, &params_path);
     let (ledger, mats) = build_ledger(&params);
     let _lights = build_lights(&params, &mats);
-    let base_output = params.output.clone().build().unwrap();
+    let base_output = params.output.clone().build(()).unwrap();
 
     // Build objects
     c.bench_function("build_objects", |b| {
@@ -105,7 +105,7 @@ fn load_parameters(in_dir: &Path, params_path: &Path) -> Parameters {
         .load(&in_dir)
         .expect("Failed to load parameter resource files.");
 
-    let params = builder.build().expect("Failed to build parameters.");
+    let params = builder.build(Name::new("simulation")).expect("Failed to build parameters.");
 
     params
 }
@@ -151,13 +151,13 @@ fn build_objects(params: &Parameters, base_output: &Output, ledger: &Arc<Mutex<L
         .link(&mats)?;
 
     let attrs = attrs_future
-        .build()
+        .build(())
         .context("Failed to build attributes.")?;
 
-    let scenes = objs_builder.build()?;
+    let scenes = objs_builder.build(())?;
 
     let mut objs: Vec<_> = scenes
-        .build()?
+        .build(())?
         .into_iter()
         .flat_map(|o| o.1.clone())
         .collect();

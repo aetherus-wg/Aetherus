@@ -58,8 +58,9 @@ impl CameraBuilder {
 
 impl Build for CameraBuilder {
     type Inst = Camera;
+    type MetaInfo = ();
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, _id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         Ok(Self::Inst::new(
             Orient::new_tar(self.pos, &self.tar),
             self.fov.to_radians(),
@@ -118,7 +119,7 @@ mod tests {
         file2.write_all("{ pos: [0.0, 0.0, 0.0], tar: [1.0, 0.0, 0.0], fov: 90.0, res: [640, 480] }".as_bytes()).unwrap();
         drop(file2);
 
-        let cam: Camera = CameraBuilder::load(file.path()).unwrap().build().expect("Failed to build camera");
+        let cam: Camera = CameraBuilder::load(file.path()).unwrap().build(()).expect("Failed to build camera");
         assert_eq!(*cam.pos(), Point3::new(0.0, 0.0, 0.0));
         assert_eq!(*cam.res(), [640, 480]);
         assert_eq!(cam.num_pixels(), 640 * 480);
@@ -134,7 +135,7 @@ mod tests {
         let build_clone = build.clone();
 
         // Now we check to see that the properties have persisted.
-        let cam = build_clone.build().expect("Failed to build camera");
+        let cam = build_clone.build(()).expect("Failed to build camera");
         assert_eq!(*cam.pos(), Point3::new(1.0, 0.0, 0.0));
         assert_eq!(*cam.res(), [640, 480]);
         assert_eq!(cam.num_pixels(), 640 * 480);

@@ -76,7 +76,7 @@ fn main() {
     // );
 
     let base_output = params.output
-        .build()
+        .build(())
         .expect("Failed to build base output.");
 
     sub_section(term_width, "Linking");
@@ -103,21 +103,15 @@ fn main() {
         .link(&mats)
         .expect("Failed to link materials to attributes.");
 
-    let mut scenes = objs_builder
-        .build()
+    let scenes = objs_builder
+        .build(())
         .expect("Failed to build scene geometries.");
 
-    // FIXME: Hacky fixup of Scene name
-    // Need to find an alternative to Build for Set<SceneBuilder>
-    for scene_name in scenes.names_list() {
-        scenes.get_mut(&scene_name).unwrap().name = scene_name.to_string();
-    }
-
     let mut objs: Vec<_> = scenes
-        .build()
+        .build(())
         .expect("Failed to build scene objects.")
-        .into_iter()
-        .flat_map(|o| o.1.clone())
+        .values()
+        .flat_map(|o| o.clone())
         .collect();
 
     for obj in objs.iter_mut() {
@@ -149,7 +143,7 @@ fn main() {
         .expect("Failed to build surface set.");
 
     let attrs = attrs_future
-        .build()
+        .build(())
         .expect("Failed to build attributes.");
 
     //report!(surfs, "surfaces");
@@ -261,7 +255,9 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     report!(builder, "builder");
 
     sub_section(term_width, "Building");
-    let params = builder.build().expect("Failed to build parameters.");
+    let params = builder
+        .build(Name::new("simulation"))
+        .expect("Failed to build parameters.");
     report!(params, "parameters");
 
     params

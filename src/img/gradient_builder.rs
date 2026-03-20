@@ -17,8 +17,9 @@ pub struct GradientBuilder(
 
 impl Build for GradientBuilder {
     type Inst = Gradient;
+    type MetaInfo = ();
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, _id: ()) -> Result<Self::Inst, Error> {
         let mut cols = Vec::with_capacity(self.0.len());
 
         for col in self.0 {

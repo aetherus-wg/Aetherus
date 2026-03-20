@@ -143,14 +143,15 @@ impl<T: Load> Load for Set<T> {
 }
 
 #[allow(clippy::use_self)]
-impl<T: Build> Build for Set<T> {
+impl<T: Build<MetaInfo=Name>> Build for Set<T> {
     type Inst = Set<T::Inst>;
+    type MetaInfo = ();
 
     #[allow(clippy::expect_used)]
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, _id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         let mut list = Vec::with_capacity(self.0.len());
         for (name, val) in self.0 {
-            list.push((name, val.build()?));
+            list.push((name.clone(), val.build(name)?));
         }
         Ok(Self::Inst::from_pairs(list).context("Failed to build set.")?)
     }

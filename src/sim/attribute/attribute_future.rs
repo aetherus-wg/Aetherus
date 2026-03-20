@@ -174,7 +174,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
             // Link/Build futures with id
             // WARN: Is this a suitable place to build Reflector?
             Self::Reflector(ReflectorFuture::Future(ref_builder)) => {
-                let ref_model = ref_builder.build()?;
+                let ref_model = ref_builder.build(Name::new(""))?;
                 Self::Reflector(ReflectorFuture::Value(ref_model))
             }
             Self::Detector(IdFuture::Value(_)) => self,
@@ -248,8 +248,9 @@ impl Link<'_, Material> for AttributeFuture {
 
 impl Build for AttributeFuture {
     type Inst = Attribute;
+    type MetaInfo = Name;
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Interface(InterfaceFuture::Value(in_mat, out_mat)) => {
                 Self::Inst::Interface(in_mat, out_mat)
@@ -258,7 +259,7 @@ impl Build for AttributeFuture {
                 Self::Inst::Reflector(reflectance)
             }
             Self::Reflector(ReflectorFuture::Future(ref_builder)) => {
-                let ref_model = ref_builder.build()?;
+                let ref_model = ref_builder.build(id)?;
                 Self::Inst::Reflector(ref_model)
             }
             Self::Mirror(abs) => Self::Inst::Mirror(abs),
@@ -269,7 +270,7 @@ impl Build for AttributeFuture {
             Self::AttributeChain(attrs) => {
                 let linked_attrs: Vec<_> = attrs
                     .iter()
-                    .map(|a| a.clone().build())
+                    .map(|a| a.clone().build(id.clone()))
                     .collect::<Result<Vec<_>, Error>>()?;
 
                 Self::Inst::AttributeChain(linked_attrs)

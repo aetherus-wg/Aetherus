@@ -1,6 +1,6 @@
 //! Probability builder.
 
-use crate::{err::Error, math::Probability, ord::Build};
+use crate::{err::Error, math::Probability, ord::{Build, Name}};
 use arctk_attr::file;
 use ndarray::Array1;
 use std::fmt::{Display, Formatter};
@@ -27,8 +27,9 @@ pub enum ProbabilityBuilder {
 
 impl Build for ProbabilityBuilder {
     type Inst = Probability;
+    type MetaInfo = Name;
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, _id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Point(p) => Self::Inst::new_point(p),
             Self::Points(ps) => Self::Inst::new_points(Array1::from(ps)),

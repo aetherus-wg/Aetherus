@@ -2,10 +2,12 @@ use serde::{Serialize, Deserialize};
 use std::fmt::{Display, Formatter};
 use arctk_attr::file;
 use crate::{
+    err::Error,
     fmt_report,
     geom::{Boundary, BoundaryCondition, Cube},
     math::Vec3,
-    phys::{ReflectanceBuilder},
+    ord::{Build, Name},
+    phys::ReflectanceBuilder
 };
 
 #[file]
@@ -20,35 +22,37 @@ pub struct BoundaryBuilder {
     west: Option<BoundaryConditionBuilder>,
 }
 
-impl BoundaryBuilder {
-    pub fn build(&self) -> Boundary {
+impl Build for BoundaryBuilder {
+    type Inst = Boundary;
+    type MetaInfo = Name;
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         let bounding_box = Cube::new(self.boundary.0.data().into(), self.boundary.1.data().into());
-        let top = match &self.top {
-            Some(a) => a.build(),
+        let top = match self.top {
+            Some(a) => a.build(id.clone())?,
             None => BoundaryCondition::default(),
         };
-        let bottom: BoundaryCondition = match &self.bottom {
-            Some(a) => a.build(),
+        let bottom: BoundaryCondition = match self.bottom {
+            Some(a) => a.build(id.clone())?,
             None => BoundaryCondition::default(),
         };
-        let north: BoundaryCondition = match &self.north {
-            Some(a) => a.build(),
+        let north: BoundaryCondition = match self.north {
+            Some(a) => a.build(id.clone())?,
             None => BoundaryCondition::default(),
         };
-        let south = match &self.south {
-            Some(a) => a.build(),
+        let south = match self.south {
+            Some(a) => a.build(id.clone())?,
             None => BoundaryCondition::default(),
         };
-        let east = match &self.east {
-            Some(a) => a.build(),
+        let east = match self.east {
+            Some(a) => a.build(id.clone())?,
             None => BoundaryCondition::default(),
         };
-        let west = match &self.west {
-            Some(a) => a.build(),
+        let west = match self.west {
+            Some(a) => a.build(id.clone())?,
             None => BoundaryCondition::default(),
         };
 
-        Boundary {
+        Ok(Boundary {
             bounding_box,
             top,
             bottom,
@@ -56,7 +60,7 @@ impl BoundaryBuilder {
             south,
             east,
             west,
-        }
+        })
     }
 }
 
@@ -110,24 +114,27 @@ pub enum BoundaryConditionBuilder {
     MpiRank(usize),
 }
 
-impl BoundaryConditionBuilder {
-    pub fn build(&self) -> BoundaryCondition {
-        match self {
-            Self::Kill => BoundaryCondition::Kill,
-            Self::Periodic(dist) => BoundaryCondition::Periodic(*dist),
-            Self::Reflect(ref_shim) => {
-                let ref_build: ReflectanceBuilder = ref_shim.clone();
-                let ref_model = ref_build.build().expect("Unable to load reflectance model for boundary. ");
-                BoundaryCondition::Reflect(ref_model)
-            },
-            #[cfg(feature = "mpi")]
-            Self::MpiRank(rank) => {
-                BoundaryCondition::MpiRank(rank.clone())
+impl Build for BoundaryConditionBuilder {
+    type Inst = BoundaryCondition;
+    type MetaInfo = Name;
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
+        Ok(
+            match self {
+                Self::Kill => BoundaryCondition::Kill,
+                Self::Periodic(dist) => BoundaryCondition::Periodic(dist),
+                Self::Reflect(ref_shim) => {
+                    let ref_build: ReflectanceBuilder = ref_shim.into();
+                    let ref_model = ref_build.build(id).expect("Unable to load reflectance model for boundary. ");
+                    BoundaryCondition::Reflect(ref_model)
+                },
+                #[cfg(feature = "mpi")]
+                Self::MpiRank(rank) => {
+                    BoundaryCondition::MpiRank(rank)
+                }
             }
-        }
+        )
     }
 }
-
 
 impl Display for BoundaryConditionBuilder {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {

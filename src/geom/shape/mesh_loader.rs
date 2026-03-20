@@ -27,7 +27,7 @@ impl Load for MeshLoader {
     type Inst = Mesh;
 
     fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
-        let trans = self.1.map(Build::build).transpose()?;
+        let trans = self.1.map(|trans3_builder| trans3_builder.build(())).transpose()?;
 
         let mut tris = Vec::new();
         let mut obj = Self::Inst::new_from_file(&in_dir.join(self.0))?;

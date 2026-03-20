@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use crate::{
-    fmt_report,
-    data::Histogram,
+    data::Histogram, fmt_report, ord::Build
 };
 
 
@@ -13,9 +12,11 @@ pub struct HistogramBuilder {
     bins: usize,
 }
 
-impl HistogramBuilder {
-    pub fn build(&self) -> Histogram {
-        Histogram::new(self.min, self.max, self.bins)
+impl Build for HistogramBuilder {
+    type Inst = Histogram;
+    type MetaInfo = ();
+    fn build(self, _id: ()) -> Result<Self::Inst, crate::err::Error> {
+        Ok(Histogram::new(self.min, self.max, self.bins))
     }
 }
 
