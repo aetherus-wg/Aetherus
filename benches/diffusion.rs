@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{env, path::Path};
 use aetherus::{
     err::Error, fs::{File, Load, Save}, geom::{Surface, Tree}, io::output::Output, ord::{Build, Link, Name, Set}, phys::{Light, Material}, sim::{
         Attribute, Input, Parameters, ParametersBuilderLoader, run
@@ -11,6 +11,7 @@ use std::hint::black_box;
 
 /// Main program function.
 fn criterion_config(c: &mut Criterion) {
+    env::set_var("PB_QUIET", "1");
 
     let params_path = Path::new("scene.json5");
     let input_dir_str = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "benches/data/diffusion");
@@ -77,6 +78,7 @@ fn criterion_config(c: &mut Criterion) {
 }
 
 fn criterion_sim(c: &mut Criterion) {
+    env::set_var("PB_QUIET", "1");
 
     let params_path = Path::new("scene.json5");
     let input_dir_str = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "benches/data/diffusion");

@@ -16,7 +16,11 @@ impl ProgressBar {
     pub fn new(msg: &'static str, total: usize) -> Self {
         debug_assert!(total > 0);
 
-        let pb = indicatif::ProgressBar::new(total as u64);
+        let pb = if std::env::var("PB_QUIET").is_ok() {
+            indicatif::ProgressBar::hidden()
+        } else {
+            indicatif::ProgressBar::new(total as u64)
+        };
 
         pb.set_style(
             indicatif::ProgressStyle::default_bar()
