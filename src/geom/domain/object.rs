@@ -281,7 +281,7 @@ impl Build for SceneBuilder {
             }
         }
 
-        let transform = self.transform.map(Build::build).transpose()?;
+        let transform = self.transform.map(|transform| transform.build()).transpose()?;
 
         let scene = Scene {
             name: "default".to_string(),

@@ -47,19 +47,6 @@ macro_rules! unwrap_future {
     };
 }
 
-macro_rules! unwrap_interf_future {
-    ($ftype:tt, $e:expr) => {
-        match $e {
-            $ftype::Future(inside_mat, outside_mat) => Ok((inside_mat, outside_mat)),
-            $ftype::ImplicitFuture(outside_mat) => Ok(outside_mat),
-            _ => Err(format!(
-                "Attempted to unwrap already linked {}",
-                stringify!($ftype)
-            )),
-        }
-    };
-}
-
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 enum InterfaceConfig {
@@ -138,26 +125,29 @@ pub enum AttributeFuture {
 
 impl AttributeFuture {
     pub fn resolve_material(self, in_mat: Option<Material>) -> Result<AttributeFuture, Error> {
-        if in_mat.is_none() {
-            return Ok(self);
-        }
         match &self {
             AttributeFuture::Interface(interf_fut) => {
                 match interf_fut {
                     InterfaceFuture::Future(_, out_name) => {
-                        return Err(Error::Text(format!(
+                        return Err(Error::Linking(format!(
                             "Failed to resolve material for interface future with outside name: {}. Expected an implicit future.",
                             out_name.as_string()
                         )));
                     },
                     InterfaceFuture::ImplicitFuture(out_name) => {
-                        return Err(Error::Text(format!(
+                        return Err(Error::Linking(format!(
                             "Failed to resolve material for interface future with outside name: {}. Expected an implicit future.",
                             out_name.as_string()
                         )));
                     },
                     InterfaceFuture::Implicit(out_mat) => {
-                        Ok(AttributeFuture::Interface(InterfaceFuture::Value(in_mat.unwrap(), out_mat.clone())))
+                        if let Some(in_mat) = in_mat {
+                            Ok(AttributeFuture::Interface(InterfaceFuture::Value(in_mat, out_mat.clone())))
+                        } else {
+                            return Err(Error::Linking(format!(
+                                "Failed to resolve material for implicit interface. Expected an inside material, but none provided."
+                            )));
+                        }
                     }
                     InterfaceFuture::Value(..) => {
                         warn!("Attempted to resolve material for already resolved interface future. Ignoring.");
@@ -176,23 +166,26 @@ impl<'a> Link<'a, usize> for AttributeFuture {
         vec![]
     }
 
-    fn link(mut self, reg: &'a Set<usize>) -> Result<Self, Error> {
+    fn link(self, reg: &'a Set<usize>) -> Result<Self, Error> {
         Ok(match self {
+            // Passthrough not covered or already linked values
             Self::Interface(_) | Self::Mirror(_) => self,
-            Self::Reflector(ref mut ref_future) => {
-                if let ReflectorFuture::Future(builder) = ref_future {
-                    let ref_model = builder.build()?;
-                    *ref_future = ReflectorFuture::Value(ref_model)
-                }
-                self
+            Self::Reflector(ReflectorFuture::Value(_)) => self,
+            // Link/Build futures with id
+            // WARN: Is this a suitable place to build Reflector?
+            Self::Reflector(ReflectorFuture::Future(ref_builder)) => {
+                let ref_model = ref_builder.build()?;
+                Self::Reflector(ReflectorFuture::Value(ref_model))
             }
-            Self::Detector(ref mut id_future) => {
-                if let IdFuture::Future(name) = id_future {
-                    if let Some(id) = reg.get(name) {
-                        *id_future = IdFuture::Value(*id);
-                    }
-                }
-                self
+            Self::Detector(IdFuture::Value(_)) => self,
+            Self::Detector(IdFuture::Future(name)) => {
+                let id_future =
+                if let Some(id) = reg.get(&name) {
+                    IdFuture::Value(*id)
+                } else {
+                    IdFuture::Future(name)
+                };
+                Self::Detector(id_future)
             }
             Self::AttributeChain(attrs) => {
                 let linked_attrs: Result<Vec<_>, _> =
@@ -264,8 +257,8 @@ impl Build for AttributeFuture {
             Self::Reflector(ReflectorFuture::Value(reflectance)) => {
                 Self::Inst::Reflector(reflectance)
             }
-            Self::Reflector(ReflectorFuture::Future(builder)) => {
-                let ref_model = builder.build()?;
+            Self::Reflector(ReflectorFuture::Future(ref_builder)) => {
+                let ref_model = ref_builder.build()?;
                 Self::Inst::Reflector(ref_model)
             }
             Self::Mirror(abs) => Self::Inst::Mirror(abs),
@@ -281,10 +274,9 @@ impl Build for AttributeFuture {
 
                 Self::Inst::AttributeChain(linked_attrs)
             }
-            _ => panic!(
-                "Attempted to convert unlinked AttributeFuture: {} into Attribute",
-                self
-            ),
+            _ => Err(Error::Linking(format!(
+                "Attempted to convert unlinked AttributeFuture: {:?} into Attribute",
+                self)))?
         })
     }
 }
