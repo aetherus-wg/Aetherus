@@ -105,7 +105,9 @@ fn load_parameters(in_dir: &Path, params_path: &Path) -> Parameters {
         .load(&in_dir)
         .expect("Failed to load parameter resource files.");
 
-    let params = builder.build(Name::new("simulation")).expect("Failed to build parameters.");
+    let params = builder
+        .build(Name::new("simulation"))
+        .expect("Failed to build parameters.");
 
     params
 }
@@ -158,8 +160,8 @@ fn build_objects(params: &Parameters, base_output: &Output, ledger: &Arc<Mutex<L
 
     let mut objs: Vec<_> = scenes
         .build(())?
-        .into_iter()
-        .flat_map(|o| o.1.clone())
+        .values()
+        .flat_map(|o| o.clone())
         .collect();
 
     for obj in objs.iter_mut() {

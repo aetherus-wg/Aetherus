@@ -39,21 +39,10 @@
             Interface: "cube_material",
           },
         },
-        mats_map : {
+        mats_map: {
           Cube_material: "cube_material",
         },
       },
-      det: {
-        obj: "./objs/square.obj",
-        transform: {
-          trans: [0.050, 0.050, 0.050],
-          scale: 0.050,
-          rot: [90, 0, 0]
-        },
-        attrs_map: {
-          default: "spad_sensor",
-        },
-      }
   }},
 
   attrs: { Here: {

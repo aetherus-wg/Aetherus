@@ -41,7 +41,7 @@
             Interface: "cube_material",
           },
         },
-        mats_map : {
+        mats_map: {
           Cube_material: "cube_material",
         },
       },
@@ -59,9 +59,6 @@
   }},
 
   attrs: { Here: {
-    cube_material: {
-        Interface: ["cube_material", "cube_material"],
-    },
     spad_sensor: {
         Detector: "spad_sensor",
     },
