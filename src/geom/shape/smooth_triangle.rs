@@ -3,7 +3,7 @@
 use crate::{
     access,
     err::Error,
-    geom::{Collide, Cube, Emit, Ray, Side, Split, SplitSegments, Trace, Transformable, Triangle},
+    geom::{Collide, Cube, Emit, Ray, Side, Trace, Transformable, Triangle},
     math::{Dir3, Point3, Trans3, Vec3},
     ord::{ALPHA, BETA, GAMMA},
 };
@@ -213,50 +213,5 @@ impl Collide<Triangle> for SmoothTriangle {
 impl Collide<SmoothTriangle> for SmoothTriangle {
     fn overlap(&self, other: &SmoothTriangle) -> bool {
         self.tri.overlap(&other.tri)
-    }
-}
-
-impl Collide<SplitSegments> for SmoothTriangle {
-    fn overlap(&self, other: &SplitSegments) -> bool {
-        self.tri.overlap(other)
-    }
-}
-
-impl Split<SplitSegments, ()> for SmoothTriangle {
-    type Inst = Vec<Self>;
-    fn split_transparent(&self, other: &SplitSegments) -> (Self::Inst, ()) {
-        // SmoothTriangle doesn't need to be split by segments, so just return itself
-        let (tris, primitives) = self.tri.split_transparent(other);
-        let smooth_tris = self.partition(tris);
-        (smooth_tris, primitives)
-    }
-    fn split(&self, other: &SplitSegments) -> Self::Inst {
-        self.split_transparent(other).0
-    }
-}
-
-impl Split<Triangle, SplitSegments> for SmoothTriangle {
-    type Inst = Vec<Self>;
-    fn split_transparent(&self, other: &Triangle) -> (Self::Inst, SplitSegments) {
-        let (tris, split_segments) = self.tri.split_transparent(other);
-        let smooth_tris = self.partition(tris);
-        (smooth_tris, split_segments)
-    }
-
-    #[inline]
-    fn split(&self, other: &Triangle) -> Self::Inst {
-        self.split_transparent(other).0
-    }
-}
-
-impl Split<SmoothTriangle, SplitSegments> for SmoothTriangle {
-    type Inst = Vec<Self>;
-    #[inline]
-    fn split_transparent(&self, other: &SmoothTriangle) -> (Self::Inst, SplitSegments) {
-        self.split_transparent(other.tri())
-    }
-    #[inline]
-    fn split(&self, other: &SmoothTriangle) -> Self::Inst {
-        self.split_transparent(other.tri()).0
     }
 }

@@ -100,6 +100,7 @@ impl<T> Set<T> {
     }
 
     /// Reference the internal map.
+    // TODO: Rename to inner
     #[inline]
     #[must_use]
     pub const fn map(&self) -> &Map<Name, T> {
@@ -151,7 +152,7 @@ impl<T: Build> Build for Set<T> {
         for (name, val) in self.0 {
             list.push((name, val.build()?));
         }
-        Ok(Self::Inst::from_pairs(list).expect("Failed to build set."))
+        Ok(Self::Inst::from_pairs(list).context("Failed to build set.")?)
     }
 }
 

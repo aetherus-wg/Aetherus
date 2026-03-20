@@ -2,7 +2,7 @@
 
 use crate::{
     fmt_report,
-    geom::{object::Object, Boundary, Tree},
+    geom::{Boundary, Tree},
     ord::{Register, Set},
     phys::{Light, Material},
     sim::{Attribute, Settings},
@@ -11,7 +11,9 @@ use std::fmt::{Display, Error, Formatter};
 
 /// MCRT simulation resources conglomerate.
 #[derive(Clone)]
-pub struct Input<'a> {
+pub struct Input<'a, T>
+    where T: Clone
+{
     /// Spectrometer register.
     pub spec_reg: &'a Register,
     /// Materials.
@@ -21,14 +23,14 @@ pub struct Input<'a> {
     /// Emission light.
     pub light: &'a Light<'a>,
     /// Hit-scan tree.
-    pub tree: &'a Tree<'a, Object>,
+    pub tree: &'a Tree<'a, T>,
     /// General settings.
     pub sett: &'a Settings,
     /// Boundary for the simulation.
     pub bound: &'a Boundary,
 }
 
-impl<'a> Input<'a> {
+impl<'a, T: Clone> Input<'a, T> {
     /// Construct a new instance.
     #[must_use]
     pub const fn new(
@@ -36,7 +38,7 @@ impl<'a> Input<'a> {
         mats: &'a Set<Material>,
         attrs: &'a Set<Attribute>,
         light: &'a Light,
-        tree: &'a Tree<Object>,
+        tree: &'a Tree<T>,
         sett: &'a Settings,
         bound: &'a Boundary,
     ) -> Self {
@@ -52,7 +54,7 @@ impl<'a> Input<'a> {
     }
 }
 
-impl Display for Input<'_> {
+impl<T: Clone> Display for Input<'_, T> {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.spec_reg, "spectrometer register");

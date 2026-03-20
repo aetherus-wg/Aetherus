@@ -1,11 +1,12 @@
 use crate::{
     access, clone, fmt_report,
-    geom::{Cube, Hit, Ray, Side, Trace, object::Object, plane::ray_plane_intersection},
+    geom::{Cube, Hit, Ray, Side, Trace, plane::ray_plane_intersection},
     math::{Dir3, Point3, Vec3},
     phys::{Photon, Reflectance},
     sim::Attribute,
     ord::cartesian::{X, Y, Z},
 };
+use aetherus_events::SrcId;
 use rand::Rng;
 use std::{fmt::{Display, Formatter}, marker::PhantomData};
 
@@ -389,7 +390,7 @@ impl<'a> BoundaryHit<'a> {
         }
     }
 
-    pub fn get_hit(&self) -> Hit<'_, PhantomData<Object>> {
+    pub fn get_hit(&self) -> Hit<'_, PhantomData<(Attribute, SrcId)>> {
         Hit::new(
             &PhantomData,
             self.dist(),

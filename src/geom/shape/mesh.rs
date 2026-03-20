@@ -1,14 +1,20 @@
 //! Smooth triangle-mesh implementation.
 
 use crate::{
-    access, clone, err::Error, fmt_report, fs::{File, mesh_from_objfile, mesh_from_ugrid}, geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Split, Trace, Transformable}, math::Trans3, ord::{ALPHA, cartesian::X}
-};
-use log::{debug, info};
-use rand::{Rng, RngExt};
-use std::{
-    collections::VecDeque, fmt::{Display, Formatter}, path::Path
+    access, clone,
+    err::Error,
+    fmt_report,
+    fs::{mesh_from_objfile, mesh_from_ugrid, File},
+    geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Trace, Transformable},
+    math::Trans3,
+    ord::{cartesian::X, ALPHA},
 };
 use anyhow::Context;
+use rand::{Rng, RngExt};
+use std::{
+    fmt::{Display, Formatter},
+    path::Path,
+};
 
 /// Boundary padding.
 const PADDING: f64 = 1e-6;
@@ -167,21 +173,20 @@ impl File for Mesh {
     fn load(path: &Path) -> Result<Self, Error> {
         if path.extension().unwrap() == "obj" {
             let mesh_tris = mesh_from_objfile(path)
-                .context(format!("Unable to read mesh from wavefront file: {}", path.display()))?;
+                .context(
+                    format!("Unable to read mesh from wavefront file: {}", path.display())
+                )?;
 
             Ok(Self::new(mesh_tris))
-
         } else if path.extension().unwrap() == "nc" {
             let mesh_tris = mesh_from_ugrid(path).unwrap_or_else(|_| {
                 panic!("Unable to read mesh from ugrid file: {}", path.display())
             });
 
             Ok(Self::new(mesh_tris))
-
         } else {
             panic!("Mesh file {} has unsupported file type", path.display());
         }
-
     }
 }
 
@@ -198,72 +203,5 @@ impl Collide<Mesh> for Mesh {
             }
         }
         false
-    }
-}
-
-impl Split<Mesh, Mesh> for Mesh {
-    type Inst = Mesh;
-    fn split_transparent(&self, other: &Mesh) -> (Self::Inst, Mesh) {
-        let mut u_tris: VecDeque<_> = self.tris().iter().map(|tri| tri.clone()).collect();
-        let mut v_tris: Vec<_> = other.tris().iter().map(|tri| tri.clone()).collect();
-
-        let mut final_u_tris = Vec::new();
-
-        while !u_tris.is_empty()
-        {
-            let u_tri = u_tris.pop_front().unwrap();
-            let mut v_tris_mutated = Vec::new();
-            let mut new_surf_v_tris = Vec::new();
-            let mut u_tri_collision = false;
-
-            debug!("Checking for collisions of {:?} to {} triangles", u_tri, v_tris.len());
-            for (v_idx, v_tri) in v_tris.iter().enumerate() {
-                // FIXME: Triangle overlap should exclude triangles that just share an edge or vertex
-                if u_tri.overlap(v_tri) {
-                    let (new_u_tris, split_segs) = u_tri.split_transparent(&v_tris[v_idx]);
-                    if new_u_tris.len() > 1 {
-                        debug!("Splitting triangle {:?}: into {} triangles.", u_tri, new_u_tris.len());
-                        new_u_tris
-                            .iter()
-                            .for_each(|new_u_tri|
-                                u_tris.push_back(new_u_tri.clone())
-                            );
-                        u_tri_collision = true;
-                    }
-                    let new_v_tris = v_tris[v_idx].split(&split_segs);
-                    if new_v_tris.len() > 1 {
-                        debug!("Splitting triangle {:?}:{} into {} triangles.", v_tris[v_idx], v_idx, new_v_tris.len());
-                        v_tris_mutated.push(v_idx);
-                        new_v_tris
-                            .iter()
-                            .for_each(|new_v_tri|
-                                new_surf_v_tris.push(new_v_tri.clone())
-                            );
-                    }
-                    assert!(new_u_tris.len() > 0 && new_v_tris.len() > 0, "Not a valid triangle collision occured");
-                    if u_tri_collision {
-                        info!("Overlapping surfaces");
-                        debug!("Overlapping surfaces between: {:?} and {:?}", u_tri, v_tri);
-                        break;
-                    }
-                }
-            }
-
-            if !u_tri_collision {
-                final_u_tris.push(u_tri);
-            }
-
-            let mut offset = 0;
-            for v_idx in v_tris_mutated {
-                v_tris.remove(v_idx - offset);
-                offset += 1;
-            }
-            v_tris.extend(new_surf_v_tris);
-        }
-
-        (Mesh::new(final_u_tris), Mesh::new(v_tris))
-    }
-    fn split(&self, other: &Mesh) -> Self::Inst {
-        self.split_transparent(other).0
     }
 }

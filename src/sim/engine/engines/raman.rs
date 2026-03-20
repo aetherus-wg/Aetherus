@@ -1,18 +1,16 @@
 //! Raman photon-lifetime engine function.
 
 use crate::{
-    math::Point3,
-    phys::Photon,
-    sim::{scatter::shift_scatter, surface::surface, travel::travel, Event, Input},
-    io::output::{Output, OutputParameter},
+    io::output::{Output, OutputParameter}, math::Point3, phys::Photon, sim::{Attribute, Event, Input, scatter::shift_scatter, surface::surface, travel::travel}
 };
+use aetherus_events::SrcId;
 use rand::{rngs::ThreadRng, RngExt};
 
 /// Simulate the life of a single photon which has the potential to generate a Raman photon.
 #[allow(clippy::expect_used)]
 pub fn raman(
     _detector_pos: &Point3,
-    input: &Input,
+    input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
     mut rng: &mut ThreadRng,
     mut phot: Photon,

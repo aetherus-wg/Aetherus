@@ -159,7 +159,7 @@ fn build_objects(params: &Parameters, base_output: &Output, ledger: &Arc<Mutex<L
     let mut objs: Vec<_> = scenes
         .build()?
         .into_iter()
-        .flat_map(|o| o.clone())
+        .flat_map(|o| o.1.clone())
         .collect();
 
     for obj in objs.iter_mut() {

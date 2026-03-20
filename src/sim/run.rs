@@ -1,10 +1,7 @@
 //! Simulation control functions.
 
 use crate::{
-    err::Error,
-    sim::{Engine, Input},
-    tools::ProgressBar,
-    io::output::Output,
+    err::Error, io::output::Output, sim::{Attribute, Engine, Input}, tools::ProgressBar
 };
 use rand::rng;
 use rayon::prelude::*;
@@ -18,7 +15,7 @@ use aetherus_events::{EventId, SrcId, emission::Emission, ledger::Ledger};
 #[allow(clippy::expect_used)]
 pub fn multi_thread<'a>(
     engine: &Engine,
-    input: &'a Input<'a>,
+    input: &'a Input<'a, (Attribute, SrcId)>,
     output: &Output,
     ledger: Arc<Mutex<Ledger>>,
 ) -> Result<Output, Error> {
@@ -58,7 +55,7 @@ pub fn multi_thread<'a>(
 #[must_use]
 fn thread<'a>(
     engine: &Engine,
-    input: &'a Input<'a>,
+    input: &'a Input<'a, (Attribute, SrcId)>,
     mut output: Output,
     ledger: Arc<Mutex<Ledger>>,
     pb: &Arc<Mutex<ProgressBar>>,

@@ -7,6 +7,5 @@ pub mod collide;
 pub mod emit;
 pub mod trace;
 pub mod transformable;
-pub mod split;
 
-pub use self::{collide::*, emit::*, trace::*, transformable::*, split::*};
+pub use self::{collide::*, emit::*, trace::*, transformable::*};

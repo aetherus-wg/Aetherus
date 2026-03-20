@@ -10,6 +10,7 @@ use std::fmt::{Display, Error, Formatter};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Attribute {
     /// Material interface, inside material reference, outside material reference.
+    // TODO: Convert to Interface(Arc<Material>, Arc<Material>)
     Interface(Material, Material),
     /// A purely reflecting material, with a provided reflectance model.
     Reflector(Reflectance),

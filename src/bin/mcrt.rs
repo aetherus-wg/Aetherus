@@ -35,6 +35,7 @@ fn main() {
     let (in_dir, out_dir, params_path) = initialisation(term_width);
     let params = load_parameters(term_width, &in_dir, &params_path);
 
+
     section(term_width, "Input");
     sub_section(term_width, "Reconstruction");
     let engine = params.engine;
@@ -43,11 +44,14 @@ fn main() {
     report!(sett, "settings");
     let bound = params.boundary;
     report!(bound, "boundary");
-    let mut mats = params.mats;
-    report!(mats, "materials");
 
+    section(term_width, "Ledger and materials setup");
     let ledger = Arc::new(Mutex::new(aetherus_events::ledger::Ledger::new()));
-    {
+
+    let mats = {
+        let mut mats = params.mats;
+        report!(mats, "materials");
+
         let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
 
         for name in mats.names_list() {
@@ -55,7 +59,9 @@ fn main() {
             *mat = mat.clone().with_id(ledger_guard.with_mat(name.to_string()));
         }
         drop(ledger_guard);
-    }
+
+        mats
+    };
 
     //sub_section(term_width, "Registration");
     //let (spec_reg, img_reg, ccd_reg, phot_col_reg) = gen_detector_registers(&params.attrs);
@@ -97,16 +103,21 @@ fn main() {
         .link(&mats)
         .expect("Failed to link materials to attributes.");
 
-    let scenes = objs_builder
+    let mut scenes = objs_builder
         .build()
         .expect("Failed to build scene geometries.");
 
+    // FIXME: Hacky fixup of Scene name
+    // Need to find an alternative to Build for Set<SceneBuilder>
+    for scene_name in scenes.names_list() {
+        scenes.get_mut(&scene_name).unwrap().name = scene_name.to_string();
+    }
 
     let mut objs: Vec<_> = scenes
         .build()
         .expect("Failed to build scene objects.")
         .into_iter()
-        .flat_map(|o| o.clone())
+        .flat_map(|o| o.1.clone())
         .collect();
 
     for obj in objs.iter_mut() {

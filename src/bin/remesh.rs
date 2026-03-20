@@ -7,7 +7,7 @@ use std::{
 use aetherus::{
     args,
     fs::{File, Load, Save},
-    geom::{Tree, Split},
+    geom::Tree,
     ord::{Build, Link, Name, Set},
     report,
     sim::{
@@ -19,7 +19,6 @@ use aetherus::{
         fmt::term,
     },
 };
-use log::{debug, info};
 
 /// Backup print width if the terminal width can not be determined.
 const BACKUP_TERM_WIDTH: usize = 80;
@@ -79,11 +78,12 @@ fn main() {
         .build()
         .expect("Failed to build scene geometries.");
 
+    section(term_width, "Objects loading and remeshing");
     let objs: Vec<_> = scenes
         .build()
         .expect("Failed to build scene objects.")
         .into_iter()
-        .flat_map(|o| o.clone())
+        .flat_map(|o| o.1.clone())
         .collect();
 
     println!("{} Objects have been read from files", objs.len());
@@ -96,38 +96,8 @@ fn main() {
         .map(|obj| (Name::new(&obj.obj_name), obj.get_surface()))
         .collect();
 
-    let mut surfs = Set::from_pairs(surfs_vec)
+    let surfs = Set::from_pairs(surfs_vec)
         .expect("Failed to build surface set.");
-
-    //report!(surfs, "surfaces");
-    let surfs_names = surfs.names_list();
-
-    section(term_width, "Remeshing");
-    // 1. Take any two objects that we try to resolve Mesh collisions for
-    for i in 0..surfs_names.len() {
-        for j in (i+1)..surfs_names.len() {
-            if surfs_names[i] == surfs_names[j] {
-                println!("[WARN] Duplicate surface name: {}", surfs_names[i]);
-            }
-
-            let surf_u = surfs.get(&surfs_names[i]).unwrap();
-            let surf_v = surfs.get(&surfs_names[j]).unwrap();
-
-            let mesh_u = surf_u.mesh();
-            let mesh_v = surf_v.mesh();
-
-            // Check that u_tri is free of collisions from surf_v_tris
-            debug!("Checking for collisions between surfaces: {} and {}", surfs_names[i], surfs_names[j]);
-
-            let (new_mesh_u, new_mesh_v) = mesh_u.split_transparent(&mesh_v);
-
-            // FIXME: Only tris need be updated, area and boundary should be the same as before
-            // splitting
-            *surfs.get_mut(&surfs_names[i]).unwrap().mesh_mut() = new_mesh_u;
-            *surfs.get_mut(&surfs_names[j]).unwrap().mesh_mut() = new_mesh_v;
-        }
-    }
-
 
     surfs.save(&out_dir.join("export_surfaces.obj"))
         .expect("Failed to save surfaces to output directory.");

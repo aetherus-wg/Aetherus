@@ -3,17 +3,23 @@
 use std::{fmt::Display, path::{Path, PathBuf}};
 
 use aetherus_events::SrcId;
+use anyhow::Context;
+use mesh_splitting::{Collide, IdxTriangle, Split, mesh::parse_obj, primitives::PrimitiveIdx};
 use serde::{Deserialize, Deserializer};
 
 use crate::{
-    err::Error, fmt_report, fs::Load, geom::{Mesh, SmoothTriangle, Surface, Transformable}, math::{Dir3, Point3, Trans3, Trans3Builder}, ord::{Build, Link, Map, Name, Set}, phys::{Material, MaterialBuilder}, sim::{Attribute, AttributeFuture}
+    err::Error, fmt_report, fs::Load, geom::{Mesh, SmoothTriangle, Surface}, math::{Dir3, Point3, Trans3, Trans3Builder}, ord::{Build, Link, Map, Name, Set}, phys::{Material, MaterialBuilder}, sim::{Attribute, AttributeFuture}
 };
 
-use log::warn;
+use mesh_splitting::mesh::{Mesh as IdxMesh};
+
+use log::{debug, info, trace, warn};
 
 /// Object from Wavefront .obj file.
 #[derive(Clone)]
 pub struct Object {
+    /// Scene name it sourced from
+    pub scene_name: String,
     /// Object/Surface Name.
     pub obj_name: String,
     /// Material name from .obj file, or going to be populated from mats_map
@@ -21,32 +27,37 @@ pub struct Object {
     /// Resolved material.
     pub mat: Option<Material>,
     /// Mesh built from SmoothTriangles
-    pub mesh: Mesh,
+    pub mesh: IdxMesh,
     /// Source ID used by the UIDs Ledger
     pub src_id: SrcId,
     /// Attribute
     pub attr: Attribute,
 }
 
-impl Object {
-    pub fn empty() -> Self {
-        Self {
-            obj_name: String::new(),
-            mat_name: None,
-            mat: None,
-            mesh: Mesh::new(vec![]),
-            src_id: SrcId::Surf(0),
-            attr: Attribute::Mirror(0.0),
-        }
+impl From<IdxTriangle> for SmoothTriangle {
+    fn from(tri: IdxTriangle) -> Self {
+        let verts = tri.verts.map(|v| Point3::from(v.value));
+        let norms = tri.norms.map(|norms| norms.map(|n| Dir3::from(n.value))).unwrap();
+        Self::new_from_verts(verts, norms)
     }
+}
+
+impl From<IdxMesh> for Mesh {
+    fn from(mesh: IdxMesh) -> Self {
+        let tris = mesh.tris().into_iter().map(|tri| tri.into()).collect();
+        Mesh::new(tris)
+    }
+}
+
+impl Object {
     pub fn obj_name(&self) -> &str {
         &self.obj_name
     }
     pub fn mat_name(&self) -> Option<&str> {
         self.mat_name.as_deref()
     }
-    pub fn get_surface(&self) -> Surface<Object> {
-        Surface::new(self.mesh.clone(), self.clone())
+    pub fn get_surface(&self) -> Surface<(Attribute, SrcId)> {
+        Surface::new(self.mesh.clone().into(), (self.attr.clone(), self.src_id))
     }
 
     pub fn with_id(&mut self, src_id: SrcId) -> Result<(), Error> {
@@ -89,13 +100,6 @@ impl Object {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(untagged)]
-pub enum AttributeFutureFuture {
-    Future(Name),
-    Value(AttributeFuture),
-}
-
 #[derive(Debug, Clone)]
 pub enum ObjFuture {
     Future(PathBuf),
@@ -113,7 +117,7 @@ impl<'de> Deserialize<'de> for ObjFuture {
 }
 
 pub struct Scene {
-    name: String,
+    pub name: String,
     objs: obj::Obj,
     transform: Option<Trans3>,
     mats_map: Set<Material>,
@@ -126,7 +130,8 @@ pub struct SceneBuilder {
     /// Optional transformation.
     transform: Option<Trans3Builder>,
     mats_map: Option<Set<MaterialFuture>>,
-    attrs_map: Option<Set<AttributeFutureFuture>>,
+    // TODO: Convert back to AttributeFutureFuture in order to allow global attributes to be used
+    attrs_map: Option<Set<AttributeFuture>>,
 }
 
 impl Display for SceneBuilder {
@@ -162,37 +167,29 @@ impl Link<'_, AttributeFuture> for SceneBuilder {
         todo!()
     }
     fn link(mut self, attrs: &Set<AttributeFuture>) -> Result<Self::Inst, Error> {
-        if let Some(attrs_map) = &mut self.attrs_map {
-            for name in attrs_map.names_list() {
-                let attr_futfut = attrs_map.get_mut(&name).ok_or_else(||
-                    Error::Linking(format!("Attributes map missing value of key: {}", name))
-                )?;
-                *attr_futfut = attr_futfut.clone().link(&attrs)?;
+        let mut new_attrs: Vec<(Name, AttributeFuture)> = Vec::new();
+        for (name, attr_fut) in attrs.map().iter() {
+            let already_exists = self
+                .attrs_map
+                .as_ref()
+                .map(|attrs_map| attrs_map.map().contains_key(name))
+                .unwrap_or(false);
+            if already_exists {
+                warn!("AttributeFuture {} in SceneBuilder(?) has priority over the attempt to link global value. This may indicate a problem with the input configuration.", name);
+            } else {
+                new_attrs.push((name.clone(), attr_fut.clone()));
             }
         }
+        if !new_attrs.is_empty() {
+            let new_attrs_global = Set::from_pairs(new_attrs)?;
+            let new_attrs_map = if let Some(attrs_map) = self.attrs_map {
+                    attrs_map.combine(new_attrs_global)?
+                } else {
+                    new_attrs_global
+                };
+            self.attrs_map = Some(new_attrs_map);
+        }
         Ok(self)
-    }
-}
-
-impl Link<'_, AttributeFuture> for AttributeFutureFuture {
-    type Inst = AttributeFutureFuture;
-    fn requires(&self) -> Vec<Name> {
-        match self {
-            AttributeFutureFuture::Future(name) => vec![name.clone()],
-            AttributeFutureFuture::Value(_) => vec![],
-        }
-    }
-    fn link(self, attrs: &Set<AttributeFuture>) -> Result<Self::Inst, Error> {
-        match self {
-            AttributeFutureFuture::Future(name) => {
-                let attr_fut = attrs.get(&name)
-                    .ok_or_else(||
-                        Error::Linking(format!("Attribute {} not found in attributes set during linking.", name))
-                    )?;
-                Ok(AttributeFutureFuture::Value(attr_fut.clone()))
-            },
-            AttributeFutureFuture::Value(attr) => Ok(AttributeFutureFuture::Value(attr)),
-        }
     }
 }
 
@@ -202,6 +199,7 @@ impl Link<'_, Material> for SceneBuilder {
         todo!()
     }
     fn link(mut self, mats: &Set<Material>) -> Result<Self::Inst, Error> {
+        // Link in the materials referenced for local use
         if let Some(mats_map) = &mut self.mats_map {
             for name in mats_map.names_list() {
                 let mat_fut = mats_map.get_mut(&name).ok_or_else(||
@@ -210,6 +208,12 @@ impl Link<'_, Material> for SceneBuilder {
                 *mat_fut = mat_fut.clone().link(&mats)?;
             }
         }
+
+        // Link materials in the attributes deserialized
+        if let Some(attrs_fut) = &mut self.attrs_map {
+            *attrs_fut = attrs_fut.clone().link(&mats)?;
+        }
+
         Ok(self)
     }
 }
@@ -234,71 +238,60 @@ impl Link<'_, Material> for MaterialFuture {
     }
 }
 
-impl Build for Set<SceneBuilder> {
-    type Inst = Vec<Scene>;
+impl Build for SceneBuilder {
+    type Inst = Scene;
     fn build(self) -> Result<Self::Inst, Error> {
-        let mut scenes = Vec::with_capacity(self.len());
-        for (scene_name, builder) in self {
-            // FIXME: Handle errors properly
-            let objs = match &builder.obj {
-                ObjFuture::Future(_) => {
-                    return Err(Error::LoadFile(
-                        std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "Object not loaded before build.")
-                    ))
-                }
-                ObjFuture::Value(obj) => obj.clone(),
-            };
-            let mut mats_map: Map<Name, Material> = Map::new();
-            let mut attrs_map: Map<Name, AttributeFuture> = Map::new();
+        let objs = match self.obj {
+            ObjFuture::Future(_) => {
+                return Err(Error::LoadFile(
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "Object not loaded before build.")
+                ))
+            }
+            ObjFuture::Value(obj) => obj,
+        };
 
-            if let Some(mats_future_map) = builder.mats_map {
-                for (mat_name, mat_future) in mats_future_map {
-                    match mat_future {
-                        MaterialFuture::Future(map) => {
-                            match map {
-                                MaterialMap::Map(name) => {
-                                    return Err(Error::Linking(format!("Material linking not implemented yet for {}", name)))
-                                }
-                                MaterialMap::Builder(builder) => {
-                                    mats_map.insert(mat_name, builder.build()?);
-                                }
+        let mut mats_map: Map<Name, Material> = Map::new();
+        if let Some(mats_future_map) = self.mats_map {
+            for (mat_name, mat_future) in mats_future_map {
+                match mat_future {
+                    MaterialFuture::Future(map) => {
+                        match map {
+                            MaterialMap::Map(name) => {
+                                return Err(Error::Linking(format!("Material linking not implemented yet for {}", name)))
+                            }
+                            MaterialMap::Builder(builder) => {
+                                mats_map.insert(mat_name, builder.build()?);
                             }
                         }
-                        MaterialFuture::Value(mat) => {
-                            mats_map.insert(mat_name, mat);
-                        }
+                    }
+                    MaterialFuture::Value(mat) => {
+                        mats_map.insert(mat_name, mat);
                     }
                 }
             }
-
-            if let Some(attrs_future_map) = builder.attrs_map {
-                for (attr_name, attr_future) in attrs_future_map {
-                    match attr_future {
-                        AttributeFutureFuture::Future(_) => {
-                            return Err(Error::Linking("Attribute linking not implemented yet".to_string()))
-                        }
-                        AttributeFutureFuture::Value(attr) => {
-                            attrs_map.insert(attr_name, attr);
-                        }
-                    }
-                }
-            }
-
-            let transform = builder.transform.map(Build::build).transpose()?;
-
-            let scene = Scene {
-                name: scene_name.to_string(),
-                objs,
-                transform,
-                mats_map: Set::new(mats_map),
-                attrs_map: Set::new(attrs_map),
-            };
-            scenes.push(scene);
-
         }
-        Ok(scenes)
+
+        // FIXME:: Not necessary to rebuild
+        let mut attrs_map: Map<Name, AttributeFuture> = Map::new();
+        if let Some(ref attrs_future_map) = self.attrs_map {
+            for (attr_name, attr_future) in attrs_future_map.map() {
+                attrs_map.insert(attr_name.clone(), attr_future.clone());
+            }
+        }
+
+        let transform = self.transform.map(Build::build).transpose()?;
+
+        let scene = Scene {
+            name: "default".to_string(),
+            objs,
+            transform,
+            mats_map: Set::new(mats_map),
+            attrs_map: self.attrs_map.unwrap_or_else(|| Set::new(Map::new())),
+        };
+
+        Ok(scene)
     }
 }
 
@@ -307,95 +300,125 @@ impl Build for Set<SceneBuilder> {
 impl Build for Scene {
     type Inst = Vec<Object>;
     fn build(self) -> Result<Self::Inst, Error> {
-        let attrs = self.attrs_map.clone().build()?;
 
-        let verts = self.objs.data.position.iter()
-            .map(|vs| {
-                let vs: Vec<f64> = vs.iter().map(|v| *v as f64).collect();
-                Point3::new(vs[0], vs[1], vs[2])
-            })
-            .collect::<Vec<_>>();
+        // FIXME: Figure out how to properly sort out the mismatched version of `obj` dependency.
+        // I.e. don't rely on proxy crates data to be consistent across libraries
+        let (meshes, verts, norms, faces) = parse_obj(&self.objs.data);
 
-        let norms = self.objs.data.normal.iter()
-            .map(|vs| {
-                let vs: Vec<f64> = vs.iter().map(|v| *v as f64).collect();
-                Dir3::new(vs[0], vs[1], vs[2])
-            })
-            .collect::<Vec<_>>();
+        let mut objects: Vec<Object> = Vec::new();
+        let mut resolved_objects = Vec::new();
 
-        self.objs.data.objects
-        .iter()
-        .map(|obj| {
+        for (object_idx, object) in self.objs.data.objects.iter().enumerate() {
             // NOTE: Don't support multiple groups per object
-            let faces_idx = obj.groups
-                .iter()
-                .flat_map(|group| {
-                    group.polys.iter().map(|poly| {
-                        if poly.0.len() != 3 {
-                            return Err("Only triangular faces are supported.");
-                            // TODO: Could easily convert a quadrilaterl into 2 triangles, hence supporting
-                            // more export options for OBJ files
-                        }
-
-                        let v_idx: Vec<_> = poly.0.iter()
-                            .map(|idx_tuple| idx_tuple.0)
-                            .collect();
-                        //let t_idx = poly.0.map(|idx_tuple| idx_tuple.1);
-                        let n_idx: Vec<_> = poly.0.iter()
-                            .map(|idx_tuple| idx_tuple.2.ok_or("Missing normal index."))
-                            .collect::<Result<Vec<_>, _>>()?;
-                        Ok(((v_idx[0], v_idx[1], v_idx[2]), (n_idx[0], n_idx[1], n_idx[2])))
-                    })
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-
-            let tris = faces_idx.into_iter()
-                .map(|face|
-                    SmoothTriangle::new_from_verts(
-                        [verts[(face.0).0], verts[(face.0).1], verts[(face.0).2]],
-                        [norms[(face.1).0], norms[(face.1).1], norms[(face.1).2]],
-                    ))
-                .collect();
-            let mut mesh = Mesh::new(tris);
-            if let Some(t) = self.transform {
-                mesh.transform(&t);
-            }
-
-            let obj_name = if obj.name == "default" {
+            let obj_name = if object.name == "default" {
                 self.name.clone()
             } else {
-                format!("{}/{}", self.name, obj.name)
+                format!("{}", object.name)
             };
 
-            let mat_name = match &obj.groups[0].material {
-                Some(obj::ObjMaterial::Ref(name)) => Some(name.clone()),
-                None => Some(obj.name.clone()),
-                _ => return Err(Error::Linking("Material description from wavefront obj file not supported".to_string())),
-            };
-
+            let mut mat_name: Option<String> = None;
+            for group in &object.groups {
+                match &group.material {
+                    Some(obj::ObjMaterial::Ref(name)) => {
+                        if let Some(ref existing) = mat_name {
+                            if *existing != *name {
+                                return Err(Error::Linking(format!(
+                                    "Multiple material names found for object {}: {} and {}",
+                                    obj_name, existing, name
+                                )));
+                            }
+                        } else {
+                            mat_name = Some(name.clone());
+                        }
+                    },
+                    None => {},
+                    _ => return Err(Error::Linking("Material description from wavefront obj file not supported".to_string())),
+                };
+            }
+            if mat_name.is_none() {
+                mat_name = Some(format!("{}_material", object.name.clone()));
+            }
             let mat = match &mat_name {
                 Some(name) => self.mats_map.get(&Name::new(&name)).cloned(),
                 None => None,
             };
 
-            let attr = attrs.get(&Name::new(&obj.name))
-                            .ok_or_else(||
-                                std::io::Error::new(std::io::ErrorKind::InvalidData,
-                                format!("No Attribute found that matches with obj_name({}) in the attributes map", obj.name))
-                            )?.clone();
-
-            Ok(
+            info!("Building Object: {}, with material: {}", object.name, mat_name.as_deref().unwrap_or("None"));
+            let attr = self.attrs_map
+                .get(&Name::new(&object.name))
+                .ok_or_else(||
+                    std::io::Error::new(std::io::ErrorKind::InvalidData,
+                    format!("No Attribute found that matches with obj_name({}) in the attributes map", object.name))
+                )?
+                .clone()
+                .resolve_material(mat.clone())?
+                .build()
+                .context(format!("Failed to build Attribute for object {}/{}", self.name, object.name))?;
+            objects.push(
                 Object {
+                    scene_name: self.name.to_string(),
                     obj_name,
                     mat_name,
                     mat,
-                    mesh,
-                    src_id: SrcId::MatSurf(0),
+                    mesh: meshes[object_idx].clone(),
+                    src_id: SrcId::None,
                     attr,
+                });
+        }
+
+        info!("Start splitting meshes for Scene: {}", self.name);
+        for object in &objects {
+            debug!(" > Mesh: {}", object.mesh.name);
+        }
+
+        // Splitting of objects at the coplanar intersection with other meshes,
+        // to ensure Attribute::Interface is correctly resolved
+        let mut idx = objects.len();
+        for i in 0..objects.len() {
+            for j in i+1..meshes.len() {
+                let mesh_i = &objects[i].mesh;
+                let mesh_j = &objects[j].mesh;
+                if mesh_i.overlap(mesh_j) {
+                    info!("Mesh {} and {} overlap", mesh_i.name, mesh_j.name);
+                } else {
+                    continue;
                 }
-            )
-        })
-        .collect::<Result<Vec<_>,_>>()
+                let inter = mesh_i.intersect(mesh_j)?;
+                trace!("Mesh {} and {} intersection: {:?}", mesh_i.name, mesh_j.name, inter);
+                let (new_mesh_i, inter) = mesh_i.split(inter)?;
+                let (new_mesh_j, inter) = mesh_j.split(inter)?;
+                if !inter.is_empty() {
+                    let inter_mesh_name = format!("{}-{}", mesh_i.name, mesh_j.name);
+                    let mut inter_mesh = IdxMesh::new(
+                        inter_mesh_name,
+                        PrimitiveIdx::Global(idx),
+                        &verts, &norms, &faces
+                    );
+                    for tri_inter in inter.into_iter() {
+                        // WARN: Information is lost about the normals in the intersection, need to
+                        // propagate them from the source triangles
+                        inter_mesh.push(tri_inter.into_tris(&mesh_i.faces)?);
+                    };
+                    resolved_objects.push(
+                        Object {
+                            scene_name: self.name.clone(),
+                            obj_name: format!("{}&{}", objects[i].obj_name, objects[j].obj_name),
+                            mat_name: objects[i].mat_name.clone(),
+                            mat: objects[i].mat.clone(),
+                            mesh: inter_mesh,
+                            src_id: objects[i].src_id,
+                            attr: Attribute::Interface(objects[i].mat.clone().unwrap(), objects[j].mat.clone().unwrap())
+                        }
+                    );
+                    idx += 1;
+                }
+                objects[i].mesh = new_mesh_i;
+                objects[j].mesh = new_mesh_j;
+            }
+            resolved_objects.push(objects[i].clone());
+        }
+
+        Ok(resolved_objects)
     }
 }
 

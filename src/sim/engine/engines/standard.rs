@@ -3,17 +3,17 @@
 use crate::{
     io::output::{self, Output},
     phys::Photon,
-    sim::{Event, Input, scatter::scatter, surface::surface, travel::travel},
+    sim::{Attribute, Event, Input, scatter::scatter, surface::surface, travel::travel},
 };
 use rand::{Rng, RngExt};
 use std::sync::{Arc, Mutex};
 
-use aetherus_events::{ledger::Ledger, EventType};
+use aetherus_events::{EventType, SrcId, ledger::Ledger};
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
 pub fn standard<R: Rng>(
-    input: &Input,
+    input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
     ledger: &Arc<Mutex<Ledger>>,
     mut rng: &mut R,
