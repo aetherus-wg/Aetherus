@@ -421,19 +421,28 @@ impl Build for Scene {
             for j in i+1..meshes.len() {
                 let mesh_i = &objects[i].mesh;
                 let mesh_j = &objects[j].mesh;
-                if mesh_i.overlap(mesh_j) {
-                    info!("Mesh {} and {} overlap", mesh_i.name, mesh_j.name);
+
+                // Check if splitting is required
+                if matches!(objects[i].attr, Attribute::Interface(..)) || matches!(objects[j].attr, Attribute::Interface(..)) {
+                    if mesh_i.overlap(mesh_j) {
+                        info!("Mesh {} and {} overlap with at least an Attribute::Interface type", mesh_i.name, mesh_j.name);
+                    } else {
+                        continue;
+                    }
                 } else {
+                    trace!("Mesh {} and {} splitting is ignored, due to the opacity of their surfaces", mesh_i.name, mesh_j.name);
                     continue;
                 }
+
                 let inter = mesh_i.intersect(mesh_j)?;
                 trace!("Mesh {} and {} intersection: {:?}", mesh_i.name, mesh_j.name, inter);
                 let (new_mesh_i, inter) = mesh_i.split(inter)?;
                 let (new_mesh_j, inter) = mesh_j.split(inter)?;
-                if !inter.is_empty() {
+
+                if !inter.is_empty() && matches!(objects[j].attr, Attribute::Interface(..)) && matches!(objects[i].attr, Attribute::Interface(..)) {
                     let inter_mesh_name = format!("{}-{}", mesh_i.name, mesh_j.name);
                     let mut inter_mesh = IdxMesh::new(
-                        inter_mesh_name,
+                        inter_mesh_name.clone(),
                         PrimitiveIdx::Global(idx),
                         &verts, &norms, &faces
                     );
@@ -442,10 +451,11 @@ impl Build for Scene {
                         // propagate them from the source triangles
                         inter_mesh.push(tri_inter.into_tris(&mesh_i.faces)?);
                     };
+
                     resolved_objects.push(
                         Object {
                             scene_name: self.name.clone(),
-                            obj_name: format!("{}&{}", objects[i].obj_name, objects[j].obj_name),
+                            obj_name: inter_mesh.name.clone(),
                             mat_name: objects[i].mat_name.clone(),
                             mat: objects[i].mat.clone(),
                             mesh: inter_mesh,
@@ -455,8 +465,20 @@ impl Build for Scene {
                     );
                     idx += 1;
                 }
-                objects[i].mesh = new_mesh_i;
-                objects[j].mesh = new_mesh_j;
+
+                if matches!(objects[i].attr, Attribute::Interface(..)) && matches!(objects[j].attr, Attribute::Interface(..)) {
+                    debug!("Mesh {} and {} have been split at the coplanar intersection", mesh_i.name, mesh_j.name);
+                    objects[i].mesh = new_mesh_i;
+                    objects[j].mesh = new_mesh_j;
+                }
+                else if matches!(objects[i].attr, Attribute::Interface(..)) && !matches!(objects[j].attr, Attribute::Interface(..)) {
+                    debug!("Mesh {} discarding intersection with {}", mesh_i.name, mesh_j.name);
+                    objects[i].mesh = new_mesh_i;
+                }
+                else if !matches!(objects[i].attr, Attribute::Interface(..)) && matches!(objects[j].attr, Attribute::Interface(..)) {
+                    debug!("Mesh {} discarding intersection with {}", mesh_j.name, mesh_i.name);
+                    objects[j].mesh = new_mesh_j;
+                }
             }
             resolved_objects.push(objects[i].clone());
         }
