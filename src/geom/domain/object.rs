@@ -100,6 +100,13 @@ impl Object {
     }
 }
 
+#[derive(Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum AttributeFutureFuture {
+    Future(Name),
+    Value(AttributeFuture),
+}
+
 #[derive(Debug, Clone)]
 pub enum ObjFuture {
     Future(PathBuf),
@@ -120,8 +127,8 @@ pub struct Scene {
     pub name: String,
     objs: obj::Obj,
     transform: Option<Trans3>,
-    mats_map: Set<Material>,
-    attrs_map: Set<AttributeFuture>,
+    mats: Set<Material>,
+    attrs: Set<AttributeFuture>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -130,8 +137,7 @@ pub struct SceneBuilder {
     /// Optional transformation.
     transform: Option<Trans3Builder>,
     mats_map: Option<Set<MaterialFuture>>,
-    // TODO: Convert back to AttributeFutureFuture in order to allow global attributes to be used
-    attrs_map: Option<Set<AttributeFuture>>,
+    attrs_map: Option<Set<AttributeFutureFuture>>,
 }
 
 impl Display for SceneBuilder {
@@ -167,29 +173,52 @@ impl Link<'_, AttributeFuture> for SceneBuilder {
         todo!()
     }
     fn link(mut self, attrs: &Set<AttributeFuture>) -> Result<Self::Inst, Error> {
-        let mut new_attrs: Vec<(Name, AttributeFuture)> = Vec::new();
-        for (name, attr_fut) in attrs.map().iter() {
-            let already_exists = self
-                .attrs_map
-                .as_ref()
-                .map(|attrs_map| attrs_map.map().contains_key(name))
-                .unwrap_or(false);
-            if already_exists {
-                warn!("AttributeFuture {} in SceneBuilder(?) has priority over the attempt to link global value. This may indicate a problem with the input configuration.", name);
-            } else {
-                new_attrs.push((name.clone(), attr_fut.clone()));
+        if let Some(attrs_map) = &mut self.attrs_map {
+            for name in attrs_map.names_list() {
+                let attr_futfut = attrs_map.get_mut(&name).ok_or_else(||
+                    Error::Linking(format!("Attributes map missing value of key: {}", name))
+                )?;
+                *attr_futfut = attr_futfut.clone().link(&attrs)?;
             }
         }
-        if !new_attrs.is_empty() {
-            let new_attrs_global = Set::from_pairs(new_attrs)?;
-            let new_attrs_map = if let Some(attrs_map) = self.attrs_map {
-                    attrs_map.combine(new_attrs_global)?
-                } else {
-                    new_attrs_global
-                };
-            self.attrs_map = Some(new_attrs_map);
-        }
         Ok(self)
+    }
+}
+
+impl Link<'_, AttributeFuture> for AttributeFutureFuture {
+    type Inst = AttributeFutureFuture;
+    fn requires(&self) -> Vec<Name> {
+        match self {
+            AttributeFutureFuture::Future(name) => vec![name.clone()],
+            AttributeFutureFuture::Value(_) => vec![],
+        }
+    }
+    fn link(self, attrs: &Set<AttributeFuture>) -> Result<Self::Inst, Error> {
+        match self {
+            AttributeFutureFuture::Future(name) => {
+                let attr_fut = attrs.get(&name)
+                    .ok_or_else(||
+                        Error::Linking(format!("Attribute {} not found in attributes set during linking.", name))
+                    )?;
+                Ok(AttributeFutureFuture::Value(attr_fut.clone()))
+            },
+            AttributeFutureFuture::Value(attr) => Ok(AttributeFutureFuture::Value(attr)),
+        }
+    }
+}
+
+impl Link<'_, Material> for AttributeFutureFuture {
+    type Inst = AttributeFutureFuture;
+    fn requires(&self) -> Vec<Name> {
+        todo!()
+    }
+    fn link(self, mats: &Set<Material>) -> Result<Self::Inst, Error> {
+        match self {
+            AttributeFutureFuture::Future(_) => Ok(self),
+            AttributeFutureFuture::Value(attr) => {
+                Ok(AttributeFutureFuture::Value(attr.link(mats)?))
+            },
+        }
     }
 }
 
@@ -275,10 +304,19 @@ impl Build for SceneBuilder {
         }
 
         // FIXME:: Not necessary to rebuild
-        let mut attrs_map: Map<Name, AttributeFuture> = Map::new();
-        if let Some(ref attrs_future_map) = self.attrs_map {
-            for (attr_name, attr_future) in attrs_future_map.map() {
-                attrs_map.insert(attr_name.clone(), attr_future.clone());
+        let mut attrs: Map<Name, AttributeFuture> = Map::new();
+        if let Some(attrs_future_map) = self.attrs_map {
+            for (attr_name, attr_future) in attrs_future_map {
+                match attr_future {
+                    AttributeFutureFuture::Future(global_attr_name) => {
+                        return Err(Error::Linking(
+                            format!("Attribute linking not implemented yet for {}", global_attr_name)
+                        ));
+                    }
+                    AttributeFutureFuture::Value(attr) => {
+                        attrs.insert(attr_name, attr);
+                    }
+                }
             }
         }
 
@@ -288,8 +326,8 @@ impl Build for SceneBuilder {
             name: id.to_string(),
             objs,
             transform,
-            mats_map: Set::new(mats_map),
-            attrs_map: self.attrs_map.unwrap_or_else(|| Set::new(Map::new())),
+            mats: Set::new(mats_map),
+            attrs: Set::new(attrs),
         };
 
         Ok(scene)
@@ -341,12 +379,14 @@ impl Build for Scene {
                 mat_name = Some(format!("{}_material", object.name.clone()));
             }
             let mat = match &mat_name {
-                Some(name) => self.mats_map.get(&Name::new(&name)).cloned(),
+                Some(name) => self.mats.get(&Name::new(&name)).cloned(),
                 None => None,
             };
 
+            // TODO: Fallback to object.name maping in materials if a material hasn't been found
+            // Attribute::Interface |-> Material is defined
             info!("Building Object: {}, with material: {}", object.name, mat_name.as_deref().unwrap_or("None"));
-            let attr = self.attrs_map
+            let attr = self.attrs
                 .get(&Name::new(&object.name))
                 .ok_or_else(||
                     std::io::Error::new(std::io::ErrorKind::InvalidData,
@@ -356,6 +396,7 @@ impl Build for Scene {
                 .resolve_material(mat.clone())?
                 .build(Name::new(&object.name))
                 .context(format!("Failed to build Attribute for object {}/{}", self.name, object.name))?;
+
             objects.push(
                 Object {
                     scene_name: self.name.to_string(), // Or use `id` parmeter
