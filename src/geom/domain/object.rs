@@ -8,7 +8,14 @@ use mesh_splitting::{Collide, IdxTriangle, Split, mesh::parse_obj, primitives::P
 use serde::{Deserialize, Deserializer};
 
 use crate::{
-    err::Error, fmt_report, fs::Load, geom::{Mesh, SmoothTriangle, Surface}, math::{Dir3, Point3, Trans3, Trans3Builder}, ord::{Build, Link, Map, Name, Set}, phys::{Material, MaterialBuilder}, sim::{Attribute, AttributeFuture}
+    err::Error,
+    fmt_report,
+    fs::Load,
+    geom::{Mesh, SmoothTriangle, Surface, Transformable},
+    math::{Dir3, Point3, Trans3, Trans3Builder},
+    ord::{Build, Link, Map, Name, Set},
+    phys::{Material, MaterialBuilder},
+    sim::{Attribute, AttributeFuture}
 };
 
 use mesh_splitting::mesh::{Mesh as IdxMesh};
@@ -28,6 +35,8 @@ pub struct Object {
     pub mat: Option<Material>,
     /// Mesh built from SmoothTriangles
     pub mesh: IdxMesh,
+    /// Optional transformation.
+    pub transform: Option<Trans3>,
     /// Source ID used by the UIDs Ledger
     pub src_id: SrcId,
     /// Attribute
@@ -57,7 +66,11 @@ impl Object {
         self.mat_name.as_deref()
     }
     pub fn get_surface(&self) -> Surface<(Attribute, SrcId)> {
-        Surface::new(self.mesh.clone().into(), (self.attr.clone(), self.src_id))
+        let mut mesh: Mesh = self.mesh.clone().into();
+        if let Some(t) = self.transform {
+            mesh.transform(&t);
+        };
+        Surface::new(mesh, (self.attr.clone(), self.src_id))
     }
 
     pub fn with_id(&mut self, src_id: SrcId) -> Result<(), Error> {
@@ -334,8 +347,6 @@ impl Build for SceneBuilder {
     }
 }
 
-// FIXME: Cleanup this mess! break down the objects iterator, so it can be more easily understood
-// what is happening, especially with error handling collect.
 impl Build for Scene {
     type Inst = Vec<Object>;
     type MetaInfo = Name;
@@ -404,6 +415,7 @@ impl Build for Scene {
                     mat_name,
                     mat,
                     mesh: meshes[object_idx].clone(),
+                    transform: self.transform,
                     src_id: SrcId::None,
                     attr,
                 });
@@ -447,8 +459,6 @@ impl Build for Scene {
                         &verts, &norms, &faces
                     );
                     for tri_inter in inter.into_iter() {
-                        // WARN: Information is lost about the normals in the intersection, need to
-                        // propagate them from the source triangles
                         inter_mesh.push(tri_inter.into_tris(&mesh_i.faces)?);
                     };
 
@@ -459,8 +469,9 @@ impl Build for Scene {
                             mat_name: objects[i].mat_name.clone(),
                             mat: objects[i].mat.clone(),
                             mesh: inter_mesh,
+                            transform: self.transform,
                             src_id: objects[i].src_id,
-                            attr: Attribute::Interface(objects[i].mat.clone().unwrap(), objects[j].mat.clone().unwrap())
+                            attr: Attribute::Interface(objects[i].mat.clone().unwrap(), objects[j].mat.clone().unwrap()),
                         }
                     );
                     idx += 1;
