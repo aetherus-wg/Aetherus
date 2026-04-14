@@ -55,8 +55,12 @@ pub fn surface<R: Rng>(
             }
         }
         Attribute::Reflector(ref reflectance) => {
+            // NOTE: Instead of killing the photon based on reflection probability, reduce its weight
             match reflectance.reflect(rng, &phot, hit) {
-                Some(ray) => *phot.ray_mut() = ray,
+                Some((ray, ref_prob)) => {
+                    *phot.ray_mut() = ray;
+                    *phot.weight_mut() *= ref_prob;
+                },
                 None => phot.kill(),
             }
         }

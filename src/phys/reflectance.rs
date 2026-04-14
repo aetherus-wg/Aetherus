@@ -120,29 +120,23 @@ impl Reflectance {
         rng: &mut R,
         incident_photon: &Photon,
         hit: &Hit<Attribute>,
-    ) -> Option<Ray> {
+    ) -> Option<(Ray, f64)> {
         match *self {
             Self::Lambertian { ref refspec } => {
                 // This random draw determines if the photon should reflect, based on the value of the albedo.
                 match refspec.value_at(incident_photon.wavelength()) {
                     None => None,
                     Some(ref_prob) => {
-                        let should_reflect = rng.random_range(0.0..1.0) < ref_prob;
+                        let theta = rng.random_range(0.0..2.0 * PI);
+                        // We sample the phi angle using PDF = sin(theta)
+                        let phi = (rng.random_range(0.0..1.0) as Real).asin();
 
-                        if should_reflect {
-                            let theta = rng.random_range(0.0..2.0 * PI);
-                            // We sample the phi angle using PDF = sin(theta)
-                            let phi = (rng.random_range(0.0..1.0) as Real).asin();
-
-                            let mut reflected_ray = Ray::new(
-                                *incident_photon.ray().pos(),
-                                *hit.side().norm(),
-                            );
-                            reflected_ray.rotate(phi, theta);
-                            Some(reflected_ray)
-                        } else {
-                            None
-                        }
+                        let mut reflected_ray = Ray::new(
+                            *incident_photon.ray().pos(),
+                            *hit.side().norm(),
+                        );
+                        reflected_ray.rotate(phi, theta);
+                        Some((reflected_ray, ref_prob))
                     }
                 }
             }
@@ -151,20 +145,14 @@ impl Reflectance {
                 match refspec.value_at(incident_photon.wavelength()) {
                     None => None,
                     Some(ref_prob) => {
-                        let should_reflect = rng.random_range(0.0..1.0) < ref_prob;
-
-                        if should_reflect {
-                            // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
-                            let reflect = *incident_photon.ray().dir()
-                                + 2.0
-                                    * hit.side().norm().dot(&-*incident_photon.ray().dir())
-                                    * hit.side().norm();
-                            let reflected_ray =
-                                Ray::new(*incident_photon.ray().pos(), reflect.into());
-                            Some(reflected_ray)
-                        } else {
-                            None
-                        }
+                        // Implementation for this heavily borrowed from: https://www.cs.uaf.edu/2006/fall/cs381/lecture/10_03_specular.html
+                        let reflect = *incident_photon.ray().dir()
+                            + 2.0
+                                * hit.side().norm().dot(&-*incident_photon.ray().dir())
+                                * hit.side().norm();
+                        let reflected_ray =
+                            Ray::new(*incident_photon.ray().pos(), reflect.into());
+                        Some((reflected_ray, ref_prob))
                     }
                 }
             }

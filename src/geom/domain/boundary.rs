@@ -88,8 +88,11 @@ impl Boundary {
             }
             BoundaryCondition::Reflect(reflectance) => {
                 // Handle Reflect variant
-                match reflectance.reflect(rng, phot, &hit.get_hit()) {
-                    Some(ray) => *phot.ray_mut() = ray,
+                match reflectance.reflect(rng, &phot, &hit.get_hit()) {
+                    Some((ray, ref_prob)) => {
+                        *phot.ray_mut() = ray;
+                        *phot.weight_mut() *= ref_prob;
+                    },
                     None => phot.kill(),
                 }
             }
