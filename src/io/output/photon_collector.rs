@@ -65,7 +65,7 @@ impl Save for PhotonCollector {
             for phot in self.photons.iter() {
                 writeln!(
                     file,
-                    "{},{},{},{},{},{},{},{},{},{},{:016X}",
+                    "{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.10e},{:.10e},{:.10e},{:016X}",
                     phot.ray().pos().x(),
                     phot.ray().pos().y(),
                     phot.ray().pos().z(),
