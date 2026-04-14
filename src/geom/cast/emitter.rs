@@ -101,6 +101,7 @@ impl Emitter {
             Self::Point(pos) => Ray::new(pos, rand_isotropic_dir(rng)),
             Self::Beam(ref ray) => ray.clone(),
             Self::Gaussian(ref ray, div_half_angle) => {
+                // Reference: https://andrewcharlesjones.github.io/journal/rayleigh.html
                 // 1. given local frame ray.dir is z axis, need to derive (x,y) directions in the
                 //    local frame. The actual choice doesn't matter, as far as it always yields the
                 //    same result, given that we assume the gaussian beam to be symteric around the
@@ -111,13 +112,10 @@ impl Emitter {
                 // 2. Sample (theta, phi)
                 // 3. Rotate ray.dir by (theta, phi) in the local frame.
 
-                let theta = if div_half_angle <= 0.2 {
-                    // Small angle approx for better perf
-                    Probability::new_gaussian(0.0, div_half_angle).sample(rng)
-                } else {
-                    let sin_theta = Probability::new_gaussian(0.0, (div_half_angle as Real).sin()).sample(rng);
-                    (sin_theta as Real).abs().asin()
-                };
+                // CDF of Rayleigh distribution
+                let sigma = div_half_angle / 2.0_f64;
+                let rayleigh = (- 2.0 * (rng.random::<f64>()).ln()).sqrt();
+                let theta = sigma * rayleigh;
                 let phi = rng.random_range(0.0..2.0 * PI);
                 let mut beam_ray = ray.clone();
                 beam_ray.rotate(theta, phi);
