@@ -33,8 +33,9 @@ pub fn surface<R: Rng>(
             let next_env = next_mat.sample_environment(phot.wavelength());
 
             debug_assert!(
-                curr_env == *env,
-                "Current env cached in the simulation doesn't match env detected from surface interaction"
+                curr_env.scat_coeff() == env.scat_coeff() && curr_env.ref_index() == env.ref_index() && curr_env.abs_coeff() == env.abs_coeff(),
+                "Current env cached in the simulation doesn't match env detected from surface interaction: identified={:?} vs cached={:?}",
+                curr_env, env
             );
 
             // Get the near, and far side refractive indices.
@@ -53,11 +54,15 @@ pub fn surface<R: Rng>(
             let r = rng.random::<f64>();
             if r <= crossing.ref_prob() {
                 // Reflect.
-                phot.ray_mut().update_dir(*crossing.ref_dir());
+                let new_dir = *crossing.ref_dir();
+                let norm = hit.side().norm();
+                debug_assert!(phot.ray().dir().dot(&norm) * new_dir.dot(&norm)>= 0.0, "Reflection direction is not on the correct side of the surface");
+                phot.ray_mut().update_dir(new_dir);
                 EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Reflection)), src_id: hit.tag().1}
             } else {
                 // Refract.
                 let new_dir = crossing.trans_dir().expect("Invalid refraction.");
+                debug_assert!(phot.ray().dir().dot(&new_dir) >= 0.0, "Refraction direction is not on the correct side of the surface");
                 phot.ray_mut().update_dir(new_dir);
                 *env = next_env;
                 EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Refraction)), src_id: env.mat_id() }

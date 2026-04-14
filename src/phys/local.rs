@@ -4,7 +4,7 @@ use crate::clone;
 use aetherus_events::SrcId;
 
 /// Localised optical environment properties.
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Local {
     /// Refractive index.
     ref_index: f64,

@@ -87,7 +87,6 @@ pub fn standard<R: Rng>(
                 // WARN: Accessing Ledger from many threads will slow down the simulation
                 // considerably. Consider using an async design, encapsulating `uid` in work token
                 // and computed value, transforming insert into a send on an mpsc channel
-                // FIXME: Replace mcrt_event_type and mat_id palceholders with actual values
                 if input.sett.uid_tracked() == Some(true) {
                     *phot.uid_mut() = ledger.lock()
                                             .expect("Can't lock Ledger")
@@ -102,6 +101,7 @@ pub fn standard<R: Rng>(
                 // FIXME: next_seq_id needed here only for PhotonCollector, which needs the updated
                 // Uid before it can store the photon data. How to solve this RAW hazard?
                 let next_seq_id = ledger.lock().expect("Can't lock Ledger").get_next_seq_id(&phot.uid());
+                let prev_env = env.clone();
                 let event_id = surface(&mut rng, &hit, &mut phot, &mut env, data, next_seq_id);
                 phot.ray_mut().travel(bump_dist);
                 if input.sett.uid_tracked() == Some(true) && event_id.event_type != EventType::None {
@@ -112,6 +112,7 @@ pub fn standard<R: Rng>(
 
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
                 // voxels did? => Based on "MONTE CARLO MODELLING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
+                // Recompute the scattering distance for the new env
                 scat_dist = Some(scat_dist.unwrap() - hit.dist());
                 assert!(scat_dist.unwrap() >= 0.0);
             },
