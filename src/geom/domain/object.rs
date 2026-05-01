@@ -79,7 +79,7 @@ impl Object {
                 "Invalid SrcId({}) for Object({}). Expected SrcId::{{MatSurf(_), Surf(_)}}",
                 src_id, self.obj_name
             ))),
-            SrcId::Surf(_) => {
+            SrcId::Surf(_) | SrcId::Detector(_) => {
                 self.src_id = src_id;
                 Ok(())
             },
@@ -105,7 +105,7 @@ impl Object {
                 self.src_id = src_id.clone();
                 Ok(())
             },
-            SrcId::None => {
+            SrcId::None | SrcId::SrcId(_) => {
                 warn!("Attempting to assign SrcId::None to Object({})", self.obj_name);
                 Ok(())
             },
