@@ -36,7 +36,7 @@ jobs:
       - name: Report
         run: |
           bencher run \
-          --project $(echo "${{ github.repository }}" | sed 's/\//-/g') \
+          --project $(echo "${{ github.repository }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]') \
           --branch "$GITHUB_REF_NAME" \
           --testbed ubuntu-latest \
           --threshold-measure latency \
