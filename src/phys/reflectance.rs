@@ -243,11 +243,12 @@ mod tests {
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
             match reflect.reflect(&mut rng, &incoming_photon, &hit) {
-                Some(ray) => {
+                Some((ray, reflectance)) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
                     // The easy check for this is to check that norm · ray is positive.
                     assert!(ray.dir().dot(&norm) > 0.0);
+                    assert!(0.0 <= reflectance && reflectance <= 1.0);
 
                     // Sample the angle created by the ray from the normal.
                     phi_hist.collect(ray.dir().dot(&norm).acos());
@@ -319,11 +320,12 @@ mod tests {
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
             match reflect.reflect(&mut rng, &incoming_photon, &hit) {
-                Some(ray) => {
+                Some((ray, reflectance)) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
                     // The easy check for this is to check that norm · ray is positive.
                     assert!(ray.dir().dot(&norm) > 0.0);
+                    assert_approx_eq!(reflectance, 0.5, f64::EPSILON);
 
                     // Sample the angle created by the ray from the normal.
                     phi_hist.collect(ray.dir().dot(&norm).acos());
@@ -332,7 +334,7 @@ mod tests {
                     let theta_dot = Dir2::new(ray.dir().x(), ray.dir().y()).dot(&surf_vec);
                     theta_hist.collect(theta_dot.acos());
                     // Just want to check that we are getting a uniform 360 degree coverage.
-                    // The dog product will only resolve to 0 -> pi radians.
+                    // The dot product will only resolve to 0 -> pi radians.
                     if theta_dot < 0.0 {
                         theta_dot_neg += 1;
                     }
@@ -345,12 +347,8 @@ mod tests {
         // phi_hist.save_data(std::path::Path::new("lambert_check.dat")).unwrap();
         // theta_hist.save_data(std::path::Path::new("lambert_check_theta.dat")).unwrap();
 
-        // As the albedo is 0.5, we expect roughly half of the photons to get killed.
-        assert_approx_eq!(
-            n_killed as Real,
-            n_phot as Real * 0.5,
-            n_phot as Real * 0.01
-        );
+        // The albedo has an effect on reflected photon weight, rather than killing the photons
+        assert_eq!(n_killed, 0);
 
         // Check that the phi distribution conforms to a cos(theta) fall off with angle.
         let norm_fac = phi_hist.iter().map(|(_b, c)| c).take(3).mean();
@@ -367,7 +365,7 @@ mod tests {
             assert_approx_eq!(count, theta_mean, (n_phot - n_killed) as Real * 0.01);
         }
 
-        // Checkt hat we get roughly 50% of the dot products uniform, indicating
+        // Check that we get roughly 50% of the dot products uniform, indicating
         // theta coverage across both semi-circules.
         assert_approx_eq!(
             theta_dot_neg as Real,
@@ -396,9 +394,10 @@ mod tests {
         let reflected_ray_test = Ray::new(Point3::new(1.0, 0.0, 1.0), Dir3::new(1.0, 0.0, 1.0));
 
         match reflect.reflect(&mut rng, &incoming_photon, &hit) {
-            Some(ray) => {
+            Some((ray, reflectance)) => {
                 // Use assert_approx_eq due to numerical noise.
                 assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
+                assert!(0.0 <= reflectance && reflectance <= 1.0);
             }
             None => assert!(false), // With a perfect reflector, we should have no killed photons.
         }
@@ -425,21 +424,17 @@ mod tests {
         let mut n_killed_photons: usize = 0;
         for _ in 0..n_photon {
             match reflect.reflect(&mut rng, &incoming_photon, &hit) {
-                Some(ray) => {
+                Some((ray, reflectance)) => {
                     // Use assert_approx_eq due to numerical noise.
                     assert_approx_eq!(ray.dir().dot(reflected_ray_test.dir()), 1.0);
+                    assert_approx_eq!(reflectance, 0.5, f64::EPSILON);
                 }
                 None => n_killed_photons += 1, // With a perfect reflector, we should have no killed photons.
             }
         }
 
-        // Now check that the kill-rate of photons is consistent with the albedo.
-        println!("{}", n_killed_photons);
-        assert_approx_eq!(
-            n_killed_photons as Real,
-            n_photon as Real * 0.5,
-            n_photon as Real * 0.01
-        );
+        // The albedo has an effect on reflected photon weight, rather than killing the photons
+        assert_eq!(n_killed_photons, 0);
     }
 
     #[test]
@@ -468,11 +463,12 @@ mod tests {
         let mut theta_dot_neg: usize = 0;
         for _ in 0..n_phot {
             match reflect.reflect(&mut rng, &incoming_photon, &hit) {
-                Some(ray) => {
+                Some((ray, reflectance)) => {
                     // Check that the outgoing ray is within the same hemisphere as the surface normal.
                     // In the case of Lambertian scattering, this is a requirement.
                     // The easy check for this is to check that norm · ray is positive.
                     assert!(ray.dir().dot(&norm) > 0.0);
+                    assert!(0.0 <= reflectance && reflectance <= 1.0);
 
                     // Sample the angle created by the ray from the normal.
                     phi_hist.collect(ray.dir().dot(&norm).acos());
