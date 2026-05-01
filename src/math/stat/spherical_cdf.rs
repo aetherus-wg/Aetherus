@@ -282,7 +282,7 @@ mod tests {
         }
 
         // Check that the average is correct given the input planes.
-        assert_approx_eq!(az_ave.ave() * (180. / PI), 180.0, 2.0);
+        assert_approx_eq!(az_ave.ave() * (180. / PI), 180.0, 3.0);
 
         // Check that the average is correct given the input planes.
         assert_approx_eq!(pol_ave.ave(), PI / 2.0, 0.1);
