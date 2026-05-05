@@ -1,7 +1,7 @@
 //! Photon particle.
 use crate::{access, clone, geom::Ray};
 
-use aetherus_events::ledger::Uid;
+use aetherus_events::Uid;
 
 #[cfg(feature = "mpi")]
 use crate::math::{Dir3, Point3};

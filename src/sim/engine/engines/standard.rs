@@ -101,7 +101,6 @@ pub fn standard<R: Rng>(
                 // FIXME: next_seq_id needed here only for PhotonCollector, which needs the updated
                 // Uid before it can store the photon data. How to solve this RAW hazard?
                 let next_seq_id = ledger.lock().expect("Can't lock Ledger").get_next_seq_id(&phot.uid());
-                let prev_env = env.clone();
                 let event_id = surface(&mut rng, &hit, &mut phot, &mut env, data, next_seq_id);
                 phot.ray_mut().travel(bump_dist);
                 if input.sett.uid_tracked() == Some(true) && event_id.event_type != EventType::None {

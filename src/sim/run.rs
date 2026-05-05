@@ -7,7 +7,8 @@ use rand::rng;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
-use aetherus_events::{EventId, SrcId, emission::Emission, ledger::Ledger};
+use aetherus_events::prelude::*;
+use aetherus_events::events::Emission;
 
 /// Run a multi-threaded MCRT simulation.
 /// # Errors

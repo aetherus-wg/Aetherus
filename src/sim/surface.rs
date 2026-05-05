@@ -6,7 +6,7 @@ use crate::{
     phys::{Crossing, Local, Photon},
     sim::Attribute,
 };
-use aetherus_events::{EventId, EventType, SrcId, ledger::Uid, mcrt_event};
+use aetherus_events::prelude::*;
 use rand::{Rng, RngExt};
 
 /// Handle a surface collision.
