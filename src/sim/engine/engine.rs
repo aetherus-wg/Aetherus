@@ -10,9 +10,8 @@ use crate::{
 use ndarray::Array3;
 use rand::rngs::ThreadRng;
 use std::fmt::{Display, Error, Formatter};
-use std::sync::{Arc, Mutex};
 
-use aetherus_events::{ledger::Ledger, SrcId};
+use aetherus_events::prelude::*;
 
 /// Engine selection.
 #[allow(clippy::large_enum_variant)]
@@ -34,12 +33,11 @@ impl Engine {
         &self,
         input: &Input<(Attribute, SrcId)>,
         data: &mut Output,
-        ledger: &Arc<Mutex<Ledger>>,
         rng: &mut ThreadRng,
         phot: Photon,
     ) {
         match *self {
-            Self::Standard => engines::standard(input, data, ledger, rng, phot),
+            Self::Standard => engines::standard(input, data, rng, phot),
             Self::Raman(ref p) => engines::raman(p, input, data, rng, phot),
             Self::Photo(ref frames, _res) => engines::photo(frames, input, data, rng, phot),
             Self::Fluorescence(ref shift_map, ref conc_spec) => {

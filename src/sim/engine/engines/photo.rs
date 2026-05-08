@@ -87,7 +87,7 @@ pub fn photo(
             }
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, data, None);
+                surface(&mut rng, &hit, &mut phot, &mut env, data);
                 travel(&mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {

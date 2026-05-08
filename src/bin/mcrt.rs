@@ -20,9 +20,7 @@ use aetherus::{
         fmt::term,
     },
 };
-use aetherus_events::SrcId;
-
-use std::sync::{Arc, Mutex};
+use aetherus_events::prelude::*;
 
 /// Backup print width if the terminal width can not be determined.
 const BACKUP_TERM_WIDTH: usize = 80;
@@ -46,20 +44,16 @@ fn main() {
     report!(bound, "boundary");
 
     section(term_width, "Ledger and materials setup");
-    let ledger = Arc::new(Mutex::new(aetherus_events::ledger::Ledger::new()));
+    let mut ledger_tree = LedgerTree::new();
 
     let mats = {
         let mut mats = params.mats;
         report!(mats, "materials");
 
-        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
-
         for name in mats.names_list() {
             let mat = mats.get_mut(&name).unwrap();
-            *mat = mat.clone().with_id(ledger_guard.with_mat(name.to_string()));
+            *mat = mat.clone().with_id(ledger_tree.with_mat(name.to_string()));
         }
-        drop(ledger_guard);
-
         mats
     };
 
@@ -115,14 +109,13 @@ fn main() {
         .collect();
 
     for obj in objs.iter_mut() {
-        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
         let src_id = match obj.attr {
             // TODO: Move this to allocate_ids inside Object struct
             Attribute::Interface(..) => {
-                ledger_guard.with_matsurf(obj.obj_name.clone(), obj.mat_name.clone().unwrap(), None)
+                ledger_tree.with_matsurf(obj.obj_name.clone(), obj.mat_name.clone().unwrap(), None)
             },
             Attribute::Mirror(..) | Attribute::Reflector(..) => {
-                ledger_guard.with_surf(obj.obj_name.clone(), None)
+                ledger_tree.with_surf(obj.obj_name.clone(), None)
             },
             _ => SrcId::None,
         };
@@ -169,7 +162,7 @@ fn main() {
             let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, &light, &tree, &sett, &bound);
 
             let data =
-                run::multi_thread(&engine, &input, &base_output, ledger.clone()).expect("Failed to run MCRT.");
+                run::multi_thread(&engine, &input, &base_output, &ledger_tree).expect("Failed to run MCRT.");
 
             // In the case that we are outputting the files for each individual light, we can output it here with a simple setting.
             if let Some(output_individual) = sett.output_individual_lights() {
@@ -182,6 +175,9 @@ fn main() {
                                 panic!("Unable to create output directory for light '{}'", light_id)
                             );
                     }
+                    // Resolve the UIDs before attempting to save data,
+                    // which may contain a PhotonCollector
+                    ledger_tree.resolve();
                     data.save(&indiv_outpath)
                         .unwrap_or_else(|_|
                             panic!("Failed to save output data for light '{}'", light_id)
@@ -195,22 +191,24 @@ fn main() {
 
     section(term_width, "Saving");
 
+
     let ledger_path = out_dir.join("simulation_ledger.json");
     println!("[SAVE] {}", ledger_path.display());
     if let Some(true) = sett.uid_tracked() {
-        use aetherus_events::{pattern, filter::find_dangling_uids, filter::BitsProperty};
+        ledger_tree.resolve();
+
+        use aetherus_events::{pattern, filter::BitsProperty, ledger::write_ledger_to_json};
         let no_detector_property = BitsProperty::NoMatch(pattern!(Detection, SrcId::None));
 
-        let uids = find_dangling_uids(&ledger.lock().expect("Failed to lock ledger."), no_detector_property);
+        let uids = ledger_tree.find_dangling_uids(no_detector_property);
         println!("[INFO] Found {} dangling UIDs to prune.", uids.len());
         for uid in uids {
-            ledger.lock().expect("Failed to lock ledger.").prune(&uid);
+            ledger_tree.prune_uid(&uid);
         }
 
-        aetherus_events::ledger::write_ledger_to_json(
-            &ledger.lock().expect("Failed to lock ledger."),
-            &ledger_path,
-        ).expect("Failed to save ledger.");
+        let ledger: Ledger = ledger_tree.into();
+
+        write_ledger_to_json(&ledger, &ledger_path).expect("Failed to save ledger.");
     }
 
     //report!(data, "data");

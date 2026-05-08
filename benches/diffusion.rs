@@ -11,7 +11,7 @@ use aetherus::{
     sim::{Attribute, Parameters, ParametersBuilderLoader}
 };
 
-use aetherus_events::{SrcId, ledger::Ledger};
+use aetherus_events::prelude::*;
 use anyhow::Context;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::hint::black_box;
@@ -32,20 +32,20 @@ fn criterion_config(c: &mut Criterion) {
     });
 
     let params = load_parameters(&input_dir, &params_path);
-    let (ledger, mats) = build_ledger(&params);
+    let (mut ledger, mats) = build_ledger(&params);
     let _lights = build_lights(&params, &mats);
     let base_output = params.output.clone().build(()).unwrap();
 
     // Build objects
     c.bench_function("build_objects", |b| {
         b.iter(|| {
-            let (ledger, mats) = build_ledger(&params);
-            let (objs, attrs) = build_objects(black_box(&params), black_box(&base_output), &ledger, &mats).unwrap();
+            let (mut ledger, mats) = build_ledger(&params);
+            let (objs, attrs) = build_objects(black_box(&params), black_box(&base_output), &mut ledger, &mats).unwrap();
             black_box((objs, attrs))
         });
     });
 
-    let (objs, _attrs) = build_objects(&params, &base_output, &ledger, &mats).unwrap();
+    let (objs, _attrs) = build_objects(&params, &base_output, &mut ledger, &mats).unwrap();
 
     //// Build surfaces
     //c.bench_function("build_surfaces", |b| {
@@ -112,17 +112,12 @@ fn load_parameters(in_dir: &Path, params_path: &Path) -> Parameters {
     params
 }
 
-fn build_ledger(params: &Parameters) -> (Arc<Mutex<Ledger>>, Set<Material>) {
+fn build_ledger(params: &Parameters) -> (LedgerTree, Set<Material>) {
     let mut mats = params.mats.clone();
-    let ledger = Arc::new(Mutex::new(aetherus_events::ledger::Ledger::new()));
-    {
-        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
-
-        for name in mats.names_list() {
-            let mat = mats.get_mut(&name).unwrap();
-            *mat = mat.clone().with_id(ledger_guard.with_mat(name.to_string()));
-        }
-        drop(ledger_guard);
+    let mut ledger = LedgerTree::new();
+    for name in mats.names_list() {
+        let mat = mats.get_mut(&name).unwrap();
+        *mat = mat.clone().with_id(ledger.with_mat(name.to_string()));
     }
 
     (ledger, mats)
@@ -136,7 +131,7 @@ fn build_lights<'a>(params: &Parameters, mats: &'a Set<Material>) -> Set<Light<'
         .expect("Failed to link materials to lights.")
 }
 
-fn build_objects(params: &Parameters, base_output: &Output, ledger: &Arc<Mutex<Ledger>>, mats: &Set<Material>) -> Result<(Vec<Object>, Set<Attribute>), Error> {
+fn build_objects(params: &Parameters, base_output: &Output, ledger: &mut LedgerTree, mats: &Set<Material>) -> Result<(Vec<Object>, Set<Attribute>), Error> {
 
     let attrs_future = params
         .attrs
@@ -165,14 +160,13 @@ fn build_objects(params: &Parameters, base_output: &Output, ledger: &Arc<Mutex<L
         .collect();
 
     for obj in objs.iter_mut() {
-        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
         let src_id = match obj.attr {
             // TODO: Move this to allocate_ids inside Object struct
             Attribute::Interface(..) => {
-                ledger_guard.with_matsurf(obj.obj_name.clone(), obj.mat_name.clone().unwrap(), None)
+                ledger.with_matsurf(obj.obj_name.clone(), obj.mat_name.clone().unwrap(), None)
             },
             Attribute::Mirror(..) | Attribute::Reflector(..) => {
-                ledger_guard.with_surf(obj.obj_name.clone(), None)
+                ledger.with_surf(obj.obj_name.clone(), None)
             },
             _ => SrcId::None,
         };

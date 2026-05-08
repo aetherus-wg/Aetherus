@@ -76,7 +76,7 @@ impl Save for PhotonCollector {
                     phot.power(),
                     phot.weight(),
                     phot.tof().unwrap_or(0.0),
-                    phot.uid().encode(),
+                    phot.node().map(|node| node.uid().unwrap().encode()).unwrap_or(0),
                 )?;
                 pb.tick();
             }

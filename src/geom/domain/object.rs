@@ -426,6 +426,7 @@ impl Build for Scene {
 
         // Splitting of objects at the coplanar intersection with other meshes,
         // to ensure Attribute::Interface is correctly resolved
+        // FIXME: Split the meshes after SrcId allocation to the ledger
         let mut idx = objects.len();
         for i in 0..objects.len() {
             for j in i+1..meshes.len() {
