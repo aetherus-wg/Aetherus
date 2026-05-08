@@ -24,7 +24,7 @@
               rust.fromRustupToolchainFile ./rust-toolchain
             else
               rust.stable.latest.default.override {
-                extensions = [ "rust-src" "rustfmt" "rust-analyzer" ];
+                extensions = [ "rust-src" "rustfmt" "rust-analyzer" "clippy" ];
               };
         };
 
@@ -53,6 +53,7 @@
             llvmPackages.clang
             cmake # Required for static compile of NetCDF.
             cargo-flamegraph
+            python312 # Necesasry for PyO3
           ];
 
           env = {
