@@ -77,12 +77,6 @@ criterion = { version = "0.8.2", features = ["html_reports", "rayon"] }
 integrate = "0.3.1"
 plotters = "0.3.7"
 
-[build]
-rustdocflags = [ "--html-in-header", "./src/docs-header.html" ]
-
-[package.metadata.docs.rs]
-rustdoc-args = [ "--html-in-header", "./src/docs-header.html" ]
-
 [lib]
 
 [[bin]]
