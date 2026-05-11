@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+
+# TODO: Stash unstaged changes first using `stash-hook.sh`, then run the rest
+
+. "$(dirname "$0")"/stash-hook.sh
+
+stash_unstaged_changes
+trap restore_stash EXIT
+
+echo "🚀 Running: pre-commit hook"
+
+echo "Running tests before commit..."
+cargo test --quiet || {
+    echo "❌ Tests failed! Commit aborted."
+    exit 1
+}
+echo "✓ Tests passed"
+
+echo "Running clippy..."
+cargo clippy --all-targets --all-features -- -D warnings || {
+    echo "❌ Clippy found issues. Please fix them and try again."
+    exit 1
+}
+echo "✓ No clippy warnings"
+
+echo "Running check..."
+cargo check --all-targets --all-features || {
+    echo "❌ Clippy found issues. Please fix them and try again."
+    exit 1
+}
+echo "✓ No clippy warnings"
