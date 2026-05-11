@@ -23,7 +23,7 @@ restore_stash() {
     if [ "${STASHED:-0}" -eq 1 ]; then
         echo "📦 Restoring stashed changes..."
         if git stash list | grep -q "hook temporary stash"; then
-            git stash pop --quiet --index
+            git stash pop --index
         else
             echo "⚠️  Warning: Could not find stash to restore"
         fi
