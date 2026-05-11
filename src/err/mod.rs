@@ -13,6 +13,8 @@ pub enum Error {
     /// Parallelisation poison.
     #[error("Parallelisation poison.")]
     Parallel,
+    #[error("Build error: {0}")]
+    Build(String),
     /// Formatting error.
     #[error("Formatting")]
     Format(#[from] std::fmt::Error),

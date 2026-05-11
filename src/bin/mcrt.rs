@@ -56,7 +56,9 @@ fn main() {
     //     &params.attrs,
     // );
 
-    let base_output = params.output.build();
+    let base_output = params.output
+        .build()
+        .expect("Failed to build base output.");
 
     sub_section(term_width, "Linking");
     let lights = params

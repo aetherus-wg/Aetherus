@@ -3,14 +3,15 @@ use std::{
     fmt
 };
 
-use serde::Serialize;
 use arctk_attr::file;
 use crate::{
     fmt_report,
     data::HistogramBuilder,
+    err::Error,
     img::ImageBuilder,
     io::output::{OutputPlaneBuilder, OutputVolumeBuilder, PhotonCollectorBuilder, Output},
-    ord::Name};
+    ord::{Build, Name}
+};
 
 use super::{CcdBuilder, OutputRegistry};
 
@@ -27,29 +28,19 @@ pub struct OutputConfig {
     pub photos: Option<BTreeMap<Name, ImageBuilder>>,
 }
 
-impl OutputConfig {
-
-    pub fn build(&self) -> Output {
-        let reg = OutputRegistry::new_from_config(self);
+impl Build for OutputConfig {
+    type Inst = Output;
+    fn build(self) -> Result<Self::Inst, Error> {
+        let reg = OutputRegistry::new_from_config(&self);
         // Volume output.
         let vol = match &self.volumes {
-            Some(vols) => {
-                vols.iter().map(|(_key, conf)| {
-                    conf.build()
-                })
-                .collect()
-            },
-            None => vec![]
+            Some(vols) => vols.iter().map(|(_key, conf)| conf.build()).collect(),
+            None => vec![],
         };
 
         let plane = match &self.planes {
-            Some(planes) => {
-                planes.iter().map(|(_key, conf)| {
-                    conf.build()
-                })
-                .collect()
-            },
-            None => vec![]
+            Some(planes) => planes.iter().map(|(_key, conf)| conf.build()).collect(),
+            None => vec![],
         };
 
         let phot_cols = match &self.photon_collectors {
@@ -102,7 +93,7 @@ impl OutputConfig {
             None => vec![]
         };
 
-        Output {
+        Ok(Output {
             vol,
             plane,
             phot_cols,
@@ -111,9 +102,11 @@ impl OutputConfig {
             ccds,
             photos,
             reg,
-        }
+        })
     }
+}
 
+impl OutputConfig {
     pub fn n_volumes(&self) -> usize {
         match &self.volumes {
             Some(vol) => vol.iter().count(),
@@ -175,7 +168,7 @@ impl fmt::Display for OutputConfig {
                     fmt_report!(fmt, vol, key);
                 }
             },
-            None => fmt_report!(fmt, "none", "volume outputs")
+            None => fmt_report!(fmt, "none", "volume outputs"),
         }
 
         match &self.planes {
@@ -185,7 +178,7 @@ impl fmt::Display for OutputConfig {
                     fmt_report!(fmt, plane, key);
                 }
             },
-            None => fmt_report!(fmt, "none", "plane outputs")
+            None => fmt_report!(fmt, "none", "plane outputs"),
         }
 
         match &self.photon_collectors {
@@ -195,7 +188,7 @@ impl fmt::Display for OutputConfig {
                     fmt_report!(fmt, pc, key);
                 }
             },
-            None => fmt_report!(fmt, "none", "photon collectors")
+            None => fmt_report!(fmt, "none", "photon collectors"),
         }
 
         match &self.spectra {
@@ -205,7 +198,7 @@ impl fmt::Display for OutputConfig {
                     fmt_report!(fmt, spec, key);
                 }
             },
-            None => fmt_report!(fmt, "none", "spectra")
+            None => fmt_report!(fmt, "none", "spectra"),
         }
 
         match &self.images {
@@ -215,7 +208,7 @@ impl fmt::Display for OutputConfig {
                     fmt_report!(fmt, img, key);
                 }
             },
-            None => fmt_report!(fmt, "none", "images")
+            None => fmt_report!(fmt, "none", "images"),
         }
 
         match &self.ccds {
@@ -225,7 +218,7 @@ impl fmt::Display for OutputConfig {
                     fmt_report!(fmt, ccd, key);
                 }
             },
-            None => fmt_report!(fmt, "none", "ccds")
+            None => fmt_report!(fmt, "none", "ccds"),
         }
 
         match &self.photos {
