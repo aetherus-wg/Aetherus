@@ -1,7 +1,7 @@
-use std::{env, path::Path};
+use std::{env, path::Path, process::Command};
 use aetherus::{
-    err::Error, fs::{File, Load, Save}, geom::{Surface, Tree}, io::output::Output, ord::{Build, Link, Name, Set}, phys::{Light, Material}, sim::{
-        Attribute, Input, Parameters, ParametersBuilderLoader, run
+    err::Error, fs::{File, Load}, geom::{Surface, Tree}, io::output::Output, ord::{Build, Link, Set}, phys::{Material}, sim::{
+        Attribute, Parameters, ParametersBuilderLoader
     }
 };
 
@@ -16,8 +16,6 @@ fn criterion_config(c: &mut Criterion) {
     let params_path = Path::new("scene.json5");
     let input_dir_str = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "benches/data/diffusion");
     let input_dir = Path::new(&input_dir_str);
-    let output_dir_str = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "benches/data/diffusion/out");
-    let output_dir = Path::new(&output_dir_str);
 
     c.bench_function("load_parameters", |b| {
         b.iter(|| {
@@ -28,16 +26,6 @@ fn criterion_config(c: &mut Criterion) {
 
     let params = load_parameters(&input_dir, &params_path);
     let mats = params.mats.clone();
-
-    // Build lights
-    c.bench_function("build_lights", |b| {
-        b.iter(|| {
-            let lights = build_lights(black_box(&params), black_box(&mats));
-            black_box(lights);
-        });
-    });
-
-    let lights = build_lights(&params, &mats);
 
     // Build Output
     c.bench_function("build_output", |b| {
@@ -58,7 +46,7 @@ fn criterion_config(c: &mut Criterion) {
     });
 
     let base_output = params.output.clone().build().unwrap();
-    let (surfs, attrs) = build_objects(&params, &base_output, &mats).unwrap();
+    let (surfs, _attrs) = build_objects(&params, &base_output, &mats).unwrap();
 
     c.bench_function("build_tree", |b| {
         b.iter(|| {
@@ -66,15 +54,6 @@ fn criterion_config(c: &mut Criterion) {
             black_box(tree)
         });
     });
-
-    // Build tree
-    let tree = Tree::new(&params.tree, &surfs);
-
-    // Run simulation
-    let _output = run_sim(&params, attrs, &tree, &mats, lights, base_output, output_dir);
-
-    // Save results to check that the benchmark works correctly
-    //output.save(&output_dir).expect("Failed to save output data.");
 }
 
 fn criterion_sim(c: &mut Criterion) {
@@ -86,20 +65,18 @@ fn criterion_sim(c: &mut Criterion) {
     let output_dir_str = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "benches/data/diffusion/out");
     let output_dir = Path::new(&output_dir_str);
 
+    let bin_path = env!("CARGO_BIN_EXE_mcrt");
+
     c.bench_function("diffusion_sim", |b| {
         b.iter(|| {
-            let params = load_parameters(black_box(&input_dir), black_box(&params_path));
-            let mats = params.mats.clone();
-            let lights = build_lights(&params, &mats);
-            let base_output = black_box(&params).output.clone().build().unwrap();
-            let (surfs, attrs) = build_objects(&params, &base_output, &mats).unwrap();
-
-            let tree = Tree::new(&params.tree, &surfs);
-
-            // Run simulation
-            let output = run_sim(&params, attrs, &tree, &mats, lights, base_output, output_dir);
-
-            black_box(output);
+            Command::new(bin_path)
+                .args(&[
+                        output_dir.to_str().unwrap(),
+                        input_dir.to_str().unwrap(),
+                        params_path.to_str().unwrap(),
+                ])
+                .output()
+                .expect("Failed to execute MCRT binary.");
         });
     });
 }
@@ -114,14 +91,6 @@ fn load_parameters(in_dir: &Path, params_path: &Path) -> Parameters {
     let params = builder.build().expect("Failed to build parameters.");
 
     params
-}
-
-fn build_lights<'a>(params: &Parameters, mats: &'a Set<Material>) -> Set<Light<'a>> {
-    params
-        .lights
-        .clone()
-        .link(&mats)
-        .expect("Failed to link materials to lights.")
 }
 
 fn build_objects(params: &Parameters, base_output: &Output, mats: &Set<Material>) -> Result<(Set<Surface<'static, Attribute>>, Set<Attribute>), Error> {
@@ -154,46 +123,6 @@ fn build_objects(params: &Parameters, base_output: &Output, mats: &Set<Material>
 
 
     Ok((surfs, attrs.clone()))
-}
-
-fn run_sim(
-    params: &Parameters,
-    attrs: Set<Attribute>,
-    tree: &Tree<Attribute>,
-    mats: &Set<Material>,
-    lights: Set<Light>,
-    base_output: Output,
-    output_dir: &Path
-) -> Output {
-    // Core simulation
-    let engine = params.engine.clone();
-    let sett = params.sett.clone();
-    let bound = params.boundary.clone();
-    let mut output = base_output.clone();
-    for (_light_idx, (light_name, light)) in lights.into_iter().enumerate() {
-        let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, light, &tree, &sett, &bound);
-        let data = run::multi_thread(&engine, input, &base_output)
-            .expect("Failed to run MCRT.");
-        // In the case that we are outputting the files for each individual light, we can output it here with a simple setting.
-        if let Some(output_individual) = sett.output_individual_lights() {
-            if output_individual {
-                let indiv_outpath = output_dir.join(&light_name.as_string());
-                if !indiv_outpath.exists() {
-                    // Create the directory for the output if it does not already exist.
-                    std::fs::create_dir(&indiv_outpath).expect(&format!(
-                        "Unable to create output directory for light '{}'",
-                        light_name
-                    ));
-                }
-                data.save(&indiv_outpath).expect(&format!(
-                    "Failed to save output data for light '{}'",
-                    light_name
-                ));
-            }
-        }
-        output += data;
-    }
-    output
 }
 
 criterion_group!(benches, criterion_config, criterion_sim);
