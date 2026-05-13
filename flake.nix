@@ -54,6 +54,7 @@
             cmake # Required for static compile of NetCDF.
             cargo-flamegraph
             python312 # Necesasry for PyO3
+            fontconfig
           ];
 
           env = {
