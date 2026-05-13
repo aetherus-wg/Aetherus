@@ -54,6 +54,12 @@ jobs:
           --project $(echo "${{ github.repository }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]') \
           --branch "$GITHUB_REF_NAME" \
           --testbed ubuntu-latest \
+          --threshold-measure "Mean Absolute Error" \
+          --threshold-test static \
+          --threshold-upper-boundary 0.4 \
+          --threshold-measure "Root Mean Squared Error" \
+          --threshold-test static \
+          --threshold-upper-boundary 0.7 \
           --file results.json \
           --github-actions '${{ secrets.GITHUB_TOKEN }}' \
             cargo bench accuracy
