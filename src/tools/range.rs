@@ -3,7 +3,6 @@
 use crate::clone;
 use arctk_attr::file;
 use std::{
-    f64::{INFINITY, NEG_INFINITY},
     fmt::{Display, Formatter, Result},
 };
 
@@ -35,8 +34,8 @@ impl Range {
     #[must_use]
     pub const fn new_infinite() -> Self {
         Self {
-            min: NEG_INFINITY,
-            max: INFINITY,
+            min: f64::NEG_INFINITY,
+            max: f64::INFINITY,
         }
     }
 

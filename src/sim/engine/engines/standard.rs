@@ -11,7 +11,7 @@ use rand::{Rng, RngExt};
 #[allow(clippy::expect_used)]
 pub fn standard<R: Rng>(
     input: &Input,
-    mut data: &mut Output,
+    data: &mut Output,
     mut rng: &mut R,
     mut phot: Photon,
 ) {
@@ -72,31 +72,31 @@ pub fn standard<R: Rng>(
         // Event handling.
         match Event::new(voxel_dist, scat_dist.unwrap(), surf_hit, boundary_hit, bump_dist) {
             Event::Voxel(dist) => {
-                travel(&mut data, &mut phot, &env, dist + bump_dist);
+                travel(data, &mut phot, &env, dist + bump_dist);
                 // Update scat_dist for the frame of the new position
                 scat_dist = Some(scat_dist.unwrap() - dist - bump_dist);
                 assert!(scat_dist.unwrap() > 0.0);
             },
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env,dist);
+                travel(data, &mut phot, &env,dist);
                 scatter(&mut rng, &mut phot, &env);
                 // Reset scat_dist for the new scattering event
                 scat_dist = None;
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
-                travel(&mut data, &mut phot, &env, bump_dist);
+                travel(data, &mut phot, &env, hit.dist());
+                surface(&mut rng, &hit, &mut phot, &mut env, data);
+                travel(data, &mut phot, &env, bump_dist);
                 // WARN: Is the surface interaction also affecting the scattering statistics like
                 // voxels did?
                 scat_dist = None;
             },
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, boundary_hit.dist());
+                travel(data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
-                    travel(&mut data, &mut phot, &env, bump_dist);
+                    travel(data, &mut phot, &env, bump_dist);
                     scat_dist = Some(scat_dist.unwrap() - boundary_hit.dist()- bump_dist);
                 }
             }

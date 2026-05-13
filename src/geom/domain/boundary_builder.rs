@@ -114,9 +114,9 @@ impl BoundaryConditionBuilder {
     pub fn build(&self) -> BoundaryCondition {
         match self {
             Self::Kill => BoundaryCondition::Kill,
-            Self::Periodic(dist) => BoundaryCondition::Periodic(dist.clone()),
+            Self::Periodic(dist) => BoundaryCondition::Periodic(*dist),
             Self::Reflect(ref_shim) => {
-                let ref_build: ReflectanceBuilder = ref_shim.clone().into();
+                let ref_build: ReflectanceBuilder = ref_shim.clone();
                 let ref_model = ref_build.build().expect("Unable to load reflectance model for boundary. ");
                 BoundaryCondition::Reflect(ref_model)
             },

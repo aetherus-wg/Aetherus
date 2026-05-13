@@ -92,7 +92,6 @@ impl Dir3 {
     }
 
     #[inline]
-    #[must_use]
     pub fn renormalize(&mut self) {
         self.data.renormalize();
     }
@@ -147,7 +146,7 @@ impl Mul<f64> for Dir3 {
 
     #[inline]
     fn mul(self, rhs: f64) -> Vec3 {
-        return Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs);
+        Vec3::new(self.x() * rhs, self.y() * rhs, self.z() * rhs)
     }
 }
 
@@ -183,7 +182,7 @@ impl Neg for Dir3 {
     /// Negation implementation for Dir3.
     #[inline]
     fn neg(self) -> Self::Output {
-        return Self::new(-self.x(), -self.y(), -self.z());
+        Self::new(-self.x(), -self.y(), -self.z())
     }
 }
 

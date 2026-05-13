@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 #[allow(clippy::expect_used)]
 pub fn multi_thread<'a>(
     engine: &Engine,
-    input: Input<'a>,
+    input: &'a Input<'a>,
     output: &Output,
 ) -> Result<Output, Error> {
     let pb = ProgressBar::new("MCRT", input.sett.num_phot());
@@ -25,12 +25,12 @@ pub fn multi_thread<'a>(
     let num_threads = input
         .sett
         .num_threads()
-        .unwrap_or(std::usize::MAX)
+        .unwrap_or(usize::MAX)
         .min(num_cpus::get());
     let threads: Vec<_> = (0..num_threads).collect();
     let mut out: Vec<_> = threads
         .par_iter()
-        .map(|_id| thread(engine, input.clone(), output.clone(), &Arc::clone(&pb)))
+        .map(|_id| thread(engine, input, output.clone(), &Arc::clone(&pb)))
         .collect();
     pb.lock()?.finish_with_message("Simulation complete.");
 
@@ -47,7 +47,7 @@ pub fn multi_thread<'a>(
 #[must_use]
 fn thread<'a>(
     engine: &Engine,
-    input: Input<'a>,
+    input: &'a Input<'a>,
     mut output: Output,
     pb: &Arc<Mutex<ProgressBar>>,
 ) -> Output {
@@ -64,7 +64,7 @@ fn thread<'a>(
     } {
         for _ in start..end {
             let phot = input.light.emit(&mut rng, phot_energy);
-            engine.run(&input, &mut output, &mut rng, phot);
+            engine.run(input, &mut output, &mut rng, phot);
         }
     }
 

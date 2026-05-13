@@ -55,12 +55,12 @@ impl AspectRatio {
         let fy = (total_target as f64 / self.ratio()).sqrt().ceil() as u64;
 
         // Round up to nearest multiple if required.
-        let mx = if fx % mult.0 == 0 {
+        let mx = if fx.is_multiple_of(mult.0) {
             fx
         } else {
             fx + (mult.0 - (fx % mult.0))
         };
-        let my = if fy % mult.1 == 0 {
+        let my = if fy.is_multiple_of(mult.1) {
             fy
         } else {
             fy + (mult.1 - (fx % mult.1))

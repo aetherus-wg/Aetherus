@@ -92,7 +92,7 @@ pub fn surface<R: Rng>(
 
             phot.kill();
         }
-        Attribute::Reflector(ref reflectance) => match reflectance.reflect(rng, &phot, hit) {
+        Attribute::Reflector(ref reflectance) => match reflectance.reflect(rng, phot, hit) {
             Some(ray) => *phot.ray_mut() = ray,
             None => phot.kill(),
         },
@@ -103,9 +103,9 @@ pub fn surface<R: Rng>(
             data.phot_cols[*id].collect_photon(phot);
         },
         Attribute::AttributeChain(ref attrs) => {
-            for attr in attrs.iter() {
+            for attr in attrs {
                 let hit_proxy = Hit::new(attr, hit.dist(), hit.side().clone());
-                surface(rng, &hit_proxy, phot, env, data)
+                surface(rng, &hit_proxy, phot, env, data);
             }
         },
         Attribute::Rasterise(id, ref rasteriser) => {
@@ -118,9 +118,8 @@ pub fn surface<R: Rng>(
             let hp_loc = Point3::new(projected_xy.0, projected_xy.1, phot.wavelength());
             let projected_area = plane.projected_pix_area(&data.vol[*id]);
             let spec_binsize = plane.hyperspectral_bin_size(&data.vol[*id]);
-            match data.vol[*id].gen_index(&hp_loc) {
-                Some(index) => data.vol[*id].data_mut()[index] += phot.power() * phot.weight() / (projected_area * spec_binsize),
-                None => {},
+            if let Some(index) = data.vol[*id].gen_index(&hp_loc) {
+                data.vol[*id].data_mut()[index] += phot.power() * phot.weight() / (projected_area * spec_binsize);
             }
         }
     }

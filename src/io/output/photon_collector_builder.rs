@@ -10,20 +10,14 @@ pub struct PhotonCollectorBuilder {
 impl PhotonCollectorBuilder {
     pub fn build(&self) -> PhotonCollector {
         let mut photcol = PhotonCollector::new();
-        photcol.kill_photon = match self.kill_photons {
-            Some(kp) => kp,
-            None => false
-        };
+        photcol.kill_photon = self.kill_photons.unwrap_or(false);
         photcol
     }
 }
 
 impl Display for PhotonCollectorBuilder {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> std::fmt::Result {
-        let kill_str = match self.kill_photons {
-            Some(kf) => kf,
-            None => false,
-        };
+        let kill_str = self.kill_photons.unwrap_or_default();
         writeln!(fmt, "PhotonCollector: ")?;
         fmt_report!(fmt, kill_str, "kill on collect");
         Ok(())

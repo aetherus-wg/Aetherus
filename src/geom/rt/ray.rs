@@ -36,7 +36,7 @@ impl Ray {
     #[inline]
     #[must_use]
     pub fn new(pos: Point3, mut dir: Dir3) -> Self {
-        let _ = dir.renormalize();
+        dir.renormalize();
         let invdir = Vector3::new(1.0_f64 / dir.x(), 1.0_f64 / dir.y(), 1.0_f64 / dir.z());
         Self { pos, dir, invdir }
     }
@@ -48,7 +48,7 @@ impl Ray {
     }
 
     pub fn update_dir(&mut self, mut dir: Dir3) {
-        let _ = dir.renormalize();
+        dir.renormalize();
         self.dir = dir;
         self.invdir = Vector3::new(1.0 / dir.x(), 1.0 / dir.y(), 1.0 / dir.z());
     }
@@ -70,7 +70,7 @@ impl Ray {
         };
 
         let pitch_axis = self.dir.cross_vec(&arbitrary_axis.into());
-        let pitch_rot = Rot3::from_axis_angle(&Vec3::from(pitch_axis), pitch);
+        let pitch_rot = Rot3::from_axis_angle(&pitch_axis, pitch);
         let roll_rot = Rot3::from_axis_angle(&Vec3::from(self.dir), roll);
 
         self.update_dir(roll_rot * pitch_rot * self.dir);

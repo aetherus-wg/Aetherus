@@ -341,7 +341,6 @@ impl Probability {
     /// Outputs the PDF currently contained in this instance to a file at the provided path.
     ///
     /// **Note:** this is only implemented for `LinearSpline` variants.
-    #[must_use]
     pub fn pdf_to_file(&self, filename: &str) -> Result<(), Error> {
         let mut outfile = File::create(filename)?;
 
@@ -370,7 +369,6 @@ impl Probability {
     /// Outputs the CDF currently contained in this instance to a file at the provided path.
     ///
     /// **Note:** this is only implemented for `LinearSpline` variants.
-    #[must_use]
     pub fn cdf_to_file(&self, filename: &str) -> Result<(), Error> {
         let mut outfile = File::create(filename)?;
 

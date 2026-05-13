@@ -203,7 +203,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
             Self::Interface(_) | Self::Mirror(_) => self,
             Self::Spectrometer(ref mut spec_future) => {
                 if let SpectrometerFuture::Future((name, _range, _resolution)) = spec_future {
-                    if let Some(id) = reg.get(&name) {
+                    if let Some(id) = reg.get(name) {
                         *spec_future = SpectrometerFuture::Value(*id);
                     }
                 }
@@ -213,7 +213,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
                 if let ImagerFuture::Future((name, _resolution, width, center, forward)) =
                     img_future
                 {
-                    if let Some(id) = reg.get(&name) {
+                    if let Some(id) = reg.get(name) {
                         let orient = Orient::new(Ray::new(*center, Dir3::from(*forward)));
                         *img_future = ImagerFuture::Value(*id, *width, orient)
                     }
@@ -224,7 +224,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
                 if let CcdFuture::Future((name, _resolution, width, center, forward, binner)) =
                     ccd_future
                 {
-                    if let Some(id) = reg.get(&name) {
+                    if let Some(id) = reg.get(name) {
                         let orient = Orient::new(Ray::new(*center, Dir3::from(*forward)));
                         *ccd_future = CcdFuture::Value(*id, *width, orient, binner.clone())
                     }
@@ -242,7 +242,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
                 // TODO: `kill_photons` in attributes is not used but the output configuration
                 // is used instead => Remove dead feature
                 if let PhotonCollectorFuture::Future((name, _kill_photons)) = &pc_future {
-                    if let Some(id) = reg.get(&name) {
+                    if let Some(id) = reg.get(name) {
                         return Ok(Self::PhotonCollector(PhotonCollectorFuture::Value(*id)));
                     }
                 }
@@ -250,7 +250,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
             }
             Self::AttributeChain(attrs) => {
                 let linked_attrs: Result<Vec<_>, _> =
-                    attrs.iter().map(|a| a.clone().link(&reg)).collect();
+                    attrs.iter().map(|a| a.clone().link(reg)).collect();
                 Self::AttributeChain(linked_attrs?)
             }
             Self::Rasterise(ref mut id_future, ref mut rasterise_future) => {
@@ -259,7 +259,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
                     *rasterise_future = RasteriseFuture::Value(rasteriser);
                 }
                 if let IdFuture::Future(name) = id_future {
-                    if let Some(id) = reg.get(&name) {
+                    if let Some(id) = reg.get(name) {
                         *id_future = IdFuture::Value(*id);
                     }
                 }
@@ -267,7 +267,7 @@ impl<'a> Link<'a, usize> for AttributeFuture {
             }
             Self::Hyperspectral(ref mut id_future, ref _plane) => {
                 if let IdFuture::Future(name) = id_future {
-                    if let Some(id) = reg.get(&name) {
+                    if let Some(id) = reg.get(name) {
                         *id_future = IdFuture::Value(*id);
                     }
                 }
@@ -288,11 +288,11 @@ impl<'a> Link<'a, Material> for AttributeFuture {
         Ok(match self {
             Self::Interface(ref mut intf_future) => {
                 if let InterfaceFuture::Future((in_name, out_name)) = intf_future {
-                    let inside = mats.get(&in_name).ok_or(Error::Text(format!(
+                    let inside = mats.get(in_name).ok_or(Error::Text(format!(
                         "Failed to link attribute-interface key: {}",
                         in_name
                     )))?;
-                    let outside = mats.get(&out_name).ok_or(Error::Text(format!(
+                    let outside = mats.get(out_name).ok_or(Error::Text(format!(
                         "Failed to link attribute-interface key: {}",
                         out_name
                     )))?;
@@ -358,7 +358,7 @@ impl Display for AttributeFuture {
                 let (in_name, out_name) = unwrap_future!(InterfaceFuture, intf_future).expect(
                     "The attributes has already been built before displaying configuration",
                 );
-                write!(fmt, "Interface: {} :| {}", in_name, out_name)
+                write!(fmt, "Interface: {in_name} :| {out_name}")
             }
             Self::Mirror(abs) => {
                 write!(fmt, "Mirror: {}% abs", abs * 100.0)
@@ -411,7 +411,7 @@ impl Display for AttributeFuture {
                 fmt_report!(
                     fmt,
                     if let Some(diff_ref) = &ref_shim.diff_ref {
-                        format!("{}", diff_ref)
+                        format!("{diff_ref}")
                     } else {
                         String::from("none")
                     },
@@ -420,7 +420,7 @@ impl Display for AttributeFuture {
                 fmt_report!(
                     fmt,
                     if let Some(spec_ref) = &ref_shim.spec_ref {
-                        format!("{}", spec_ref)
+                        format!("{spec_ref}")
                     } else {
                         String::from("none")
                     },
@@ -429,7 +429,7 @@ impl Display for AttributeFuture {
                 fmt_report!(
                     fmt,
                     if let Some(specularity) = ref_shim.specularity {
-                        format!("{}", specularity)
+                        format!("{specularity}")
                     } else {
                         String::from("none")
                     },

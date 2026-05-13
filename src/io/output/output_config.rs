@@ -34,18 +34,18 @@ impl Build for OutputConfig {
         let reg = OutputRegistry::new_from_config(&self);
         // Volume output.
         let vol = match &self.volumes {
-            Some(vols) => vols.iter().map(|(_key, conf)| conf.build()).collect(),
+            Some(vols) => vols.values().map(|conf| conf.build()).collect(),
             None => vec![],
         };
 
         let plane = match &self.planes {
-            Some(planes) => planes.iter().map(|(_key, conf)| conf.build()).collect(),
+            Some(planes) => planes.values().map(|conf| conf.build()).collect(),
             None => vec![],
         };
 
         let phot_cols = match &self.photon_collectors {
             Some(pcs) => {
-                pcs.iter().map(|(_key, conf)| {
+                pcs.values().map(|conf| {
                     conf.build()
                 })
                 .collect()
@@ -55,7 +55,7 @@ impl Build for OutputConfig {
 
         let specs = match &self.spectra {
             Some(specs) => {
-                specs.iter().map(|(_key, conf)| {
+                specs.values().map(|conf| {
                     conf.build()
                 })
                 .collect()
@@ -65,7 +65,7 @@ impl Build for OutputConfig {
 
         let imgs = match &self.images {
             Some(imgs) => {
-                imgs.iter().map(|(_key, conf)| {
+                imgs.values().map(|conf| {
                     conf.build()
                 })
                 .collect()
@@ -75,7 +75,7 @@ impl Build for OutputConfig {
 
         let ccds = match &self.ccds {
             Some(ccds) => {
-                ccds.iter().map(|(_key, conf)| {
+                ccds.values().map(|conf| {
                     conf.build()
                 })
                 .collect()
@@ -85,7 +85,7 @@ impl Build for OutputConfig {
 
         let photos = match &self.photos {
             Some(phots) => {
-                phots.iter().map(|(_key, conf)| {
+                phots.values().map(|conf| {
                     conf.build()
                 })
                 .collect()

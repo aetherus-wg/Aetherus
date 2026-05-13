@@ -15,7 +15,7 @@ pub fn fluorescence(
     flu_concs: &Array3<f64>,
     flu_spec: &Formula,
     input: &Input,
-    mut data: &mut Output,
+    data: &mut Output,
     mut rng: &mut ThreadRng,
     mut phot: Photon,
 ) {
@@ -83,22 +83,22 @@ pub fn fluorescence(
 
         // Event handling.
         match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, dist + bump_dist),
+            Event::Voxel(dist) => travel(data, &mut phot, &env, dist + bump_dist),
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, dist);
+                travel(data, &mut phot, &env, dist);
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut local, &mut data);
-                travel(&mut data, &mut phot, &env, bump_dist);
+                travel(data, &mut phot, &env, hit.dist());
+                surface(&mut rng, &hit, &mut phot, &mut local, data);
+                travel(data, &mut phot, &env, bump_dist);
             }
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, boundary_hit.dist());
+                travel(data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
-                    travel(&mut data, &mut phot, &env, bump_dist);
+                    travel(data, &mut phot, &env, bump_dist);
                 }
             }
         }

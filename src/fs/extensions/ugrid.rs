@@ -9,8 +9,6 @@ use netcdf;
 use std::{path::Path,
           convert::TryInto};
 
-#[allow(clippy::use_self)]
-
 pub fn mesh_from_ugrid(path: &Path) -> Result<Vec<SmoothTriangle>, Error> {
 
     let file = netcdf::open(path)?;

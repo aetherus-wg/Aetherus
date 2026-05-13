@@ -20,12 +20,12 @@ pub fn title(term_width: usize, title: &str) {
 
     for (pos, ch) in title.chars().enumerate() {
         match pos % 6 {
-            0 => print!(" {}", format!("{}", ch).bright_red().bold()),
-            1 => print!(" {}", format!("{}", ch).bright_yellow().bold()),
-            2 => print!(" {}", format!("{}", ch).bright_green().bold()),
-            3 => print!(" {}", format!("{}", ch).bright_cyan().bold()),
-            4 => print!(" {}", format!("{}", ch).bright_blue().bold()),
-            5 => print!(" {}", format!("{}", ch).bright_magenta().bold()),
+            0 => print!(" {}", format!("{ch}").bright_red().bold()),
+            1 => print!(" {}", format!("{ch}").bright_yellow().bold()),
+            2 => print!(" {}", format!("{ch}").bright_green().bold()),
+            3 => print!(" {}", format!("{ch}").bright_cyan().bold()),
+            4 => print!(" {}", format!("{ch}").bright_blue().bold()),
+            5 => print!(" {}", format!("{ch}").bright_magenta().bold()),
             _ => unreachable!(),
         }
     }

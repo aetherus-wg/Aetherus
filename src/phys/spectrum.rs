@@ -51,7 +51,7 @@ impl Spectrum {
             Self::Data(ref lams, ref vals) => {
                 // First check that the wavelength falls within the region of wavelength spectrum that we cover.
                 // If not, we are done. Just return a None.
-                if lams.iter().count() > 0
+                if !lams.is_empty()
                     && (lam < *lams.iter().next().unwrap() || lam > *lams.iter().last().unwrap())
                 {
                     return None;
@@ -87,7 +87,7 @@ impl Spectrum {
     pub fn min_lam(&self) -> Option<&f64> {
         match *self {
             Self::Constant(_) => None,
-            Self::Tophat(ref lower, _, _) => Some(&lower),
+            Self::Tophat(ref lower, _, _) => Some(lower),
             Self::Data(ref lams, _) => lams.iter().min_by(|a, b| a.total_cmp(b)),
         }
     }
@@ -95,23 +95,23 @@ impl Spectrum {
     pub fn max_lam(&self) -> Option<&f64> {
         match *self {
             Self::Constant(_) => None,
-            Self::Tophat(_, ref upper, _) => Some(&upper),
+            Self::Tophat(_, ref upper, _) => Some(upper),
             Self::Data(ref lams, _) => lams.iter().max_by(|a, b| a.total_cmp(b)),
         }
     }
 
     pub fn min_val(&self) -> Option<&f64> {
         match *self {
-            Self::Constant(ref value) => Some(&value),
-            Self::Tophat(_, _, ref value) => Some(&value),
+            Self::Constant(ref value) => Some(value),
+            Self::Tophat(_, _, ref value) => Some(value),
             Self::Data(_, ref vals) => vals.iter().min_by(|a, b| a.total_cmp(b)),
         }
     }
 
     pub fn max_val(&self) -> Option<&f64> {
         match *self {
-            Self::Constant(ref value) => Some(&value),
-            Self::Tophat(_, _, ref value) => Some(&value),
+            Self::Constant(ref value) => Some(value),
+            Self::Tophat(_, _, ref value) => Some(value),
             Self::Data(_, ref vals) => vals.iter().max_by(|a, b| a.total_cmp(b)),
         }
     }
@@ -135,8 +135,8 @@ impl Display for Spectrum {
             }
             Self::Data(ref lam, _) => {
                 writeln!(fmt, "Data: ")?;
-                fmt_report!(fmt, lam.iter().count(), "no. points");
-                if lam.iter().count() > 1 {
+                fmt_report!(fmt, lam.len(), "no. points");
+                if lam.len() > 1 {
                     fmt_report!(
                         fmt,
                         format!(

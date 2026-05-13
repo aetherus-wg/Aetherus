@@ -39,7 +39,7 @@ impl Binner {
 
         let frac = (x - self.range.min()) / self.range.width();
         let bin = (frac * self.bins as f64).floor() as usize;
-        bin.min(self.bins - 1) as usize
+        bin.min(self.bins - 1)
     }
 
     /// Determine the corresponding bin if the value is within the range.

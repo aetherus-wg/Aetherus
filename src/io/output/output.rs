@@ -45,14 +45,9 @@ impl Output {
     /// in the path of travel of the packet, in that case return `None`.
     pub fn voxel_dist(&self, phot: &Photon) -> f64 {
         let dists: Vec<f64> = self.vol.iter()
-            .map(|grid| { grid.voxel_dist(phot) })
-            .filter(Option::is_some)
-            .map(Option::unwrap)
+            .filter_map(|grid| { grid.voxel_dist(phot) })
             .collect();
-        match dists.into_iter().reduce(f64::min) {
-            Some(val) => val,
-            None => f64::INFINITY,
-        }
+        dists.into_iter().reduce(f64::min).unwrap_or(f64::INFINITY)
     }
 
     pub fn get_volumes_for_param(&self, param: OutputParameter) -> Vec<&OutputVolume> {
@@ -105,34 +100,34 @@ impl Save for Output {
     fn save_data(&self, out_dir: &Path) -> Result<(), Error> {
 
         for (vol, name) in self.vol.iter().zip(self.reg.vol_reg.names_list()) {
-            let path = out_dir.join(format!("volume_{}.nc", name.to_string()));
+            let path = out_dir.join(format!("volume_{name}.nc"));
             vol.save(&path)?;
         }
 
         for (plane, name) in self.plane.iter().zip(self.reg.plane_reg.names_list()) {
-            let path = out_dir.join(format!("plane_{}.nc", name.to_string()));
+            let path = out_dir.join(format!("plane_{name}.nc"));
             plane.save(&path)?;
         }
 
         for (name, index) in self.reg.spec_reg.set().map().iter() {
-            self.specs[*index].save(&out_dir.join(&format!("spectrometer_{}.csv", name)))?;
+            self.specs[*index].save(&out_dir.join(format!("spectrometer_{name}.csv")))?;
         }
 
         for (name, index) in self.reg.img_reg.set().map().iter() {
-            self.imgs[*index].save(&out_dir.join(&format!("img_{}.png", name)))?;
+            self.imgs[*index].save(&out_dir.join(format!("img_{name}.png")))?;
         }
 
         for (name, index) in self.reg.ccd_reg.set().map().iter() {
-            self.ccds[*index].save(&out_dir.join(&format!("ccd_{}.nc", name)))?;
+            self.ccds[*index].save(&out_dir.join(format!("ccd_{name}.nc")))?;
         }
 
         for (n, photo) in self.photos.iter().enumerate() {
-            photo.save(&out_dir.join(&format!("photo_{:03}.png", n)))?;
+            photo.save(&out_dir.join(format!("photo_{n:03}.png")))?;
         }
 
         for (name, index) in self.reg.phot_cols_reg.set().map().iter() {
             self.phot_cols[*index]
-                .save(&out_dir.join(&format!("photon_collector_{}.csv", name)))?;
+                .save(&out_dir.join(format!("photon_collector_{name}.csv")))?;
         }
 
         Ok(())

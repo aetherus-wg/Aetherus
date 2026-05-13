@@ -103,7 +103,7 @@ impl<'a> Output<'a> {
             spec_reg,
             img_reg,
             ccd_reg,
-            phot_col_reg: phot_col_reg,
+            phot_col_reg,
             specs,
             imgs,
             ccds,
@@ -156,25 +156,25 @@ impl Save for Output<'_> {
         let path = out_dir.join("shift_density.nc");
         (&self.shifts / self.cell_vol).save(&path)?;
 
-        for (name, index) in self.spec_reg.set().map().iter() {
-            self.specs[*index].save(&out_dir.join(&format!("spectrometer_{}.csv", name)))?;
+        for (name, index) in self.spec_reg.set().map() {
+            self.specs[*index].save(&out_dir.join(format!("spectrometer_{name}.csv")))?;
         }
 
-        for (name, index) in self.img_reg.set().map().iter() {
-            self.imgs[*index].save(&out_dir.join(&format!("img_{}.png", name)))?;
+        for (name, index) in self.img_reg.set().map() {
+            self.imgs[*index].save(&out_dir.join(format!("img_{name}.png")))?;
         }
 
-        for (name, index) in self.ccd_reg.set().map().iter() {
-            self.ccds[*index].save(&out_dir.join(&format!("ccd_{}.nc", name)))?;
+        for (name, index) in self.ccd_reg.set().map() {
+            self.ccds[*index].save(&out_dir.join(format!("ccd_{name}.nc")))?;
         }
 
         for (n, photo) in self.photos.iter().enumerate() {
-            photo.save(&out_dir.join(&format!("photo_{:03}.png", n)))?;
+            photo.save(&out_dir.join(format!("photo_{n:03}.png")))?;
         }
 
-        for (name, index) in self.phot_col_reg.set().map().iter() {
+        for (name, index) in self.phot_col_reg.set().map() {
             self.phot_cols[*index]
-                .save(&out_dir.join(&format!("photon_collector_{}.csv", name)))?;
+                .save(&out_dir.join(format!("photon_collector_{name}.csv")))?;
         }
 
         Ok(())

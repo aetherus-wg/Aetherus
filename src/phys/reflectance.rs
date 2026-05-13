@@ -14,26 +14,14 @@ use std::{f64::consts::PI, fmt::Display};
 pub fn reflectance_spectrum_valid(spec: &Spectrum) -> bool {
     match *spec {
         Spectrum::Constant(ref val) | Spectrum::Tophat(_, _, ref val) => {
-            if *val >= 0.0 && *val <= 1.0 {
-                true
-            } else {
-                false
-            }
+            *val >= 0.0 && *val <= 1.0
         }
         Spectrum::Data(_, _) => {
             let max = spec.max_val();
             let min = spec.min_val();
 
-            if min.is_some() && max.is_some() {
-                if *max.unwrap() <= 1.0 && *max.unwrap() >= 0.0 {
-                    if *max.unwrap() <= 1.0 && *max.unwrap() >= 0.0 {
-                        true
-                    } else {
-                        false
-                    }
-                } else {
-                    false
-                }
+            if let (Some(min), Some(max)) = (min, max) {
+                *max <= 1.0 && *max >= 0.0 && *min >= 0.0 && *min <= *max
             } else {
                 false
             }
@@ -147,8 +135,8 @@ impl Reflectance {
                             let phi = (rng.random_range(0.0..1.0) as Real).asin();
 
                             let mut reflected_ray = Ray::new(
-                                incident_photon.ray().pos().clone(),
-                                hit.side().norm().clone(),
+                                *incident_photon.ray().pos(),
+                                *hit.side().norm(),
                             );
                             reflected_ray.rotate(phi, theta);
                             Some(reflected_ray)
@@ -172,7 +160,7 @@ impl Reflectance {
                                     * hit.side().norm().dot(&-*incident_photon.ray().dir())
                                     * hit.side().norm();
                             let reflected_ray =
-                                Ray::new(incident_photon.ray().pos().clone(), reflect.into());
+                                Ray::new(*incident_photon.ray().pos(), reflect.into());
                             Some(reflected_ray)
                         } else {
                             None

@@ -2,10 +2,7 @@
 #![warn(
     clippy::all,
     clippy::cargo,
-    clippy::missing_docs_in_private_items,
-    clippy::nursery,
-    clippy::pedantic,
-    clippy::restriction
+    //clippy::missing_docs_in_private_items,
 )]
 #![allow(
     clippy::as_conversions,
@@ -21,8 +18,7 @@
     clippy::float_arithmetic,
     clippy::implicit_return,
     clippy::indexing_slicing,
-    clippy::integer_arithmetic,
-    clippy::integer_division,
+    clippy::arithmetic_side_effects,
     clippy::missing_panics_doc,
     clippy::missing_inline_in_public_items,
     clippy::module_name_repetitions,
@@ -33,6 +29,7 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::single_call_fn,
+    clippy::too_many_arguments,
     clippy::unreachable,
     clippy::unwrap_used
 )]

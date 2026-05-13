@@ -59,7 +59,7 @@ impl Neg for Dir2 {
     /// Negation implementation for Dir2.
     #[inline]
     fn neg(self) -> Self::Output {
-        return Self::new(-self.x(), -self.y());
+        Self::new(-self.x(), -self.y())
     }
 }
 

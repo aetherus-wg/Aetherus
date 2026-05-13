@@ -25,14 +25,14 @@ impl PhotonCollector {
     }
 
     pub fn nphoton(&self) -> usize {
-        self.photons.iter().count()
+        self.photons.len()
     }
 }
 
 impl Save for PhotonCollector {
     /// Loads the fields of the photon into a vec of vecs and outputs using a table to CSV.
     fn save_data(&self, path: &Path) -> Result<(), Error> {
-        if self.photons.iter().count() > 0 {
+        if !self.photons.is_empty() {
             let mut file = File::create(path)?;
 
             // To reduce the time to run, I am manually do my won CSV write, directly from this vec.
@@ -54,7 +54,7 @@ impl Save for PhotonCollector {
             writeln!(file)?;
 
             // This can potentually
-            let mut pb = ProgressBar::new("Saving Photons", self.photons.iter().count());
+            let mut pb = ProgressBar::new("Saving Photons", self.photons.len());
 
             // Write the properties of each of the photons to the output table.
             for phot in self.photons.iter() {
@@ -123,7 +123,7 @@ mod tests {
     #[test]
     fn test_clone_photon_collector() {
         let mut col = PhotonCollector::new();
-        // This time we will get it to kill the photon when we collect it. 
+        // This time we will get it to kill the photon when we collect it.
         col.kill_photon = true;
         let pos = Point3::new(0.0, 0.0, 0.0);
         let dir = Dir3::new(1.0, 0.0, 0.0);
@@ -139,7 +139,7 @@ mod tests {
         assert_eq!(cloned.photons[0].wavelength(), 5.0E-7);
         assert_eq!(cloned.photons[0].power(), 1.0);
 
-        // Check that the photon was indeed killed. 
+        // Check that the photon was indeed killed.
         assert_eq!(test_phot.weight(), 0.0);
     }
 
@@ -151,7 +151,7 @@ mod tests {
         let dir = Dir3::new(1.0, 0.0, 0.0);
         let mut test_phot = Photon::new(Ray::new(pos.clone(), dir.clone()), 5.0E-7, 1.0);
 
-        // Now collect the photon and check that everything was conserved during the clone. 
+        // Now collect the photon and check that everything was conserved during the clone.
         col1.collect_photon(&mut test_phot);
         col2.collect_photon(&mut test_phot);
         col1 += &col2;

@@ -40,7 +40,7 @@ impl<T> Set<T> {
 
         for (key, item) in list {
             if map.contains_key(&key) {
-                return Err(Error::Text(format!("Duplicate entries for group: {}", key)));
+                return Err(Error::Text(format!("Duplicate entries for group: {key}")));
             }
 
             map.insert(key, item);
@@ -52,7 +52,7 @@ impl<T> Set<T> {
     pub fn combine(self, rhs: Self) -> Result<Self, Error> {
         let combined_pairs = self
             .into_iter()
-            .chain(rhs.into_iter())
+            .chain(rhs)
             .collect();
         Self::from_pairs(combined_pairs)
     }
@@ -81,7 +81,6 @@ impl<T> Set<T> {
 
     /// Iterate over the values.
     #[inline]
-    #[must_use]
     pub fn values(&self) -> Values<'_, Name, T> {
         self.0.values()
     }
@@ -163,7 +162,7 @@ impl<'a, T, S: Link<'a, T>> Link<'a, T> for Set<S> {
     fn requires(&self) -> Vec<Name> {
         self.0
             .values()
-            .map(|v| v.requires())
+            .map(Link::requires)
             .collect::<Vec<_>>()
             .into_iter()
             .flatten()
@@ -183,7 +182,7 @@ impl<T: Display> Display for Set<T> {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "...")?;
         for (key, val) in &self.0 {
-            fmt_report!(fmt, val, &format!("{}", key));
+            fmt_report!(fmt, val, &format!("{key}"));
         }
         Ok(())
     }

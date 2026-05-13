@@ -71,7 +71,7 @@ impl Crossing {
         let r_tran_sqrt = (n2_c_i - n1_c_t) / (n2_c_i + n1_c_t);
         let r_tran = r_tran_sqrt * r_tran_sqrt;
 
-        (r_norm + r_tran) / 2.0
+        f64::midpoint(r_norm, r_tran)
     }
 
     /// Calculate the reflection direction.

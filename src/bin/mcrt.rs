@@ -111,7 +111,7 @@ fn main() {
             let input = Input::new(&base_output.reg.spec_reg, &mats, &attrs, light, &tree, &sett, &bound);
 
             let data =
-                run::multi_thread(&engine, input, &base_output).expect("Failed to run MCRT.");
+                run::multi_thread(&engine, &input, &base_output).expect("Failed to run MCRT.");
 
             // In the case that we are outputting the files for each individual light, we can output it here with a simple setting.
             if let Some(output_individual) = sett.output_individual_lights() {

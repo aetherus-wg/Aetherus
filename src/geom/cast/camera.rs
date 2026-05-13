@@ -67,7 +67,7 @@ impl Camera {
     #[inline]
     #[must_use]
     pub const fn num_samples(&self) -> usize {
-        self.num_super_samples() * self.num_pixels() as usize
+        self.num_super_samples() * self.num_pixels()
     }
 
     /// Emit a ray for the given pixel and super-sample.

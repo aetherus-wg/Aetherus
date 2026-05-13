@@ -142,7 +142,7 @@ impl AddAssign<&Self> for OutputPlane {
 
 impl Save for OutputPlane {
     fn save_data(&self, path: &std::path::Path) -> Result<(), crate::err::Error> {
-        self.data.save(&path)?;
+        self.data.save(path)?;
         Ok(())
     }
 }

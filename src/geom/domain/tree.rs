@@ -63,32 +63,32 @@ impl<'a, T> Tree<'a, T> {
     /// Initialise the boundary encompassing all of the mesh vertices.
     #[must_use]
     fn init_boundary(surfs: &Set<Surface<T>>) -> Cube {
-        let mut mins = None;
-        let mut maxs = None;
+        let mut mins: Option<Point3> = None;
+        let mut maxs: Option<Point3> = None;
 
         for surf in surfs.values() {
             let (mesh_mins, mesh_maxs) = surf.mesh().boundary().mins_maxs();
 
-            if mins.is_none() {
-                mins = Some(mesh_mins);
-            } else {
-                for (grid_min, mesh_min) in mins.as_mut().unwrap().iter_mut().zip(mesh_mins.iter())
+            if let Some(inner_mins) = mins.as_mut() {
+                for (grid_min, mesh_min) in inner_mins.iter_mut().zip(mesh_mins.iter())
                 {
                     if mesh_min < grid_min {
                         *grid_min = *mesh_min;
                     }
                 }
+            } else {
+                mins = Some(mesh_mins);
             }
 
-            if maxs.is_none() {
-                maxs = Some(mesh_maxs);
-            } else {
-                for (grid_max, mesh_max) in maxs.as_mut().unwrap().iter_mut().zip(mesh_maxs.iter())
+            if let Some(inner_maxs) = maxs.as_mut() {
+                for (grid_max, mesh_max) in inner_maxs.iter_mut().zip(mesh_maxs.iter())
                 {
                     if mesh_max > grid_max {
                         *grid_max = *mesh_max;
                     }
                 }
+            } else {
+                maxs = Some(mesh_maxs);
             }
         }
 
@@ -99,7 +99,7 @@ impl<'a, T> Tree<'a, T> {
     #[allow(clippy::similar_names)]
     #[must_use]
     fn init_children(
-        mut pb: &mut ProgressBar,
+        pb: &mut ProgressBar,
         sett: &TreeSettings,
         parent_boundary: &Cube,
         depth: u32,
@@ -112,7 +112,7 @@ impl<'a, T> Tree<'a, T> {
         let mut make_child = |min_x: f64, min_y: f64, min_z: f64| {
             let min = Point3::new(min_x, min_y, min_z);
             Self::init_child(
-                &mut pb,
+                pb,
                 sett,
                 Cube::new(min, min + hws),
                 depth,
@@ -137,7 +137,7 @@ impl<'a, T> Tree<'a, T> {
     /// Initialise a child cell.
     #[must_use]
     fn init_child(
-        mut pb: &mut ProgressBar,
+        pb: &mut ProgressBar,
         sett: &TreeSettings,
         boundary: Cube,
         depth: u32,
@@ -161,7 +161,7 @@ impl<'a, T> Tree<'a, T> {
         }
 
         let children = Box::new(Self::init_children(
-            &mut pb,
+            pb,
             sett,
             &boundary,
             depth + 1,

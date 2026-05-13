@@ -49,32 +49,30 @@ impl Cube {
     /// Initialise the boundary encompassing all of the mesh vertices.
     #[must_use]
     pub fn new_shrink(surfs: &[Mesh]) -> Self {
-        let mut mins = None;
-        let mut maxs = None;
+        let mut mins: Option<Point3> = None;
+        let mut maxs: Option<Point3> = None;
 
         for mesh in surfs {
             let (mesh_mins, mesh_maxs) = mesh.boundary().mins_maxs();
 
-            if mins.is_none() {
-                mins = Some(mesh_mins);
-            } else {
-                for (grid_min, mesh_min) in mins.as_mut().unwrap().iter_mut().zip(mesh_mins.iter())
-                {
+            if let Some(inner_mins) = mins.as_mut() {
+                for (grid_min, mesh_min) in inner_mins.iter_mut().zip(mesh_mins.iter()) {
                     if mesh_min < grid_min {
                         *grid_min = *mesh_min;
                     }
                 }
+            } else {
+                mins = Some(mesh_mins);
             }
 
-            if maxs.is_none() {
-                maxs = Some(mesh_maxs);
-            } else {
-                for (grid_max, mesh_max) in maxs.as_mut().unwrap().iter_mut().zip(mesh_maxs.iter())
-                {
+            if let Some(inner_maxs) = maxs.as_mut() {
+                for (grid_max, mesh_max) in inner_maxs.iter_mut().zip(mesh_maxs.iter()) {
                     if mesh_max > grid_max {
                         *grid_max = *mesh_max;
                     }
                 }
+            } else {
+                maxs = Some(mesh_maxs);
             }
         }
 

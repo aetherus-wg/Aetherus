@@ -30,9 +30,9 @@ where
             Self::Single(redir) => Load::load(redir, in_dir),
             Self::Multi(redirs) => {
                 redirs.into_iter()
-                    .fold(Ok(Set::empty()), |acc, redir| {
+                    .try_fold(Set::empty(), |acc, redir| {
                         let curr_set = Load::load(redir, in_dir).context("Set load from MultiSet")?;
-                        acc?.combine(curr_set)
+                        acc.combine(curr_set)
                     })
             }
         }
@@ -43,11 +43,11 @@ impl<T: Display> Display for MultiSet<T> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             Self::Single(ref set) => {
-                writeln!(fmt, "{}", set)?;
+                writeln!(fmt, "{set}")?;
             },
             Self::Multi(ref ms) => {
                 writeln!(fmt, "MultiSet: ")?;
-                fmt_report!(fmt, ms.iter().count(), "length");
+                fmt_report!(fmt, ms.len(), "length");
             }
         };
         Ok(())

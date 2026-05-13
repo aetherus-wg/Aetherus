@@ -88,7 +88,7 @@ impl Boundary {
             }
             BoundaryCondition::Reflect(reflectance) => {
                 // Handle Reflect variant
-                match reflectance.reflect(rng, &phot, &hit.get_hit()) {
+                match reflectance.reflect(rng, phot, &hit.get_hit()) {
                     Some(ray) => *phot.ray_mut() = ray,
                     None => phot.kill(),
                 }
@@ -96,7 +96,7 @@ impl Boundary {
             #[cfg(not(feature = "mpi"))]
             BoundaryCondition::Periodic(padding) => {
                 // Get the opposing boundary
-                self.set_ray_to_opposite_boundary(&mut phot.ray_mut(), hit.direction(), padding);
+                self.set_ray_to_opposite_boundary(phot.ray_mut(), hit.direction(), padding);
             }
             #[cfg(feature = "mpi")]
             BoundaryCondition::Periodic(_padding) => {
@@ -171,7 +171,7 @@ impl Boundary {
             // Now we have to find the boundary that the ray is going to hit.
             // We can do this by finding the max absolutel component value of the
             // vector. Then, find the dir
-            let dir = self.boundary_direction(&ray).expect("Ray outside of boundary. ");
+            let dir = self.boundary_direction(ray).expect("Ray outside of boundary. ");
             return Some(BoundaryHit::new(
                 self.condition_for_boundary(&dir),
                 dist,
@@ -212,18 +212,18 @@ impl Boundary {
         let max_point = Point3::new(self.bounding_box().maxs()[0], self.bounding_box().maxs()[1], self.bounding_box().maxs()[2]);
         let mut facing_dir = None;
         for (i, &dir) in dirs.iter().enumerate() {
-            if let Some(point) = ray_plane_intersection(&ray, if i % 2 == 0 { min_point } else { max_point }, dir.normal_vector()) {
+            if let Some(point) = ray_plane_intersection(ray, if i % 2 == 0 { min_point } else { max_point }, dir.normal_vector()) {
                 if point.x() >= min_point.x() - TOLLERANCE  && point.x() <= max_point.x() + TOLLERANCE &&
                    point.y() >= min_point.y() - TOLLERANCE  && point.y() <= max_point.y() + TOLLERANCE &&
                    point.z() >= min_point.z() - TOLLERANCE && point.z() <= max_point.z() + TOLLERANCE
                 {
-                    facing_dir = Some(dir.clone());
+                    facing_dir = Some(dir);
                     break;
                 }
             }
         }
 
-        return facing_dir;
+        facing_dir
     }
 
     /// If the given position is contained within the grid,
@@ -395,13 +395,13 @@ impl<'a> BoundaryHit<'a> {
     }
 }
 
-impl<'a> Into<Hit<'a, Attribute>> for BoundaryHit<'a> {
-    fn into(self) -> Hit<'a, Attribute> {
+impl<'a> From<BoundaryHit<'a>> for Hit<'a, Attribute> {
+    fn from(val: BoundaryHit<'a>) -> Self {
         // Not the most elegant implementation, as the tag is not used.
         Hit::new(
             &Attribute::Mirror(0.0),
-            self.dist(),
-            Side::Inside(self.direction().normal_vector()),
+            val.dist(),
+            Side::Inside(val.direction().normal_vector()),
         )
     }
 }

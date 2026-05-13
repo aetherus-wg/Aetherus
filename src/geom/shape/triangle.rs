@@ -79,13 +79,11 @@ impl Triangle {
     #[inline]
     #[must_use]
     pub fn centre(&self) -> Point3 {
-        Point3::from(
-            ((self.verts[ALPHA].to_homogeneous()
-                + self.verts[BETA].to_homogeneous()
-                + self.verts[GAMMA].to_homogeneous())
-                / 3.0)
-                .xyz(),
-        )
+        ((self.verts[ALPHA].to_homogeneous()
+            + self.verts[BETA].to_homogeneous()
+            + self.verts[GAMMA].to_homogeneous())
+            / 3.0)
+            .xyz()
     }
 
     /// Determine the intersection distance along a `Ray`'s direction.
@@ -97,7 +95,7 @@ impl Triangle {
         let e1 = verts[BETA] - verts[ALPHA];
         let e2 = verts[GAMMA] - verts[ALPHA];
 
-        let d_cross_e2 = ray.dir().cross_vec(&e2.into());
+        let d_cross_e2 = ray.dir().cross_vec(&e2);
         let e1_dot_d_cross_e2 = e1.dot(&d_cross_e2);
 
         if e1_dot_d_cross_e2.abs() <= 0.0 {

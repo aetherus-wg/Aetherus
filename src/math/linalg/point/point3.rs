@@ -189,7 +189,7 @@ impl Sub<&Point3> for Point3 {
 
     #[inline]
     fn sub(self, rhs: &Self) -> Vec3 {
-        Vec3::from(self - *rhs)
+        self - *rhs
     }
 }
 
@@ -198,7 +198,7 @@ impl Sub<Point3> for &Point3 {
 
     #[inline]
     fn sub(self, rhs: Point3) -> Vec3 {
-        Vec3::from(*self - rhs)
+        *self - rhs
     }
 }
 
@@ -207,7 +207,7 @@ impl Sub<&Point3> for &Point3 {
 
     #[inline]
     fn sub(self, rhs: &Point3) -> Vec3 {
-        Vec3::from(*self - *rhs)
+        *self - *rhs
     }
 }
 
@@ -234,7 +234,7 @@ impl Sub<Vec3> for &Point3 {
 
     #[inline]
     fn sub(self, rhs: Vec3) -> Point3 {
-        Point3::from(*self - rhs)
+        *self - rhs
     }
 }
 
@@ -243,7 +243,7 @@ impl Sub<&Vec3> for &Point3 {
 
     #[inline]
     fn sub(self, rhs: &Vec3) -> Point3 {
-        Point3::from(*self - *rhs)
+        *self - *rhs
     }
 }
 

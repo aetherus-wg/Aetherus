@@ -55,7 +55,7 @@ impl<T: NcTypeDescriptor> Save for Array2<T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values(&arr, ..).unwrap();
+        var.put_values(arr, ..).unwrap();
 
         Ok(())
     }
@@ -74,7 +74,7 @@ impl<T: NcTypeDescriptor> Save for ArrayView2<'_, T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values(&arr, ..).unwrap();
+        var.put_values(arr, ..).unwrap();
 
         Ok(())
     }
@@ -95,7 +95,7 @@ impl<T: NcTypeDescriptor + std::fmt::Display> Save for Array3<T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values(&arr, ..).unwrap();
+        var.put_values(arr, ..).unwrap();
 
         Ok(())
     }
@@ -116,7 +116,7 @@ impl<T: NcTypeDescriptor> Save for ArrayView3<'_, T> {
 
         let mut var = file.add_variable::<T>("data", &[dim1_name, dim2_name, dim3_name])?;
         let arr = self.as_slice().ok_or("Missing slice data.")?;
-        var.put_values(&arr, ..).unwrap();
+        var.put_values(arr, ..).unwrap();
 
         Ok(())
     }

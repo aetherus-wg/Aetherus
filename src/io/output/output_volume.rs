@@ -155,7 +155,7 @@ impl AddAssign<&Self> for OutputVolume {
 
 impl Save for OutputVolume {
     fn save_data(&self, path: &std::path::Path) -> Result<(), crate::err::Error> {
-        (&self.data / self.voxel_volume()).save(&path)?;
+        (&self.data / self.voxel_volume()).save(path)?;
         Ok(())
     }
 }

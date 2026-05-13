@@ -38,7 +38,7 @@ impl Histogram {
 
         Self {
             binner: Binner::new(Range::new(min, max), bins),
-            counts: Array1::zeros(bins as usize),
+            counts: Array1::zeros(bins),
         }
     }
 
@@ -47,7 +47,7 @@ impl Histogram {
     pub fn new_range(range: Range, bins: usize) -> Self {
         Self {
             binner: Binner::new(range, bins),
-            counts: Array1::zeros(bins as usize),
+            counts: Array1::zeros(bins),
         }
     }
 

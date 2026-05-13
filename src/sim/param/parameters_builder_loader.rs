@@ -22,7 +22,7 @@ use std::path::Path;
 pub struct ParametersBuilderLoader {
     /// Simulation specific settings.
     sett: Redirect<Settings>,
-    // Boundary conditions.
+    /// Boundary conditions.
     boundary: Redirect<BoundaryBuilder>,
     /// Tree settings.
     tree: Redirect<TreeSettings>,

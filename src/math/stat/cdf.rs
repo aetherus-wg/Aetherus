@@ -30,7 +30,7 @@ impl CumulativeDistributionFunction {
         values: Vec<Real>,
         bin_width: Real,
     ) -> Self {
-        let bins = (0..cumulative_probability.iter().count())
+        let bins = (0..cumulative_probability.len())
             .map(|i| CumulativeDistributionBin {
                 cumulative_prob: cumulative_probability[i],
                 width: bin_width,
@@ -42,7 +42,7 @@ impl CumulativeDistributionFunction {
     }
 
     pub fn from_spline_points(probs: Vec<Real>, values: Vec<Real>) -> Self {
-        let keys = (0..probs.iter().count())
+        let keys = (0..probs.len())
             .map(|i| Key::new(probs[i], values[i], Interpolation::Linear))
             .collect();
 
@@ -55,7 +55,7 @@ impl CumulativeDistributionFunction {
         let mut cumulative_prob: Vec<Real> = prob
             .iter()
             .map(|prob| {
-                let current_accum = accum.clone();
+                let current_accum = accum;
                 accum += *prob;
                 current_accum
             })
@@ -83,7 +83,7 @@ impl CumulativeDistributionFunction {
                     // This is the first bin edge that is greater than the search, so go to the previous one.
                     Some(ibin) => ibin - 1,
                     // If no bin edge is greater, then it must lie in the final bin.
-                    None => bins.iter().count() - 1,
+                    None => bins.len() - 1,
                 };
                 bins[ibin].value
             }
@@ -105,11 +105,11 @@ impl CumulativeDistributionFunction {
             Self::Bins(ref bins) => {
                 // Write the header
                 let _ = writeln!(outfile, "# cdf_bin_centre\tcdf_bin_width\tvalue");
-                for i in 0..bins.iter().count() {
+                for item in bins {
                     outfile.write_all(
                         format!(
                             "{}\t{}\t{}\n",
-                            bins[i].cumulative_prob, bins[i].width, bins[i].value
+                            item.cumulative_prob, item.width, item.value
                         )
                         .as_bytes(),
                     )?;

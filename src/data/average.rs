@@ -17,6 +17,12 @@ pub struct Average {
     total: Real,
 }
 
+impl Default for Average {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Average {
     clone!(counts: Int);
     clone!(total: Real);

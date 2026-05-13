@@ -14,7 +14,7 @@ impl SpectrumBuilder {
     pub fn build(&self) -> Result<Spectrum, Error> {
         match *self {
             Self::Constant(ref value) => Ok(Spectrum::new_constant(*value)),
-            Self::Spectrum(ref input_file) => Spectrum::data_from_file(&Path::new(&input_file)),
+            Self::Spectrum(ref input_file) => Spectrum::data_from_file(Path::new(&input_file)),
             Self::Tophat(lower, upper, val) => Ok(Spectrum::new_tophat(lower, upper, val)),
             Self::Linear(lower, upper, lower_value, upper_value) => {
                 Ok(Spectrum::new_linear(lower, upper, lower_value, upper_value))

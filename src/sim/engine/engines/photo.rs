@@ -16,11 +16,11 @@ use rand::{rngs::ThreadRng, RngExt};
 pub fn photo(
     frames: &[Frame],
     input: &Input,
-    mut data: &mut Output,
+    data: &mut Output,
     mut rng: &mut ThreadRng,
     mut phot: Photon,
 ) {
-    // Add to the emission variables in which the photon is present. 
+    // Add to the emission variables in which the photon is present.
     for vol in data.get_volumes_for_param_mut(OutputParameter::Emission) {
         if let Some(index) = vol.gen_index(phot.ray().pos()) {
             vol.data_mut()[index] += phot.power() * phot.weight();
@@ -68,9 +68,9 @@ pub fn photo(
 
         // Event handling.
         match Event::new(voxel_dist, scat_dist, surf_hit, boundary_hit, bump_dist) {
-            Event::Voxel(dist) => travel(&mut data, &mut phot, &env, dist + bump_dist),
+            Event::Voxel(dist) => travel(data, &mut phot, &env, dist + bump_dist),
             Event::Scattering(dist) => {
-                travel(&mut data, &mut phot, &env, dist);
+                travel(data, &mut phot, &env, dist);
 
                 // Capture.
                 for (frame, photo) in frames.iter().zip(data.photos.iter_mut()) {
@@ -84,22 +84,22 @@ pub fn photo(
                                     1.0,
                                 ) * (phot.power() * phot.weight() * weight) as f32;
                         }
-                    };
+                    }
                 }
 
                 scatter(&mut rng, &mut phot, &env);
             }
             Event::Surface(hit) => {
-                travel(&mut data, &mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, &mut data);
-                travel(&mut data, &mut phot, &env, bump_dist);
+                travel(data, &mut phot, &env, hit.dist());
+                surface(&mut rng, &hit, &mut phot, &mut env, data);
+                travel(data, &mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {
-                travel(&mut data, &mut phot, &env, boundary_hit.dist());
+                travel(data, &mut phot, &env, boundary_hit.dist());
                 input.bound.apply(rng, &boundary_hit, &mut phot);
-                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve. 
+                // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
-                    travel(&mut data, &mut phot, &env, bump_dist);
+                    travel(data, &mut phot, &env, bump_dist);
                 }
             }
         }

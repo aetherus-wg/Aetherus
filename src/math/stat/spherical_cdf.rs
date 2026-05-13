@@ -24,6 +24,12 @@ pub struct SphericalCdfPlane {
     cdf: Probability,
 }
 
+impl Default for SphericalCdfPlane {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SphericalCdfPlane {
     access!(azimuth_angle, azimuth_angle_mut: Real);
     access!(delta_aziumuth, delta_aziumuth_mut: PlaneWidth);
@@ -67,6 +73,12 @@ pub struct SphericalCdf {
     azimuth_cdf: Probability,
 }
 
+impl Default for SphericalCdf {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SphericalCdf {
     access!(planes, planes_mut: Vec<SphericalCdfPlane>);
     access!(azimuth_cdf, azimuth_cdf_mut: Probability);
@@ -81,7 +93,7 @@ impl SphericalCdf {
 
     /// Returns true if the distribution is spherically symmetric - in this case there will only be one plane.
     pub fn is_spherically_symmetric(&self) -> bool {
-        self.planes.iter().count() == 1
+        self.planes.len() == 1
     }
 
     /// Samples the CDF and returns a tuple containing the azimuthal and polar angles in radians.
