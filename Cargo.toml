@@ -70,6 +70,8 @@ tempfile = "3.2.*"
 statrs = "0.15.*"
 husky-rs = "0.3.2"
 criterion = { version = "0.8.2", features = ["html_reports", "rayon"] }
+integrate = "0.3.1"
+plotters = "0.3.7"
 
 [build]
 rustdocflags = [ "--html-in-header", "./src/docs-header.html" ]
@@ -92,4 +94,9 @@ debug = true
 
 [[bench]]
 name = "diffusion"
+harness = false
+
+[[bench]]
+name = "accuracy"
+path = "benches/accuracy/diffusion.rs"
 harness = false
