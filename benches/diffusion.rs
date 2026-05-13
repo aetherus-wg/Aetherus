@@ -26,15 +26,6 @@ fn criterion_config(c: &mut Criterion) {
 
     let params = load_parameters(&input_dir, &params_path);
     let mats = params.mats.clone();
-
-    // Build Output
-    c.bench_function("build_output", |b| {
-        b.iter(|| {
-            let base_output = black_box(&params).output.clone().build();
-            assert!(base_output.is_ok());
-        });
-    });
-
     let base_output = params.output.clone().build().unwrap();
 
     // Build objects
