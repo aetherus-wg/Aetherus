@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies HDF5 and netCDF
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y libhdf5-dev libnetcdf-dev
+          sudo apt-get install --no-install-recommends -y libhdf5-dev libnetcdf-dev libfontconfig1-dev libfreetype6-dev
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Build
