@@ -24,6 +24,7 @@
     clippy::integer_arithmetic,
     clippy::integer_division,
     clippy::missing_panics_doc,
+    clippy::missing_inline_in_public_items,
     clippy::module_name_repetitions,
     clippy::modulo_arithmetic,
     clippy::multiple_crate_versions,
@@ -31,6 +32,7 @@
     clippy::panic_in_result_fn,
     clippy::panic,
     clippy::print_stdout,
+    clippy::single_call_fn,
     clippy::unreachable,
     clippy::unwrap_used
 )]

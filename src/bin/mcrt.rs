@@ -116,18 +116,18 @@ fn main() {
             // In the case that we are outputting the files for each individual light, we can output it here with a simple setting.
             if let Some(output_individual) = sett.output_individual_lights() {
                 if output_individual {
-                    let indiv_outpath = out_dir.join(&light_id.as_string());
+                    let indiv_outpath = out_dir.join(light_id.as_string());
                     if !indiv_outpath.exists() {
                         // Create the directory for the output if it does not already exist.
-                        std::fs::create_dir(&indiv_outpath).expect(&format!(
-                            "Unable to create output directory for light '{}'",
-                            light_id
-                        ));
+                        std::fs::create_dir(&indiv_outpath)
+                            .unwrap_or_else(|_|
+                                panic!("Unable to create output directory for light '{}'", light_id)
+                            );
                     }
-                    data.save(&indiv_outpath).expect(&format!(
-                        "Failed to save output data for light '{}'",
-                        light_id
-                    ));
+                    data.save(&indiv_outpath)
+                        .unwrap_or_else(|_|
+                            panic!("Failed to save output data for light '{}'", light_id)
+                        );
                 }
             }
 
@@ -171,9 +171,9 @@ fn initialisation(term_width: usize) -> (PathBuf, PathBuf, PathBuf) {
 fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Parameters {
     section(term_width, "Parameters");
     sub_section(term_width, "Loading");
-    let builder = ParametersBuilderLoader::new_from_file(&in_dir.join(&params_path))
+    let builder = ParametersBuilderLoader::new_from_file(&in_dir.join(params_path))
         .expect("Failed to load parameters file.")
-        .load(&in_dir)
+        .load(in_dir)
         .expect("Failed to load parameter resource files.");
     report!(builder, "builder");
 

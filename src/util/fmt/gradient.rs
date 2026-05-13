@@ -1,6 +1,7 @@
 //! Gradient formatting function.
 
-use ansi_rgb::Background;
+use ansi_rgb::Background as _;
+use core::fmt::Write as _;
 use palette::{Gradient, LinSrgba};
 use rgb::RGB8;
 
@@ -14,12 +15,12 @@ pub fn to_string(grad: &Gradient<LinSrgba>, len: usize) -> String {
 
         let col = grad.get(x as f32);
 
-        let (r, g, b) = (
+        let (red, green, blue) = (
             (col.red * 255.0) as u8,
             (col.green * 255.0) as u8,
             (col.blue * 255.0) as u8,
         );
-        scale.push_str(&format!("{}", " ".bg(RGB8::new(r, g, b,))));
+        write!(scale, "{}", " ".bg(RGB8::new(red, green, blue))).expect("Formatting colored gradient");
     }
 
     scale
