@@ -35,7 +35,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Build
         run: "cargo build --release"
-      - name: Report
+      - name: Report performance
         run: |
           bencher run \
           --project $(echo "${{ github.repository }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]') \
@@ -47,4 +47,13 @@ jobs:
           --threshold-upper-boundary 0.99 \
           --thresholds-reset \
           --github-actions '${{ secrets.GITHUB_TOKEN }}' \
-          cargo bench
+          cargo bench diffusion
+      - name: Report accuracy
+        run: |
+          bencher run \
+          --project $(echo "${{ github.repository }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]') \
+          --branch "$GITHUB_REF_NAME" \
+          --testbed ubuntu-latest \
+          --file results.json \
+          --github-actions '${{ secrets.GITHUB_TOKEN }}' \
+            cargo bench accuracy
