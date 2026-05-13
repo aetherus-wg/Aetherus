@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 use crate::{
     fmt_report,
     img::{Image, Colour}

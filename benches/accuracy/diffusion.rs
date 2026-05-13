@@ -1,4 +1,4 @@
-use std::{env, f64::consts::PI, ops::{Range, RangeBounds}, path::Path, process::Command};
+use std::{env, f64::consts::PI, ops::Range, path::Path, process::Command};
 use netcdf;
 use ndarray::{self, Array3};
 use integrate::prelude::*;
@@ -6,8 +6,6 @@ use plotters::prelude::*;
 use anyhow::Result;
 
 // NOTE: More generic use of custom benchmark for multiple configurations: https://bencher.dev/learn/benchmarking/rust/custom-harness/#create-a-custom-benchmark-runner
-
-static LIGHT_SPEED: f64 = 3.0e8;
 
 fn run_sim() {
     env::set_var("PB_QUIET", "1");
@@ -55,25 +53,6 @@ fn pos_from_idx(idx: usize, bounds: Range<f64>, dim: usize) -> f64 {
   bound_min + (idx as f64 + 0.5) * delta_x
 }
 
-fn diffusion_equation_impulse(x: f64, y: f64, z: f64, t: f64,
-    ref_index: f64,
-    diff_coeff:f64,
-    abs_coeff: f64
-) -> f64 {
-    assert!(t >= 0.0, "Time must be non-negative");
-    if t == 0.0 {
-        // Initial condition: point source at the origin
-        if x == 0.0 && y == 0.0 && z == 0.0 {
-            return 1.0; // Arbitrary initial energy density
-        } else {
-            return 0.0;
-        }
-    }
-    let r_sqrd = x.powi(2) + y.powi(2) + z.powi(2);
-    let c = LIGHT_SPEED / ref_index;
-    (c / (4.0 * PI * diff_coeff * c).powf(1.5)) * f64::exp(-r_sqrd / (4.0 * diff_coeff * c * t) - (abs_coeff * c * t))
-}
-
 fn diffusion_equation_spatial(x: f64, y: f64, z: f64,
     diff_coeff:f64,
     abs_coeff: f64
@@ -89,7 +68,7 @@ fn main() -> Result<()> {
     let u_s = 500.0;
     let u_a = 10.0;
     let g = 0.4;
-    let n = 1.30;
+    //let n = 1.30;
 
     let u_s_reduces = u_s * (1.0 - g);
     let diff_coeff = 1.0 / (3.0 * (u_a + u_s_reduces));
@@ -105,7 +84,7 @@ fn main() -> Result<()> {
     let y_max = 0.050;
 
     plot_phi(x_min..x_max, y_min..y_max, z, diff_coeff, u_a)?;
-    plot_measure(x_min..x_max, y_min..y_max, z_idx, &simulated)?;
+    plot_measure(z_idx, &simulated)?;
 
     let func = |x: f64, y: f64| diffusion_equation_spatial(x, y, z, diff_coeff, u_a);
     let phi_energy = simpson_rule(|x: f64|
@@ -165,11 +144,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn plot_measure(x_range: Range<f64>, y_range: Range<f64>, z_idx: usize, measured: &Array3<f64>) -> Result<()> {
-    let x_min = x_range.start;
-    let x_max = x_range.end;
-    let y_min = y_range.start;
-    let y_max = y_range.end;
+fn plot_measure(z_idx: usize, measured: &Array3<f64>) -> Result<()> {
     let grid = 50usize;
 
     let target_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("target");
@@ -217,10 +192,6 @@ fn plot_measure(x_range: Range<f64>, y_range: Range<f64>, z_idx: usize, measured
 }
 
 fn plot_phi(x_range: Range<f64>, y_range: Range<f64>, z: f64, diff_coeff: f64, abs_coeff: f64) -> Result<()> {
-    let x_min = x_range.start;
-    let x_max = x_range.end;
-    let y_min = y_range.start;
-    let y_max = y_range.end;
     let grid = 200usize;
 
     let target_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("target");
@@ -269,7 +240,8 @@ fn plot_phi(x_range: Range<f64>, y_range: Range<f64>, z: f64, diff_coeff: f64, a
     Ok(())
 }
 
-/// Jet colormap
+// Jet colormap
+#[allow(dead_code)]
 fn jet(value: f64) -> RGBColor {
     let r = if value < 0.5 {
         0.0
@@ -289,7 +261,7 @@ fn jet(value: f64) -> RGBColor {
     RGBColor(r as u8, g as u8, b as u8)
 }
 
-/// Viridis colormap
+// Viridis colormap
 fn viridis(value: f64) -> RGBColor {
     let t = value.clamp(0.0, 1.0);
 

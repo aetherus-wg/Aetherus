@@ -16,4 +16,5 @@ pub mod png;
 pub mod ugrid;
 pub mod wavefront;
 
+#[allow(unused_imports)]
 pub use self::{csv::*, json::*, lid::*, netcdf::*, png::*, ugrid::*, wavefront::*};

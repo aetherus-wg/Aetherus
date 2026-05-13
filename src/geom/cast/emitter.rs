@@ -1,9 +1,8 @@
 //! Optical material.
 
 use crate::{
-    core::Real,
     geom::{Emit, Grid, Mesh, Ray},
-    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf, Trans3, rng::Probability},
+    math::{rand_isotropic_dir, Dir3, Point3, SphericalCdf, Trans3},
     tools::linear_to_three_dim,
 };
 use ndarray::Array3;

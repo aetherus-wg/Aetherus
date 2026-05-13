@@ -128,10 +128,6 @@ mod tests {
     use crate::geom::Ray;
     #[cfg(feature = "mpi")]
     use crate::math::{Dir3, Point3};
-    #[cfg(feature = "mpi")]
-    use assert_approx_eq::assert_approx_eq;
-    #[cfg(feature = "mpi")]
-    use std::f64;
 
     #[cfg(feature = "mpi")]
     use super::PhotonBuf;
