@@ -95,24 +95,34 @@ impl OutputVolume {
 
     #[inline]
     #[must_use]
-    fn gen_index_axis(min: f64, max: f64, res: usize, coord: f64) -> usize {
-        (res-1).min((((coord - min) / (max - min)) * res as f64).floor() as usize)
+    fn gen_index_axis(min: f64, max: f64, res: usize, coord: f64) -> Option<usize> {
+        let idx = (((coord - min) / (max - min)) * res as f64).floor() as usize;
+        if idx < res {
+            Some(idx)
+        } else {
+            None
+        }
     }
 
     /// If the given position is contained within the grid,
     /// generate the index for the given position within the grid.
     #[must_use]
     pub fn gen_index(&self, p: &Point3) -> Option<[usize; 3]> {
-        self.boundary.contains(p).then(|| {
+        if self.boundary.contains(p) {
             let mins = self.boundary.mins();
             let maxs = self.boundary.maxs();
 
-            [
-                Self::gen_index_axis(mins.x(), maxs.x(), self.res[X], p.x()),
-                Self::gen_index_axis(mins.y(), maxs.y(), self.res[Y], p.y()),
-                Self::gen_index_axis(mins.z(), maxs.z(), self.res[Z], p.z()),
-            ]
-        })
+            let x_idx = Self::gen_index_axis(mins.x(), maxs.x(), self.res[X], p.x());
+            let y_idx = Self::gen_index_axis(mins.y(), maxs.y(), self.res[Y], p.y());
+            let z_idx = Self::gen_index_axis(mins.z(), maxs.z(), self.res[Z], p.z());
+
+            match (x_idx, y_idx, z_idx) {
+                (Some(x), Some(y), Some(z)) => Some([x, y, z]),
+                _ => None,
+            }
+        } else {
+            None
+        }
     }
 
     /// If the given position is contained within the grid,
