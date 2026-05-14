@@ -125,8 +125,11 @@ fn main() -> Result<()> {
     let rmse = (acc_se / (50.0 * 50.0)).sqrt();
     mae /= 50.0 * 50.0;
 
+    let tv_l1 = total_variation_l1(&simulated) / (50.0 * 50.0) / measure_energy;
+
     println!("RMSE: {}", rmse);
     println!("MAE: {}", mae);
+    println!("Total Variation (L1): {}", tv_l1);
 
     let mut bmf = serde_json::Map::new();
     bmf.insert("accuracy_diffusion".to_string(), serde_json::json!({
@@ -135,6 +138,9 @@ fn main() -> Result<()> {
         },
         "Mean Absolute Error": {
             "value": mae,
+        },
+        "Total Variation L1": {
+            "value": tv_l1,
         },
     }));
     let bmf_str = serde_json::to_string_pretty(&bmf).unwrap();
@@ -238,6 +244,28 @@ fn plot_phi(x_range: Range<f64>, y_range: Range<f64>, z: f64, diff_coeff: f64, a
     root.present()?;
 
     Ok(())
+}
+
+/// Total Variation using L1 norm
+fn total_variation_l1(image: &Array3<f64>) -> f64 {
+    let mut tv = 0.0;
+    let (x_dim, y_dim, z_dim) = image.dim();
+    for x in 0..x_dim {
+        for y in 0..y_dim {
+            for z in 0..z_dim {
+                if x < x_dim - 1 {
+                    tv += (image[[x + 1, y, z]] - image[[x, y, z]]).abs();
+                }
+                if y < y_dim - 1 {
+                    tv += (image[[x, y + 1, z]] - image[[x, y, z]]).abs();
+                }
+                if z < z_dim - 1 {
+                    tv += (image[[x, y, z + 1]] - image[[x, y, z]]).abs();
+                }
+            }
+        }
+    }
+    tv
 }
 
 // Jet colormap
