@@ -100,7 +100,7 @@ fn voxels_march<F>(
 
         // Compute the effective distance that results in the same energy accumulation for
         // a non absorbing medium.
-        let effective_step = if env.abs_coeff() <= f64::EPSILON {
+        let effective_step = if env.abs_coeff() < f64::MIN_POSITIVE {
             step
         } else {
             (1.0 - (-env.abs_coeff() * step).exp()) / env.abs_coeff()
