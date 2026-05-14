@@ -11,7 +11,7 @@ pub fn travel(phot: &mut Photon, env: &Local, dist: f64) {
     phot.ray_mut().travel(dist);
 
     // Update weight based on Beer's Law
-    if env.abs_coeff() > f64::EPSILON {
+    if env.abs_coeff() >= f64::MIN_POSITIVE {
         *phot.weight_mut() *= (-env.abs_coeff() * dist).exp();
     }
 }
