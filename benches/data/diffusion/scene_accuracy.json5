@@ -1,0 +1,78 @@
+{
+  // Simulation specific settings - redirected to settings.json5.
+  sett: { Here: {
+    // Add distance unit (meters, milimeters, etc)
+    // Based on how we choose to export the OBJ file, some are more suitable to be worked in milimeters and meters
+
+    num_phot:         1E7,   // Number of photons to simulate.
+    block_size:       1e3,   // Photons to simulate per block.
+    bump_dist:        1E-7,  // Bump distance.
+    loop_limit:       1e5,   // Maximum number of events before culling.
+    min_weight:       0.001,  // Minimum simulation weight.
+    roulette_barrels: 8,     // Roulette survival fraction.
+    time_resolved:    true,  // Enable ToF measurements
+    uid_tracked:      false,
+    output_individual_lights: false,
+  }},
+
+  // Settings for the grid of the simulation.
+  boundary: { Here: {
+      boundary: [[-0.100, -0.100, -0.100], [ 0.100, 0.100, 0.100]],
+  }},
+
+  // Settings pertaining to the octree that contains the geometry.
+  tree: { Here: {
+    // The target number of triangles per leaf cell.
+    tar_tris: 8,
+    // The maximum depth to which the octree is split.
+    max_depth: 6,
+    // The fraction to increase leaf cell dimensions during detection.
+    padding: 0.01,
+    // Do we want to output the octree to a JSON file?
+    output: true,
+
+  }},
+
+  surfs: { Here: {
+      cube_object: {
+        attr: "cube_material",
+        mesh: [["./objs/DiffusionCube.obj"], null]
+      },
+  }},
+
+  attrs: { Here: {
+    cube_material: {
+        Interface: ["cube_material", "cube_material"],
+    },
+  }},
+
+  // Materials.
+  mats: { Here: {
+      air: { There: "mats/air.json5" },
+      cube_material: { There: "mats/cube_material.json5" },
+  }},
+
+  lights: { Here: {
+    laser_beam: {
+      power: 1000000.0,
+      mat: "cube_material",
+      spec: { Here: { Points: [450e-9, 515e-9, 640e-9] }},
+      emit: {
+        Point: [0.0, 0.000, 0.000],
+      },
+    },
+  }},
+
+  engine: "Standard",
+
+  output: { Here: {
+      volumes: {
+          energy_density: {
+              boundary: [[-0.050, -0.050, 0.010], [ 0.050, 0.050, 0.050]],
+              res: [50, 50, 40],
+              param: 'energy',
+          },
+      },
+  }},
+
+}

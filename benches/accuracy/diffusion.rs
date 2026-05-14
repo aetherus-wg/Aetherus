@@ -1,6 +1,6 @@
-use std::{env, f64::consts::PI, ops::Range, path::Path, process::Command};
+use std::{env, f64::consts::PI, io::{self, Write}, ops::Range, path::Path, process::Command};
 use netcdf;
-use ndarray::{self, Array3};
+use ndarray::{self, Array2, Array3};
 use integrate::prelude::*;
 use plotters::prelude::*;
 use anyhow::Result;
@@ -10,22 +10,24 @@ use anyhow::Result;
 fn run_sim() {
     env::set_var("PB_QUIET", "1");
 
-    let params_path = Path::new("scene.json5");
+    let params_path = Path::new("scene_accuracy.json5");
     let input_dir_str = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "benches/data/diffusion");
     let input_dir = Path::new(&input_dir_str);
     let output_dir_str = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), "benches/data/diffusion/out");
     let output_dir = Path::new(&output_dir_str);
 
     let bin_path = env!("CARGO_BIN_EXE_mcrt");
-
-    Command::new(bin_path)
-        .args(&[
+    let mut command = Command::new(bin_path);
+    command.args(&[
                 output_dir.to_str().unwrap(),
                 input_dir.to_str().unwrap(),
                 params_path.to_str().unwrap(),
-        ])
-        .output()
-        .expect("Failed to execute MCRT binary.");
+        ]);
+
+    println!("Running MCRT binary with command: {:?}", command);
+
+    let output = command.output().expect("Failed to execute MCRT binary.");
+    io::stderr().write_all(&output.stderr).unwrap();
 }
 
 fn read_result() -> Array3<f64> {
@@ -65,69 +67,74 @@ fn diffusion_equation_spatial(x: f64, y: f64, z: f64,
 fn main() -> Result<()> {
     run_sim();
 
-    let u_s = 500.0;
-    let u_a = 10.0;
+    let u_s = 50.0;
+    let u_a = 1.0;
     let g = 0.4;
     //let n = 1.30;
+    let x_min = -0.050;
+    let x_max = 0.050;
+    let y_min = -0.050;
+    let y_max = 0.050;
+    let x_steps = 50;
+    let y_steps = 50;
+    let z_steps = 40;
+    let xy_cells = x_steps * y_steps;
 
     let u_s_reduces = u_s * (1.0 - g);
     let diff_coeff = 1.0 / (3.0 * (u_a + u_s_reduces));
 
     let z_idx = 10;
-    let z = pos_from_idx(z_idx, 0.010..0.050, 40);
+    let z = pos_from_idx(z_idx, 0.010..0.050, z_steps);
 
     let simulated = read_result();
 
-    let x_min = -0.050;
-    let x_max = 0.050;
-    let y_min = -0.050;
-    let y_max = 0.050;
-
-    plot_phi(x_min..x_max, y_min..y_max, z, diff_coeff, u_a)?;
+    plot_phi(x_min..x_max, y_min..y_max, (x_steps, y_steps), z, diff_coeff, u_a)?;
     plot_measure(z_idx, &simulated)?;
 
     let func = |x: f64, y: f64| diffusion_equation_spatial(x, y, z, diff_coeff, u_a);
-    let phi_energy = simpson_rule(|x: f64|
-        simpson_rule(|y: f64|
-            func(x, y),
-            y_min,
-            y_max,
-            50_usize,
-        ),
-        x_min,
-        x_max,
-        50_usize,
-    ) / ((x_max - x_min) * (y_max - y_min));
+    let phi_sampled = sample(func, x_min..x_max, y_min..y_max, (x_steps, y_steps));
+    plot_sampled((x_steps, y_steps), &phi_sampled)?;
 
-    let mut measure_energy = 0.0;
-    for x_idx in 0..50 {
-        for y_idx in 0..50 {
-            measure_energy += simulated[[x_idx, y_idx, z_idx]];
+    let mut simulated_average = 0.0;
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            simulated_average += simulated[[x_idx, y_idx, z_idx]];
         }
     }
-    measure_energy /= 50.0 * 50.0;
+    simulated_average /= xy_cells as f64;
 
-    println!("Phi energy: {}", phi_energy);
-    println!("Measure energy: {}", measure_energy);
+    let mut phi_average = 0.0;
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            phi_average += phi_sampled[[x_idx, y_idx]];
+        }
+    }
+    phi_average /= xy_cells as f64;
 
+    println!("Phi average: {}", phi_average);
+    println!("Simulated average: {}", simulated_average);
+
+    let mut rel_acc_se = 0.0;
     let mut acc_se = 0.0;
     let mut mae = 0.0;
-    for x_idx in 0..50 {
-        for y_idx in 0..50 {
-            let x = pos_from_idx(x_idx, -0.050..0.050, 50);
-            let y = pos_from_idx(y_idx, -0.050..0.050, 50);
-            let intensity_normalized = diffusion_equation_spatial(x, y, z, diff_coeff, u_a) / phi_energy;
-            let measure_normalized = simulated[[x_idx, y_idx, z_idx]] / measure_energy;
-            acc_se += (intensity_normalized - measure_normalized).powi(2);
-            mae += (intensity_normalized - measure_normalized).abs();
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            let simulated_normalized = simulated[[x_idx, y_idx, z_idx]] / simulated_average;
+            let phi_normalized = phi_sampled[[x_idx, y_idx]] / phi_average;
+            let err = phi_normalized - simulated_normalized;
+            rel_acc_se += (err / phi_normalized).powi(2);
+            acc_se += (err).powi(2);
+            mae += (err).abs();
         }
     }
-    let rmse = (acc_se / (50.0 * 50.0)).sqrt();
-    mae /= 50.0 * 50.0;
+    let rmse = (acc_se / xy_cells as f64).sqrt();
+    let rmsre = (rel_acc_se / xy_cells as f64).sqrt();
+    mae /= xy_cells as f64;
 
-    let tv_l1 = total_variation_l1(&simulated) / (50.0 * 50.0) / measure_energy;
+    let tv_l1 = total_variation_l1(&simulated) / (50.0 * 50.0) / simulated_average;
 
     println!("RMSE: {}", rmse);
+    println!("RMSRE: {}", rmsre);
     println!("MAE: {}", mae);
     println!("Total Variation (L1): {}", tv_l1);
 
@@ -135,6 +142,9 @@ fn main() -> Result<()> {
     bmf.insert("accuracy_diffusion".to_string(), serde_json::json!({
         "Root Mean Squared Error": {
             "value": rmse,
+        },
+        "Root Mean Squared Relative Error": {
+            "value": rmsre,
         },
         "Mean Absolute Error": {
             "value": mae,
@@ -148,6 +158,31 @@ fn main() -> Result<()> {
     println!("{bmf_str}");
 
     Ok(())
+}
+
+fn sample(func: impl Fn(f64, f64) -> f64, x_range: Range<f64>, y_range: Range<f64>, (x_steps, y_steps): (usize, usize)) -> Array2<f64> {
+    let mut result = Array2::zeros((x_steps, y_steps));
+    let dx = (x_range.end - x_range.start) / (x_steps as f64);
+    let dy = (y_range.end - y_range.start) / (y_steps as f64);
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            let x = x_range.start + x_idx as f64 * dx;
+            let y = y_range.start + y_idx as f64 * dy;
+            let dphi_int = simpson_rule(|u: f64|
+                simpson_rule(|v: f64|
+                    func(u, v),
+                    y,
+                    y + dy,
+                    32_usize,
+                ),
+                x,
+                x + dx,
+                32_usize,
+            );
+            result[[x_idx, y_idx]] = dphi_int / (dx * dy);
+        }
+    }
+    result
 }
 
 fn plot_measure(z_idx: usize, measured: &Array3<f64>) -> Result<()> {
@@ -178,10 +213,9 @@ fn plot_measure(z_idx: usize, measured: &Array3<f64>) -> Result<()> {
     for x_idx in 0..grid {
         for y_idx in 0..grid {
             let v = measured[[x_idx, y_idx, z_idx]];
-            let v_log = (v + 1e-12).ln();
-            min_val = min_val.min(v_log);
-            max_val = max_val.max(v_log);
-            values.push((x_idx, y_idx, v_log));
+            min_val = min_val.min(v);
+            max_val = max_val.max(v);
+            values.push((x_idx, y_idx, v));
         }
     }
 
@@ -197,9 +231,51 @@ fn plot_measure(z_idx: usize, measured: &Array3<f64>) -> Result<()> {
     Ok(())
 }
 
-fn plot_phi(x_range: Range<f64>, y_range: Range<f64>, z: f64, diff_coeff: f64, abs_coeff: f64) -> Result<()> {
-    let grid = 200usize;
+fn plot_sampled((x_steps, y_steps): (usize, usize), value: &Array2<f64>) -> Result<()> {
+    let target_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("target");
+    let heatmap_path = target_dir.join("diffusion_sampled.png");
 
+    let root = BitMapBackend::new(&heatmap_path, (800, 800)).into_drawing_area();
+    root.fill(&WHITE)?;
+
+    let mut chart = ChartBuilder::on(&root)
+        .margin(20)
+        .x_label_area_size(10)
+        .y_label_area_size(10)
+        .build_cartesian_2d(0..x_steps, 0..y_steps)?;
+
+    chart
+        .configure_mesh()
+        .disable_x_mesh()
+        .disable_y_mesh()
+        .draw()?;
+
+    let mut values = Vec::with_capacity(x_steps * y_steps);
+    let mut min_val = f64::INFINITY;
+    let mut max_val = f64::NEG_INFINITY;
+
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            let v = value[[x_idx, y_idx]];
+            min_val = min_val.min(v);
+            max_val = max_val.max(v);
+            values.push((x_idx, y_idx, v));
+        }
+    }
+
+    chart.draw_series(values.iter().map(|(x, y, v)| {
+        let t = (v - min_val) / (max_val - min_val);
+        //let color = HSLColor(t, 1.0, 0.5).filled();
+        let color = viridis(t);
+        Rectangle::new([(*x, *y), (x + 1, y + 1)], color.filled())
+    }))?;
+
+    root.present()?;
+
+    Ok(())
+}
+
+fn plot_phi(x_range: Range<f64>, y_range: Range<f64>, (x_steps, y_steps): (usize, usize), z: f64, diff_coeff: f64, abs_coeff: f64) -> Result<()> {
     let target_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("target");
     let heatmap_path = target_dir.join("diffusion_expected.png");
 
@@ -210,7 +286,7 @@ fn plot_phi(x_range: Range<f64>, y_range: Range<f64>, z: f64, diff_coeff: f64, a
         .margin(20)
         .x_label_area_size(10)
         .y_label_area_size(10)
-        .build_cartesian_2d(0..grid, 0..grid)?;
+        .build_cartesian_2d(0..x_steps, 0..y_steps)?;
 
     chart
         .configure_mesh()
@@ -218,19 +294,18 @@ fn plot_phi(x_range: Range<f64>, y_range: Range<f64>, z: f64, diff_coeff: f64, a
         .disable_y_mesh()
         .draw()?;
 
-    let mut values = Vec::with_capacity(grid * grid);
+    let mut values = Vec::with_capacity(x_steps * y_steps);
     let mut min_val = f64::INFINITY;
     let mut max_val = f64::NEG_INFINITY;
 
-    for x_idx in 0..grid {
-        for y_idx in 0..grid {
-            let x = pos_from_idx(x_idx, x_range.clone(), grid);
-            let y = pos_from_idx(y_idx, y_range.clone(), grid);
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            let x = pos_from_idx(x_idx, x_range.clone(), x_steps);
+            let y = pos_from_idx(y_idx, y_range.clone(), y_steps);
             let v = diffusion_equation_spatial(x, y, z, diff_coeff, abs_coeff);
-            let v_log = (v + 1e-12).ln();
-            min_val = min_val.min(v_log);
-            max_val = max_val.max(v_log);
-            values.push((x_idx, y_idx, v_log));
+            min_val = min_val.min(v);
+            max_val = max_val.max(v);
+            values.push((x_idx, y_idx, v));
         }
     }
 
