@@ -3,7 +3,7 @@
 use crate::{
     io::output::{self, Output},
     phys::Photon,
-    sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
+    sim::{Event, Input, scatter::scatter, surface::surface, travel::travel},
 };
 use rand::{Rng, RngExt};
 
@@ -62,7 +62,7 @@ pub fn standard<R: Rng>(
             scat_dist = Some(-(rng.random::<f64>()).ln() / env.scat_coeff());
         }
         // NOTE: Does aggregated absorption and scattering reduce the scanning depth?
-        // Perhaps the distance considerations signigicantly reduces the time to complet the Tree search
+        // Perhaps the distance considerations significantly reduces the time to complete the Tree search
         let surf_hit = input.tree.scan(
             phot.ray().clone(),
             bump_dist,
@@ -75,8 +75,6 @@ pub fn standard<R: Rng>(
         let interaction_event = Event::new(scat_dist.unwrap(), surf_hit, boundary_hit, bump_dist);
 
         data.volume_estimate(&env, &phot, interaction_event.dist(), bump_dist);
-        let interaction_env = env.clone();
-        let interaction_dist = interaction_event.dist();
 
         // Event handling.
         match interaction_event {
@@ -89,9 +87,9 @@ pub fn standard<R: Rng>(
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
                 surface(&mut rng, &hit, &mut phot, &mut env, data);
-                travel(&mut phot, &env, bump_dist);
+                phot.ray_mut().travel(bump_dist);
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
-                // voxels did? => Based on "MONTE CARLO MODELING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
+                // voxels did? => Based on "MONTE CARLO MODELLING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
                 scat_dist = Some(scat_dist.unwrap() - hit.dist());
                 assert!(scat_dist.unwrap() >= 0.0);
             }
@@ -108,9 +106,6 @@ pub fn standard<R: Rng>(
 
         if phot.weight() <= 0.0 {
             break;
-        } else {
-            // Update weight based on Beer's Law
-            *phot.weight_mut() *= (- interaction_env.abs_coeff() * interaction_dist).exp();
         }
     }
 }

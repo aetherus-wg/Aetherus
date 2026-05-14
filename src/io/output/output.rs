@@ -46,16 +46,15 @@ fn voxels_march<F>(
     vol: &mut OutputVolume,
     env: &Local,
     phot: &Photon,
-    dist: f64,
+    mut dist: f64,
     bump_dist: f64,
     delta_fn: &F,
 ) where
-    F:  Fn(f64, f64) -> f64,
+    F: Fn(f64, f64) -> f64,
 {
     assert!(dist > 0.0, "Photon travel distance must be positive non-zero");
 
     let mut tmp_phot = phot.clone();
-    let mut tmp_dist = dist;
 
     // 1. First move tmp_phot to the voxel boundary
     if vol.contains(phot.ray().pos()) {
@@ -63,6 +62,7 @@ fn voxels_march<F>(
     } else {
         if let Some(boundary_dist) = vol.boundary_dist(&tmp_phot) {
             travel(&mut tmp_phot, &env, boundary_dist + bump_dist);
+            dist -= boundary_dist + bump_dist;
         } else {
             // This output volume has not been found in the path of this photon
             return;
@@ -70,7 +70,7 @@ fn voxels_march<F>(
     }
 
     // 2. Max travel to within the volume of interest
-    tmp_dist = tmp_dist.min(vol.boundary_dist(&tmp_phot).unwrap_or(f64::INFINITY));
+    let mut tmp_dist = dist.min(vol.boundary_dist(&tmp_phot).unwrap_or(0.0));
 
     // 3. Iterate throgh the voxels, until the distance is consumed
     while tmp_dist > 0.0 {
@@ -100,7 +100,7 @@ fn voxels_march<F>(
 
         // Compute the effective distance that results in the same energy accumulation for
         // a non absorbing medium.
-        let effective_step = if env.abs_coeff() == 0.0 {
+        let effective_step = if env.abs_coeff() <= f64::EPSILON {
             step
         } else {
             (1.0 - (-env.abs_coeff() * step).exp()) / env.abs_coeff()
@@ -109,7 +109,7 @@ fn voxels_march<F>(
         debug_assert!(effective_step > 0.0, "Step size must be positive non-zero");
 
         // Step temporal photon to the next voxel
-        travel(&mut tmp_phot, &env, step + bump_dist);
+        travel(&mut tmp_phot, &env, step);
 
         debug_assert!(tmp_phot.ray() != phot.ray());
 
@@ -160,7 +160,7 @@ impl Output {
     pub fn voxel_dist(&self, phot: &Photon) -> f64 {
         let dists: Vec<f64> = self.vol
             .iter()
-            .filter_map(|grid| { grid.voxel_dist(phot) })
+            .filter_map(|grid| grid.voxel_dist(phot))
             .collect();
         dists.into_iter().reduce(f64::min).unwrap_or(f64::INFINITY)
     }

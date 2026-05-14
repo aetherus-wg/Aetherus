@@ -27,20 +27,23 @@ impl<'a, T> Event<'a, T> {
         debug_assert!(scat_dist > 0.0);
         debug_assert!(bump_dist > 0.0);
 
+        let free_space_event = if boundary_hit.dist() < scat_dist {
+            Self::Boundary(boundary_hit)
+        } else {
+            Self::Scattering(scat_dist)
+        };
+
         // Logically, if there is any geometry, it should be within the octree
         // which is contained within the boundary.
         if let Some(hit) = surf_hit {
-            if (scat_dist + bump_dist) < hit.dist() {
-                return Self::Scattering(scat_dist);
+            if free_space_event.dist() < hit.dist() {
+                free_space_event
+            } else {
+                Self::Surface(hit)
             }
-            return Self::Surface(hit);
+        } else {
+            free_space_event
         }
-
-        if boundary_hit.dist() < scat_dist {
-            return Self::Boundary(boundary_hit);
-        }
-
-        return Self::Scattering(scat_dist);
     }
 
     pub fn dist(&self) -> f64 {
