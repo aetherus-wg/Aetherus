@@ -57,10 +57,16 @@ jobs:
           --testbed ubuntu-latest \
           --threshold-measure "Mean Absolute Error" \
           --threshold-test static \
-          --threshold-upper-boundary 0.4 \
+          --threshold-upper-boundary 0.1 \
           --threshold-measure "Root Mean Squared Error" \
           --threshold-test static \
-          --threshold-upper-boundary 0.7 \
+          --threshold-upper-boundary 0.1 \
+          --threshold-measure "Root Mean Squared Relative Error" \
+          --threshold-test static \
+          --threshold-upper-boundary 0.1 \
+          --threshold-measure "Total Variation L1" \
+          --threshold-test static \
+          --threshold-upper-boundary 10.0 \
           --file results.json \
           --github-actions '${{ secrets.GITHUB_TOKEN }}' \
             cargo bench accuracy
