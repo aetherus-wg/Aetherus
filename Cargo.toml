@@ -68,7 +68,7 @@ rand_distr = "0.6.0"
 [dev-dependencies]
 tempfile = "3.2.*"
 statrs = "0.15.*"
-husky-rs = "0.3.2"
+husky-rs = "0.3.3"
 criterion = { version = "0.8.2", features = ["html_reports", "rayon"] }
 integrate = "0.3.1"
 plotters = "0.3.7"
