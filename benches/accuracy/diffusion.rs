@@ -114,21 +114,17 @@ fn main() -> Result<()> {
     println!("Phi average: {}", phi_average);
     println!("Simulated average: {}", simulated_average);
 
-    let mut rel_acc_se = 0.0;
-    let mut acc_se = 0.0;
     let mut mae = 0.0;
     for x_idx in 0..x_steps {
         for y_idx in 0..y_steps {
             let simulated_normalized = simulated[[x_idx, y_idx, z_idx]] / simulated_average;
             let phi_normalized = phi_sampled[[x_idx, y_idx]] / phi_average;
             let err = phi_normalized - simulated_normalized;
-            rel_acc_se += (err / phi_normalized).powi(2);
-            acc_se += (err).powi(2);
             mae += (err).abs();
         }
     }
-    let rmse = (acc_se / xy_cells as f64).sqrt();
-    let rmsre = (rel_acc_se / xy_cells as f64).sqrt();
+    let rmse = rmse(&simulated, &phi_sampled, z_idx, phi_average);
+    let rmsre = rmsre(&simulated, &phi_sampled, z_idx);
     mae /= xy_cells as f64;
 
     let tv_l1 = total_variation_l1(&simulated) / (50.0 * 50.0) / simulated_average;
@@ -158,6 +154,53 @@ fn main() -> Result<()> {
     println!("{bmf_str}");
 
     Ok(())
+}
+
+// Compute lambda which minimises RMSE and RMSRE
+fn rmse(simulated: &Array3<f64>, phi_sampled: &Array2<f64>, z_idx: usize, phi_average: f64) -> f64 {
+    let (x_steps, y_steps) = phi_sampled.dim();
+    let mut acc_prod = 0.0;
+    let mut acc_ms = 0.0;
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            // acc_prod += phi_sampled[[x_idx, y_idx]] * simulated[[x_idx, y_idx, z_idx]];
+            let phi_norm = phi_sampled[[x_idx, y_idx]] / phi_average;
+            acc_prod += phi_norm * simulated[[x_idx, y_idx, z_idx]];
+            acc_ms += simulated[[x_idx, y_idx, z_idx]].powi(2);
+        }
+    }
+    let lambda = acc_prod / acc_ms;
+    let mut acc_se = 0.0;
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            let phi_norm = phi_sampled[[x_idx, y_idx]] / phi_average;
+            let err = phi_norm - lambda * simulated[[x_idx, y_idx, z_idx]];
+            acc_se += err.powi(2);
+        }
+    }
+    (acc_se / (x_steps * y_steps) as f64).sqrt()
+}
+
+fn rmsre(simulated: &Array3<f64>, phi_sampled: &Array2<f64>, z_idx: usize) -> f64 {
+    let (x_steps, y_steps) = phi_sampled.dim();
+    let mut acc_frac = 0.0;
+    let mut acc_frac_sqrd = 0.0;
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            let frac = simulated[[x_idx, y_idx, z_idx]]/ phi_sampled[[x_idx, y_idx]];
+            acc_frac += frac;
+            acc_frac_sqrd += frac.powi(2);
+        }
+    }
+    let lambda = acc_frac / acc_frac_sqrd;
+    let mut acc_rel_se = 0.0;
+    for x_idx in 0..x_steps {
+        for y_idx in 0..y_steps {
+            let err = phi_sampled[[x_idx, y_idx]] - lambda * simulated[[x_idx, y_idx, z_idx]];
+            acc_rel_se += (err / phi_sampled[[x_idx, y_idx]]).powi(2);
+        }
+    }
+    (acc_rel_se / (x_steps * y_steps) as f64).sqrt()
 }
 
 fn sample(func: impl Fn(f64, f64) -> f64, x_range: Range<f64>, y_range: Range<f64>, (x_steps, y_steps): (usize, usize)) -> Array2<f64> {
