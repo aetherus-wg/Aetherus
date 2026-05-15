@@ -67,7 +67,7 @@ fn diffusion_equation_spatial(x: f64, y: f64, z: f64,
 fn main() -> Result<()> {
     run_sim();
 
-    let u_s = 50.0;
+    let u_s = 500.0;
     let u_a = 1.0;
     let g = 0.4;
     //let n = 1.30;
