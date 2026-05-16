@@ -35,7 +35,7 @@ impl<'a> Input<'a> {
         spec_reg: &'a Register,
         mats: &'a Set<Material>,
         attrs: &'a Set<Attribute>,
-        light: &'a Light<'a>,
+        light: &'a Light,
         tree: &'a Tree<Object>,
         sett: &'a Settings,
         bound: &'a Boundary,

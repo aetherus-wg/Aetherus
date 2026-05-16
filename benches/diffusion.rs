@@ -1,8 +1,14 @@
-use std::{env, path::Path, process::Command, sync::{Arc, Mutex}};
+use std::{
+    env, path::Path, process::Command, sync::{Arc, Mutex}
+};
 use aetherus::{
-    err::Error, fs::{File, Load}, geom::{Tree, object::Object}, io::output::Output, ord::{Build, Link, Name, Set}, phys::{Light, Material}, sim::{
-        Attribute, Parameters, ParametersBuilderLoader
-    }
+    err::Error,
+    fs::{File, Load},
+    geom::{Tree, object::Object},
+    io::output::Output,
+    ord::{Build, Link, Name, Set},
+    phys::{Light, Material},
+    sim::{Attribute, Parameters, ParametersBuilderLoader}
 };
 
 use aetherus_events::{SrcId, ledger::Ledger};

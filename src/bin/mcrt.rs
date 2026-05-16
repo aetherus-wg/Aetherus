@@ -195,7 +195,7 @@ fn main() {
     if let Some(true) = sett.uid_tracked() {
         aetherus_events::ledger::write_ledger_to_json(
             &ledger.lock().expect("Failed to lock ledger."),
-            ledger_path.to_str().unwrap(),
+            &ledger_path,
         ).expect("Failed to save ledger.");
     }
 

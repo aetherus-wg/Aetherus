@@ -10,7 +10,7 @@ use rand::rng;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
-use aetherus_events::{emission::Emission, ledger::Ledger, EventId};
+use aetherus_events::{EventId, SrcId, emission::Emission, ledger::Ledger};
 
 /// Run a multi-threaded MCRT simulation.
 /// # Errors
@@ -83,13 +83,13 @@ fn thread<'a>(
                 *phot.uid_mut() = ledger
                     .lock()
                     .expect("Could not lock ledger.")
-                    .insert_start(EventId::new_emission(Emission::GaussianBeam, 0));
+                    .insert_start(EventId::new_emission(Emission::GaussianBeam, SrcId::Light(0)));
             }
 
             if input.sett.time_resolved() == Some(true) {
                 phot = phot.with_time();
             }
-            // FIXME: Locking here and waiting for engine to run esentially transform this into a
+            // FIXME: Locking here and waiting for engine to run essentially transform this into a
             // very inefficient sequential (non parallel threaded) program
             engine.run(&input, &mut output, &ledger, &mut rng, phot);
         }
