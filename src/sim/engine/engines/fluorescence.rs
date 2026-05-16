@@ -6,7 +6,7 @@ use crate::{
     phys::{Local, Photon},
     sim::{Attribute, Event, Input, scatter::scatter, surface::surface, travel::travel},
 };
-use aetherus_events::SrcId;
+use events_ledger::SrcId;
 use ndarray::Array3;
 use rand::{rngs::ThreadRng, RngExt};
 

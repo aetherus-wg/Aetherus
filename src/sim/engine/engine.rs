@@ -11,7 +11,7 @@ use ndarray::Array3;
 use rand::rngs::ThreadRng;
 use std::fmt::{Display, Error, Formatter};
 
-use aetherus_events::prelude::*;
+use events_ledger::prelude::*;
 
 /// Engine selection.
 #[allow(clippy::large_enum_variant)]

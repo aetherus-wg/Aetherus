@@ -11,7 +11,7 @@ use aetherus::{
     sim::{Attribute, Parameters, ParametersBuilderLoader}
 };
 
-use aetherus_events::prelude::*;
+use events_ledger::prelude::*;
 use anyhow::Context;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::hint::black_box;

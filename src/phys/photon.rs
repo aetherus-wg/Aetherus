@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::{access, clone, geom::Ray};
 
-use aetherus_events::prelude::*;
+use events_ledger::prelude::*;
 
 #[cfg(feature = "mpi")]
 use crate::math::{Dir3, Point3};

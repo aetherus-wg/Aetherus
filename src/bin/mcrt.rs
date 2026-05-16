@@ -20,7 +20,7 @@ use aetherus::{
         fmt::term,
     },
 };
-use aetherus_events::prelude::*;
+use events_ledger::prelude::*;
 
 /// Backup print width if the terminal width can not be determined.
 const BACKUP_TERM_WIDTH: usize = 80;
@@ -197,7 +197,7 @@ fn main() {
     if let Some(true) = sett.uid_tracked() {
         ledger_tree.resolve();
 
-        use aetherus_events::{pattern, filter::BitsProperty, ledger::write_ledger_to_json};
+        use events_ledger::{pattern, filter::BitsProperty, ledger::write_ledger_to_json};
         let no_detector_property = BitsProperty::NoMatch(pattern!(Detection, SrcId::None));
 
         let uids = ledger_tree.find_dangling_uids(no_detector_property);

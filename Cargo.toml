@@ -67,7 +67,7 @@ thiserror = "2.0.17"
 log = "0.4.29"
 rand_distr = "0.6.0"
 env_logger = "0.11.9"
-aetherus-events = { git = "https://github.com/aetherus-wg/aetherus-events", version = "^0.3.5" }
+events-ledger = "^0.3.6"
 
 [dev-dependencies]
 tempfile = "3.2.*"

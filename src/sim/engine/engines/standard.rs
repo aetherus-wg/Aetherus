@@ -7,7 +7,7 @@ use crate::{
 };
 use rand::{Rng, RngExt};
 
-use aetherus_events::prelude::*;
+use events_ledger::prelude::*;
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
