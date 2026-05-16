@@ -101,9 +101,9 @@ impl SmoothTriangle {
             // Invalid barycentric coordinates, point outside the triangle
             return Err(Error::Text(format!("Trying to calculate barycentric coordinates ({},{},{}) for a point outside the triangle.", u,v,w)));
         }
-        u = u.max(0.0).min(1.0);
-        v = v.max(0.0).min(1.0);
-        w = w.max(0.0).min(1.0);
+        u = u.clamp(0.0, 1.0);
+        v = v.clamp(0.0, 1.0);
+        w = w.clamp(0.0, 1.0);
         assert!(
             (u + v + w - 1.0).abs() < EPS,
             "Barycentric coordinates do not sum to 1: u={}, v={}, w={}",

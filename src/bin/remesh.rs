@@ -142,7 +142,7 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     sub_section(term_width, "Loading");
     let builder = ParametersBuilderLoader::new_from_file(&in_dir.join(&params_path))
         .expect("Failed to load parameters file.")
-        .load(&in_dir)
+        .load(in_dir)
         .expect("Failed to load parameter resource files.");
     report!(builder, "builder");
 

@@ -46,7 +46,7 @@ impl Build for OrientBuilder {
             let up_dir = Dir3::new(up.x(), up.y(), up.z());
             Ok(Orient::new_up(Ray::new(self.pos, self.forward), &up_dir))
         } else {
-            return Err(Error::Build("At least one of \"up\" or \"right\" must be provided for Orient".to_string()));
+            Err(Error::Build("At least one of \"up\" or \"right\" must be provided for Orient".to_string()))
         }
     }
 }
@@ -71,8 +71,8 @@ impl Build for OutputConfig {
         let vol = match self.volumes {
             Some(vols) => {
                 vols
-                    .into_iter()
-                    .map(|(_key, conf)| conf.build(id))
+                    .into_values()
+                    .map(|conf| conf.build(id))
                     .collect::<Result<Vec<_>,_>>()?
             },
             None => vec![],
@@ -81,8 +81,8 @@ impl Build for OutputConfig {
         let plane = match self.planes {
             Some(planes) => {
                 planes
-                    .into_iter()
-                    .map(|(_key, conf)| conf.build(id))
+                    .into_values()
+                    .map(|conf| conf.build(id))
                     .collect::<Result<Vec<_>,_>>()?
             },
             None => vec![],
@@ -103,7 +103,7 @@ impl Build for OutputConfig {
                     });
                     det_id += 1;
                 }
-                pcs.values().map(|conf| conf.clone()).collect()
+                pcs.values().cloned().collect()
             }
             None => vec![],
         };
@@ -118,8 +118,8 @@ impl Build for OutputConfig {
                     det_id += 1;
                 }
                 specs
-                    .into_iter()
-                    .map(|(_key, conf)| conf.build(id))
+                    .into_values()
+                    .map(|conf| conf.build(id))
                     .collect::<Result<Vec<_>,_>>()?
             },
             None => vec![],
@@ -139,8 +139,8 @@ impl Build for OutputConfig {
                     det_id += 1;
                 }
                 images
-                    .into_iter()
-                    .map(|(_key, conf)| conf.build(id))
+                    .into_values()
+                    .map(|conf| conf.build(id))
                     .collect::<Result<Vec<_>,_>>()?
             }
             None => vec![],
@@ -163,8 +163,8 @@ impl Build for OutputConfig {
                     det_id += 1;
                 }
                 ccds
-                    .into_iter()
-                    .map(|(_key, conf)| conf.build(id))
+                    .into_values()
+                    .map(|conf| conf.build(id))
                     .collect::<Result<Vec<_>,_>>()?
             },
             None => vec![],

@@ -89,7 +89,7 @@ fn thread<'a>(
             }
             // FIXME: Locking here and waiting for engine to run essentially transform this into a
             // very inefficient sequential (non parallel threaded) program
-            engine.run(&input, &mut output, &ledger, &mut rng, phot);
+            engine.run(input, &mut output, &ledger, &mut rng, phot);
         }
     }
 

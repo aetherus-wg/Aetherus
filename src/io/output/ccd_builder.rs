@@ -25,12 +25,11 @@ impl<'a> Link<'a, Light<'a>> for CcdBuilder {
 
     fn link(mut self, set: &Set<Light>) -> Result<Self::Inst, Error> {
         for light in set.values() {
-            if self.range.is_none() {
-                self.range = Some([light.spec().min(), light.spec().max()]);
-            } else {
-                let range = self.range.as_mut().unwrap();
+            if let Some(range) = self.range.as_mut() {
                 range[0] = range[0].min(light.spec().min());
                 range[1] = range[1].max(light.spec().max());
+            } else {
+                self.range = Some([light.spec().min(), light.spec().max()]);
             }
         }
         Ok(self)

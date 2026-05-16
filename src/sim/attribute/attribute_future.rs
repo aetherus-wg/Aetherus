@@ -129,24 +129,24 @@ impl AttributeFuture {
             AttributeFuture::Interface(interf_fut) => {
                 match interf_fut {
                     InterfaceFuture::Future(_, out_name) => {
-                        return Err(Error::Linking(format!(
+                        Err(Error::Linking(format!(
                             "Failed to resolve material for interface future with outside name: {}. Expected an implicit future.",
                             out_name.as_string()
-                        )));
+                        )))
                     },
                     InterfaceFuture::ImplicitFuture(out_name) => {
-                        return Err(Error::Linking(format!(
+                        Err(Error::Linking(format!(
                             "Failed to resolve material for interface future with outside name: {}. Expected an implicit future.",
                             out_name.as_string()
-                        )));
+                        )))
                     },
                     InterfaceFuture::Implicit(out_mat) => {
                         if let Some(in_mat) = in_mat {
                             Ok(AttributeFuture::Interface(InterfaceFuture::Value(in_mat, out_mat.clone())))
                         } else {
-                            return Err(Error::Linking(format!(
-                                "Failed to resolve material for implicit interface. Expected an inside material, but none provided."
-                            )));
+                            Err(Error::Linking(
+                                "Failed to resolve material for implicit interface. Expected an inside material, but none provided.".to_string()
+                            ))
                         }
                     }
                     InterfaceFuture::Value(..) => {
@@ -231,7 +231,7 @@ impl Link<'_, Material> for AttributeFuture {
                     // "inside" is given
                     InterfaceFuture::Implicit(out_material) => {
                         let inside = mats.get(&Name::new("inside")).ok_or(Error::Text(
-                            format!("Failed to link implicit material from \"inside\" entry")
+                            "Failed to link implicit material from \"inside\" entry".to_string()
                         ))?;
                         *intf_future = InterfaceFuture::Value(inside.clone(), out_material.clone());
                     }

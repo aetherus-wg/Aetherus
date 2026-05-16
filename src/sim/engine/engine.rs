@@ -39,7 +39,7 @@ impl Engine {
         phot: Photon,
     ) {
         match *self {
-            Self::Standard => engines::standard(input, data, &ledger, rng, phot),
+            Self::Standard => engines::standard(input, data, ledger, rng, phot),
             Self::Raman(ref p) => engines::raman(p, input, data, rng, phot),
             Self::Photo(ref frames, _res) => engines::photo(frames, input, data, rng, phot),
             Self::Fluorescence(ref shift_map, ref conc_spec) => {

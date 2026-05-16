@@ -56,7 +56,7 @@ pub fn surface<R: Rng>(
                 // Reflect.
                 let new_dir = *crossing.ref_dir();
                 let norm = hit.side().norm();
-                debug_assert!(phot.ray().dir().dot(&norm) * new_dir.dot(&norm)>= 0.0, "Reflection direction is not on the correct side of the surface");
+                debug_assert!(phot.ray().dir().dot(norm) * new_dir.dot(norm)>= 0.0, "Reflection direction is not on the correct side of the surface");
                 phot.ray_mut().update_dir(new_dir);
                 EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Reflection)), src_id: hit.tag().1}
             } else {
@@ -70,7 +70,7 @@ pub fn surface<R: Rng>(
         }
         Attribute::Reflector(ref reflectance) => {
             // NOTE: Instead of killing the photon based on reflection probability, reduce its weight
-            match reflectance.reflect(rng, &phot, hit) {
+            match reflectance.reflect(rng, phot, hit) {
                 Some((ray, ref_prob)) => {
                     *phot.ray_mut() = ray;
                     *phot.weight_mut() *= ref_prob;

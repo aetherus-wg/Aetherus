@@ -1,13 +1,13 @@
-use std::{collections::BTreeMap, u128};
+use std::{collections::BTreeMap};
 
 use obj::{Group, IndexTuple, Obj, ObjData, Object, SimplePolygon};
 
 use crate::{err::Error, fs::Save, geom::{Mesh, Surface}, ord::Set};
 
 fn vec_to_hash(vec: &[f32;3]) -> u128 {
-    (vec[0].to_bits() as u128) << (0*32) |
-    (vec[1].to_bits() as u128) << (1*32) |
-    (vec[2].to_bits() as u128) << (2*32)
+    (vec[0].to_bits() as u128) |
+    (vec[1].to_bits() as u128) << 32 |
+    (vec[2].to_bits() as u128) << 64
 }
 
 fn mesh_to_obj(mesh: &Mesh, name: String, position_offset: usize, normal_offset: usize) -> (Vec<[f32; 3]>, Vec<[f32; 3]>, Object) {
@@ -28,10 +28,9 @@ fn mesh_to_obj(mesh: &Mesh, name: String, position_offset: usize, normal_offset:
         .collect();
 
     let positions_map: BTreeMap<_,([f32;3],usize)> = positions_map
-        .iter()
-        .map(|(_key, v)| *v)
+        .values()
         .enumerate()
-        .map(|(idx, v)| (vec_to_hash(&v), (v, idx + position_offset)))
+        .map(|(idx, v)| (vec_to_hash(v), (*v, idx + position_offset)))
         .collect();
 
     let normals: Vec<[f32; 3]> = mesh
@@ -47,10 +46,9 @@ fn mesh_to_obj(mesh: &Mesh, name: String, position_offset: usize, normal_offset:
         .collect();
 
     let normals_map: BTreeMap<_,([f32;3],usize)> = normals_map
-        .iter()
-        .map(|(_key, v)| *v)
+        .values()
         .enumerate()
-        .map(|(idx, v)| (vec_to_hash(&v), (v, idx + normal_offset)))
+        .map(|(idx, v)| (vec_to_hash(v), (*v, idx + normal_offset)))
         .collect();
 
     group.polys = mesh
@@ -74,16 +72,16 @@ fn mesh_to_obj(mesh: &Mesh, name: String, position_offset: usize, normal_offset:
         .values()
         .map(|(v, idx)| (*idx, *v))
         .collect::<BTreeMap<_,_>>()
-        .iter()
-        .map(|(_idx, v)| *v)
+        .values()
+        .cloned()
         .collect();
 
-    let normal_vec = normals_map
+    let normal_vec: Vec<[f32; 3]> = normals_map
         .values()
         .map(|(v, idx)| (*idx, *v))
         .collect::<BTreeMap<_,_>>()
-        .iter()
-        .map(|(_idx, v)| *v)
+        .values()
+        .cloned()
         .collect();
 
 

@@ -81,7 +81,7 @@ impl Triangle {
                 Self { tris: Vec::new() }
             }
             fn push(&mut self, tri: (usize, usize, usize)) {
-                let mut tri_vec = vec![tri.0, tri.1, tri.2];
+                let mut tri_vec = [tri.0, tri.1, tri.2];
                 tri_vec.sort_unstable();
                 let new_tri = (tri_vec[0], tri_vec[1], tri_vec[2]);
                 if !self.tris.contains(&new_tri) {

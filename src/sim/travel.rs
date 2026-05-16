@@ -17,12 +17,9 @@ pub fn travel(phot: &mut Photon, env: &Local, dist: f64) {
     }
 
     // Update time of flight.
-    match phot.tof() {
+    if let Some(tof) = phot.tof_mut().as_mut() {
         // TODO: Precompute (1 / SPEED_OF_LIGHT_IN_VACUUM) and use MUL
         // instead of DIV operation, for better performance. Benchmark first!
-        Some(tof) => {
-            *phot.tof_mut() = Some(tof + dist * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM);
-        },
-        None => (),
+        *tof += dist * env.ref_index() / SPEED_OF_LIGHT_IN_VACUUM;
     };
 }

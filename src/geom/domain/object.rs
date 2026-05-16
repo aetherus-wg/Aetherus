@@ -102,7 +102,7 @@ impl Object {
                     _ => self.attr.clone(),
                 };
 
-                self.src_id = src_id.clone();
+                self.src_id = src_id;
                 Ok(())
             },
             SrcId::None | SrcId::SrcId(_) => {
@@ -191,7 +191,7 @@ impl Link<'_, AttributeFuture> for SceneBuilder {
                 let attr_futfut = attrs_map.get_mut(&name).ok_or_else(||
                     Error::Linking(format!("Attributes map missing value of key: {}", name))
                 )?;
-                *attr_futfut = attr_futfut.clone().link(&attrs)?;
+                *attr_futfut = attr_futfut.clone().link(attrs)?;
             }
         }
         Ok(self)
@@ -247,13 +247,13 @@ impl Link<'_, Material> for SceneBuilder {
                 let mat_fut = mats_map.get_mut(&name).ok_or_else(||
                     Error::Linking(format!("Material map missing value of key: {}", name))
                 )?;
-                *mat_fut = mat_fut.clone().link(&mats)?;
+                *mat_fut = mat_fut.clone().link(mats)?;
             }
         }
 
         // Link materials in the attributes deserialized
         if let Some(attrs_fut) = &mut self.attrs_map {
-            *attrs_fut = attrs_fut.clone().link(&mats)?;
+            *attrs_fut = attrs_fut.clone().link(mats)?;
         }
 
         Ok(self)
@@ -266,16 +266,14 @@ impl Link<'_, Material> for MaterialFuture {
         todo!()
     }
     fn link(mut self, mats: &Set<Material>) -> Result<Self::Inst, Error> {
-        match self {
-            MaterialFuture::Future(MaterialMap::Map(name)) => {
-                let mat = mats.get(&name)
-                    .ok_or_else(||
-                        Error::Linking(format!("Material {} not found in materials set set during linking.", name))
-                    )?;
-                self = MaterialFuture::Value(mat.clone());
-            },
-            _ => {}
+        if let MaterialFuture::Future(MaterialMap::Map(name)) = self {
+            let mat = mats.get(&name)
+                .ok_or_else(||
+                    Error::Linking(format!("Material {} not found in materials set set during linking.", name))
+                )?;
+            self = MaterialFuture::Value(mat.clone());
         }
+
         Ok(self)
     }
 }
@@ -364,7 +362,7 @@ impl Build for Scene {
             let obj_name = if object.name == "default" {
                 self.name.clone()
             } else {
-                format!("{}", object.name)
+                object.name.clone()
             };
 
             let mut mat_name: Option<String> = None;
@@ -390,7 +388,7 @@ impl Build for Scene {
                 mat_name = Some(format!("{}_material", object.name.clone()));
             }
             let mat = match &mat_name {
-                Some(name) => self.mats.get(&Name::new(&name)).cloned(),
+                Some(name) => self.mats.get(&Name::new(name)).cloned(),
                 None => None,
             };
 

@@ -73,7 +73,7 @@ impl Segment {
             return None;
         }
 
-        let (alpha_u, alpha_v) = self.intersect_unchecked(&other)?;
+        let (alpha_u, alpha_v) = self.intersect_unchecked(other)?;
 
         if alpha_u < 0.0 || alpha_u > 1.0 || alpha_v < 0.0 || alpha_v > 1.0 {
             trace!("Segments do not intersect within their lengths. alpha_self: {}, alpha_other: {}", alpha_u, alpha_v);
@@ -168,7 +168,7 @@ impl Collide<Point3> for Segment {
         let closest = self.at(alpha);
         let diff = closest - other;
         if diff.dot(&diff) < f64::EPSILON {
-            alpha >= -f64::EPSILON && alpha <= 1.0 + f64::EPSILON
+            (-f64::EPSILON..=1.0+f64::EPSILON).contains(&alpha)
         } else {
             false
         }
