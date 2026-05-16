@@ -3,7 +3,7 @@ use log::warn;
 use serde::Deserialize;
 use ndarray::Array3;
 use crate::{
-    access, clone, err::Error, fmt_report, io::output::OrientBuilder, ord::{Link, Name, Set, cartesian::{X, Y}}, phys::Light, tools::Range
+    access, clone, err::Error, fmt_report, io::output::OrientBuilder, ord::{Build, Link, Name, Set, cartesian::{X, Y}}, phys::Light, tools::Range
 };
 
 #[derive(Debug, Deserialize, Clone)]
@@ -25,12 +25,11 @@ impl<'a> Link<'a, Light<'a>> for CcdBuilder {
 
     fn link(mut self, set: &Set<Light>) -> Result<Self::Inst, Error> {
         for light in set.values() {
-            if self.range.is_none() {
-                self.range = Some([light.spec().min(), light.spec().max()]);
-            } else {
-                let range = self.range.as_mut().unwrap();
+            if let Some(range) = self.range.as_mut() {
                 range[0] = range[0].min(light.spec().min());
                 range[1] = range[1].max(light.spec().max());
+            } else {
+                self.range = Some([light.spec().min(), light.spec().max()]);
             }
         }
         Ok(self)
@@ -55,12 +54,16 @@ impl CcdBuilder {
         if let Some(range) = self.range {
             Ok(Range::new(range[0], range[1]))
         } else {
-            Err(Error::Build("Range must be provided for Ccd if not linked to any light sources.".to_string()))
+            Err(Error::Linking("Range must be provided for Ccd if not linked to any light sources.".to_string()))
         }
     }
+}
 
-    pub fn build(&self) -> Array3<f64> {
-        Array3::zeros([self.res[X], self.res[Y], self.bins])
+impl Build for CcdBuilder {
+    type Inst = Array3<f64>;
+    type MetaInfo = ();
+    fn build(self, _id: ()) -> Result<Self::Inst, Error> {
+        Ok(Array3::zeros([self.res[X], self.res[Y], self.bins]))
     }
 }
 

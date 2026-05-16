@@ -3,6 +3,8 @@
 use crate::{access, fmt_report, math::Formula, phys::Local};
 use std::fmt::{Display, Error, Formatter};
 
+use aetherus_events::SrcId;
+
 /// Optical properties.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Material {
@@ -16,6 +18,8 @@ pub struct Material {
     shift_coeff: Option<Formula>,
     /// Asymmetry factor.
     asym_fact: Formula,
+    /// Source id
+    mat_id: SrcId,
 }
 
 impl Material {
@@ -24,6 +28,7 @@ impl Material {
     access!(abs_coeff: Option<Formula>);
     access!(shift_coeff: Option<Formula>);
     access!(asym_fact: Formula);
+    access!(mat_id, mat_id_mut: SrcId);
 
     /// Construct a new instance.
     #[must_use]
@@ -40,7 +45,14 @@ impl Material {
             abs_coeff,
             shift_coeff,
             asym_fact,
+            mat_id: SrcId::Mat(0),
         }
+    }
+
+    pub fn with_id(mut self, mat_id: SrcId) -> Self {
+        debug_assert!(matches!(mat_id, SrcId::Mat(_) | SrcId::MatSurf(_)));
+        self.mat_id = mat_id;
+        self
     }
 
     /// Generate an optical environment for a given wavelength.
@@ -61,7 +73,7 @@ impl Material {
             .map_or(0.0, |shift_coeff_formula| shift_coeff_formula.y(w));
         let g = self.asym_fact.y(w);
 
-        Local::new(ref_index, scat, abs, shift, g)
+        Local::new(ref_index, scat, abs, shift, g).with_id(self.mat_id)
     }
 }
 
@@ -89,3 +101,30 @@ impl Display for Material {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sample_environment() {
+        let material = Material::new(
+            Formula::Constant{c: 1.5},
+            Formula::Constant{c: 10.0 },
+            Some(Formula::Constant{c: 2.0 }),
+            Some(Formula::Constant{c: 1.0 }),
+            Formula::Constant{c: 0.8 },
+        ).with_id(SrcId::Mat(42));
+
+        let local = material.sample_environment(550.0); // wavelength here is dummy since we have
+        // spectrum invariant material
+
+        assert_eq!(local.ref_index(), 1.5);
+        assert_eq!(local.scat_coeff(), 10.0);
+        assert_eq!(local.abs_coeff(), 2.0);
+        assert_eq!(local.shift_coeff(), 1.0);
+        assert_eq!(local.asym(), 0.8);
+        assert_eq!(local.mat_id(), SrcId::Mat(42));
+    }
+}
+

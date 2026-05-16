@@ -29,16 +29,10 @@ impl Crossing {
         let ci = -inc.dot(norm);
         let n = n_curr / n_next;
 
-        let crit_ang = if n_curr <= n_next {
-            None
-        } else {
-            Some((n_next / n_curr).asin())
-        };
-
-        let (ref_prob, trans_dir) = if crit_ang.is_some() && (ci.acos() >= crit_ang.unwrap()) {
+        let s2t = (n * n) * (1.0 - (ci * ci));
+        let (ref_prob, trans_dir) = if s2t > 1.0 {
             (1.0, None)
         } else {
-            let s2t = (n * n) * (1.0 - (ci * ci));
             let ct = (1.0 - s2t).sqrt();
 
             (

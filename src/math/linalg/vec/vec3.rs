@@ -28,6 +28,10 @@ impl Vec3 {
         }
     }
 
+    pub fn abs(&self) -> Real {
+        self.data.abs().sum()
+    }
+
     /// Construct a x-axis column vector.
     #[inline]
     #[must_use]
@@ -75,6 +79,10 @@ impl Vec3 {
     #[must_use]
     pub fn mag(&self) -> Real {
         self.data.magnitude()
+    }
+
+    pub fn norm1(&self) -> Real {
+        self.data.abs().sum()
     }
 
     /// Calculate the unit vector.

@@ -1,4 +1,9 @@
-use crate::{err::Error, fmt_report, phys::Spectrum};
+use crate::{
+    err::Error,
+    fmt_report,
+    ord::{Build, Name},
+    phys::Spectrum,
+};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, path::Path};
 
@@ -10,9 +15,11 @@ pub enum SpectrumBuilder {
     Linear(f64, f64, f64, f64),
 }
 
-impl SpectrumBuilder {
-    pub fn build(&self) -> Result<Spectrum, Error> {
-        match *self {
+impl Build for SpectrumBuilder {
+    type Inst = Spectrum;
+    type MetaInfo = Name;
+    fn build(self, _id: Name) -> Result<Self::Inst, Error> {
+        match self {
             Self::Constant(ref value) => Ok(Spectrum::new_constant(*value)),
             Self::Spectrum(ref input_file) => Spectrum::data_from_file(Path::new(&input_file)),
             Self::Tophat(lower, upper, val) => Ok(Spectrum::new_tophat(lower, upper, val)),
@@ -60,14 +67,14 @@ impl Display for SpectrumBuilder {
 mod tests {
     use super::*;
     use crate::phys::Spectrum;
-    use tempfile::NamedTempFile;
-    use std::io::{Write, Seek};
     use json5;
+    use std::io::{Seek, Write};
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_constant_spectrum_builder() {
         let builder = SpectrumBuilder::Constant(1.0);
-        let spectrum = builder.build().unwrap();
+        let spectrum = builder.build(Name::new("")).unwrap();
         assert_eq!(spectrum, Spectrum::new_constant(1.0));
     }
 
@@ -82,21 +89,24 @@ mod tests {
         let tmp_path_str = infile.path().to_str().unwrap().to_string();
 
         let builder = SpectrumBuilder::Spectrum(tmp_path_str.clone());
-        let spectrum = builder.build().unwrap();
-        assert_eq!(spectrum, Spectrum::data_from_file(Path::new(&tmp_path_str)).unwrap());
+        let spectrum = builder.build(Name::new("")).unwrap();
+        assert_eq!(
+            spectrum,
+            Spectrum::data_from_file(Path::new(&tmp_path_str)).unwrap()
+        );
     }
 
     #[test]
     fn test_tophat_spectrum_builder() {
         let builder = SpectrumBuilder::Tophat(400.0, 700.0, 1.0);
-        let spectrum = builder.build().unwrap();
+        let spectrum = builder.build(Name::new("")).unwrap();
         assert_eq!(spectrum, Spectrum::new_tophat(400.0, 700.0, 1.0));
     }
 
     #[test]
     fn test_linear_spectrum_builder() {
         let builder = SpectrumBuilder::Linear(400.0, 700.0, 0.0, 1.0);
-        let spectrum = builder.build().unwrap();
+        let spectrum = builder.build(Name::new("")).unwrap();
         assert_eq!(spectrum, Spectrum::new_linear(400.0, 700.0, 0.0, 1.0));
     }
 
@@ -107,7 +117,8 @@ mod tests {
         let mut file = infile
             .reopen()
             .expect("Unable to open temp file to write test spectrum. ");
-        file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
+        file.write_all(input_json.as_bytes())
+            .expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
         // Now read in using serde_json.
@@ -123,7 +134,8 @@ mod tests {
         let mut file = infile
             .reopen()
             .expect("Unable to open temp file to write test spectrum. ");
-        file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
+        file.write_all(input_json.as_bytes())
+            .expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
         // Now read in using serde_json.
@@ -139,7 +151,8 @@ mod tests {
         let mut file = infile
             .reopen()
             .expect("Unable to open temp file to write test spectrum. ");
-        file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
+        file.write_all(input_json.as_bytes())
+            .expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
         // Now read in using serde_json.
@@ -155,13 +168,17 @@ mod tests {
         let mut file = infile
             .reopen()
             .expect("Unable to open temp file to write test spectrum. ");
-        file.write_all(input_json.as_bytes()).expect("Unable to write test spectrum. ");
+        file.write_all(input_json.as_bytes())
+            .expect("Unable to write test spectrum. ");
         file.rewind().expect("Unable to rewind file. ");
 
         // Now read in using serde_json.
         let json_str = std::fs::read_to_string(infile.path()).unwrap();
         let builder: SpectrumBuilder = json5::from_str(&json_str).unwrap();
-        assert_eq!(builder, SpectrumBuilder::Spectrum("test_spectrum.csv".to_string()));
+        assert_eq!(
+            builder,
+            SpectrumBuilder::Spectrum("test_spectrum.csv".to_string())
+        );
     }
 
     #[test]

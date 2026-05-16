@@ -12,16 +12,19 @@
 //! println!("{}", tri.perimeter())
 //! ```
 
+use core::f64;
+
 use crate::{
     access,
-    geom::{Collide, Cube, Emit, Ray, Side, Trace, Transformable},
+    geom::{segment::Segment, Collide, Cube, Emit, Ray, Side, Trace, Transformable},
     math::{Dir3, Point3, Trans3, Vec3},
     ord::{ALPHA, BETA, GAMMA},
 };
+use log::{trace, warn};
 use rand::{Rng, RngExt};
 
 /// Triangle.
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Triangle {
     /// Vertex points.
     verts: [Point3; 3],
@@ -37,8 +40,96 @@ impl Triangle {
     #[must_use]
     pub fn new(verts: [Point3; 3]) -> Self {
         let plane_norm = Self::init_plane_norm(&verts);
+        Self::new_with_norm(verts, plane_norm)
+    }
 
+    #[must_use]
+    pub fn new_with_norm(verts: [Point3; 3], plane_norm: Dir3) -> Self {
+        {
+            let a = verts[0] - verts[1];
+            let b = verts[1] - verts[2];
+            assert!(
+                a.cross(&b).abs() > f64::EPSILON,
+                "Edges of triangle can't be colinear: {:?}",
+                verts
+            );
+        }
         Self { verts, plane_norm }
+    }
+
+    /// Construct triangles from the segments
+    pub fn from_verts_segs(&self, segs: &[(usize, usize)], verts: &[Point3]) -> Vec<Self> {
+        let mut segs_map = vec![Vec::new(); 9];
+        for seg in segs {
+            if !segs_map[seg.0].contains(&seg.1) {
+                segs_map[seg.0].push(seg.1);
+            }
+            if !segs_map[seg.1].contains(&seg.0) {
+                segs_map[seg.1].push(seg.0);
+            }
+        }
+
+        trace!("Segment map: {:?}", segs_map);
+
+        #[derive(Debug)]
+        struct TriList {
+            tris: Vec<(usize, usize, usize)>,
+        }
+
+        impl TriList {
+            fn new() -> Self {
+                Self { tris: Vec::new() }
+            }
+            fn push(&mut self, tri: (usize, usize, usize)) {
+                let mut tri_vec = [tri.0, tri.1, tri.2];
+                tri_vec.sort_unstable();
+                let new_tri = (tri_vec[0], tri_vec[1], tri_vec[2]);
+                if !self.tris.contains(&new_tri) {
+                    self.tris.push(new_tri);
+                }
+            }
+            fn inner(&self) -> &Vec<(usize, usize, usize)> {
+                &self.tris
+            }
+        }
+        let mut tris = TriList::new();
+
+        for i in 0..verts.len() {
+            for j in segs_map[i].clone() {
+                for k in segs_map[j].clone() {
+                    if segs_map[i].contains(&k) {
+                        tris.push((i, j, k));
+                    }
+                }
+            }
+        }
+
+        // Filter out triangles that contain other vertices
+        let tris_vec: Vec<_> = tris
+            .inner()
+            .iter()
+            .filter(|(i, j, k)| {
+                let tri =
+                    Triangle::new_with_norm([verts[*i], verts[*j], verts[*k]], self.plane_norm);
+                let mut checked = true;
+                for (v_idx, v) in verts.iter().enumerate() {
+                    if v_idx != *i && v_idx != *j && v_idx != *k && tri.vertex_in(v.clone()) {
+                        checked = false;
+                        break;
+                    }
+                }
+                checked
+            })
+            .collect();
+
+        trace!("Triangles (by vertex indices): {:?}", tris_vec);
+
+        tris_vec
+            .iter()
+            .map(|(i, j, k)| {
+                Triangle::new_with_norm([verts[*i], verts[*j], verts[*k]], self.plane_norm)
+            })
+            .collect()
     }
 
     /// Initialise the plane normal.
@@ -86,6 +177,18 @@ impl Triangle {
             .xyz()
     }
 
+    pub fn aabb(&self) -> Cube {
+        let mins = self.verts.iter().fold(
+            Point3::new(f64::INFINITY, f64::INFINITY, f64::INFINITY),
+            |acc, v| Point3::new(acc.x().min(v.x()), acc.y().min(v.y()), acc.z().min(v.z())),
+        );
+        let maxs = self.verts.iter().fold(
+            Point3::new(f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
+            |acc, v| Point3::new(acc.x().max(v.x()), acc.y().max(v.y()), acc.z().max(v.z())),
+        );
+        Cube::new(mins, maxs)
+    }
+
     /// Determine the intersection distance along a `Ray`'s direction.
     /// Also return the barycentric intersection coordinates.
     #[must_use]
@@ -127,9 +230,226 @@ impl Triangle {
 
         Some((dist, [u, v, w]))
     }
+
+    pub fn edges(&self) -> [Segment; 3] {
+        [
+            Segment::new(self.verts[BETA], self.verts[GAMMA]),
+            Segment::new(self.verts[GAMMA], self.verts[ALPHA]),
+            Segment::new(self.verts[ALPHA], self.verts[BETA]),
+        ]
+    }
+
+    pub fn vertex_in(&self, vertex: Point3) -> bool {
+        let segs = self.edges();
+        let mut sign: Option<bool> = None;
+
+        // 1. First check that vertex is in the plane of the triangle
+        let vertex_to_tri = vertex - self.verts[ALPHA];
+        if self.plane_norm.dot_vec(&vertex_to_tri).abs() > 1e-9 {
+            return false;
+        }
+
+        // 2. Then check that vertex is on the same side of all edges of the triangle
+        for seg in &segs {
+            let edge_vec = seg.end - seg.start;
+            let to_vertex_vec = vertex - seg.start;
+            let cross_prod = edge_vec.cross(&to_vertex_vec);
+            // 2. Check if vertex is on an edge of the triangle
+            if cross_prod.abs() < 1e-9 {
+                trace!("Vertex {:?} is on edge {:?} of triangle.", vertex, seg);
+                return false;
+            }
+            // 3. Check that the vertex is on the same side of each segment
+            let dir = self.plane_norm.dot_vec(&cross_prod) > 0.0;
+            match sign {
+                None => {
+                    sign = Some(dir);
+                }
+                Some(sign) => {
+                    if sign != dir {
+                        return false;
+                    }
+                }
+            };
+        }
+        true
+    }
 }
 
-impl Collide for Triangle {
+impl Trace for Triangle {
+    #[inline]
+    fn hit(&self, ray: &Ray) -> bool {
+        self.intersection_coors(ray).is_some()
+    }
+
+    #[inline]
+    fn dist(&self, ray: &Ray) -> Option<f64> {
+        if let Some((dist, _coors)) = self.intersection_coors(ray) {
+            return Some(dist);
+        }
+
+        None
+    }
+
+    #[inline]
+    fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
+        self.dist(ray).map(|dist| {
+            let side = Side::new(ray.dir(), self.plane_norm);
+            (dist, side)
+        })
+    }
+}
+
+impl Transformable for Triangle {
+    #[inline]
+    fn transform(&mut self, trans: &Trans3) {
+        for v in &mut self.verts {
+            *v = trans.transform_point(&v.data()).into();
+        }
+
+        self.plane_norm = Dir3::from(trans.transform_vector(&self.plane_norm.data()));
+    }
+}
+
+impl Emit for Triangle {
+    fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
+        let mut u = rng.random::<f64>();
+        let mut v = rng.random::<f64>();
+
+        if (u + v) > 1.0 {
+            u = 1.0 - u;
+            v = 1.0 - v;
+        }
+
+        let edge_a_b = self.verts[BETA] - self.verts[ALPHA];
+        let edge_a_c = self.verts[GAMMA] - self.verts[ALPHA];
+
+        let pos = self.verts[ALPHA] + (edge_a_b * u) + (edge_a_c * v);
+
+        Ray::new(pos, self.plane_norm)
+    }
+}
+
+impl Collide<Point3> for Triangle {
+    // NOTE: Similar to Triangle.vertex_in, but including coincidence with triangle vertices and
+    // edges
+    fn overlap(&self, point: &Point3) -> bool {
+        let segs = self.edges();
+        let mut sign: Option<bool> = None;
+
+        // 1. First check that vertex is in the plane of the triangle
+        let vertex_to_tri = point - self.verts[ALPHA];
+        if self.plane_norm.dot_vec(&vertex_to_tri).abs() > 1e-9 {
+            return false;
+        }
+
+        // 2. Then check that vertex is on the same side of all edges of the triangle
+        for seg in &segs {
+            let edge_vec = seg.end - seg.start;
+            let to_vertex_vec = point - seg.start;
+            if to_vertex_vec.norm1() < 1e-9 {
+                // Vertex coincides with triangle vertex
+                break;
+            }
+            let cross_prod = edge_vec.cross(&to_vertex_vec);
+            // 3. Check that the vertex is on the same side of each segment
+            let cross_prod_mag = self.plane_norm.dot_vec(&cross_prod);
+            if cross_prod_mag.abs() < 1e-9 {
+                // Point is on the edge
+                continue;
+            }
+            let dir = self.plane_norm.dot_vec(&cross_prod) > 0.0;
+            match sign {
+                None => {
+                    sign = Some(dir);
+                }
+                Some(sign) => {
+                    if sign != dir {
+                        return false;
+                    }
+                }
+            };
+        }
+        true
+    }
+}
+
+impl Collide<Triangle> for Triangle {
+    fn overlap(&self, other: &Triangle) -> bool {
+        const EPS_INTERSECTION: f64 = 1e-9;
+
+        // 1. Check that triangle planes are parallel
+        let planes_allignment = self.plane_norm.dot(&other.plane_norm);
+        if planes_allignment.abs() < 0.999 {
+            return false;
+        }
+
+        // 2. Check that the Aabb of the triangles has an intersection
+        if !self.aabb().overlap(&other.aabb()) {
+            return false;
+        }
+
+        // Choose maximal cross triangle distance
+        let cross_triangle_edge = self
+            .verts
+            .iter()
+            .zip(other.verts.iter())
+            .map(|(u, v)| u - v)
+            .max_by(|a, b| a.dot(a).partial_cmp(&b.dot(b)).unwrap())
+            .unwrap();
+        //let cross_triangle_edge = self.verts[ALPHA] - other.verts[ALPHA];
+
+        // 3. Check that the triangles are coplanar
+        if self.plane_norm.dot_vec(&cross_triangle_edge).abs() > EPS_INTERSECTION {
+            false
+        } else {
+            if planes_allignment > 0.0 {
+                warn!(
+                    "Triangles normals face the same way for: {:?} and {:?}",
+                    self, other
+                );
+            }
+
+            // 4. Check that either at least one vertex is inside the triangle or a cross edge
+            //    intersection
+            for &v in &other.verts {
+                if self.vertex_in(v) {
+                    trace!("Found vertex {:?} inside triangle", v);
+                    return true;
+                }
+            }
+            let segs_u = [
+                Segment::new(other.verts[ALPHA], other.verts[BETA]),
+                Segment::new(other.verts[BETA], other.verts[GAMMA]),
+                Segment::new(other.verts[GAMMA], other.verts[ALPHA]),
+            ];
+            for seg_u in segs_u {
+                // FIXME: This should exclude touching but not overlaping triangles
+                if self.overlap(&seg_u) {
+                    trace!("Found edge {:?} intersection with triangle", seg_u);
+                    return true;
+                }
+            }
+            false
+        }
+    }
+}
+
+impl Collide<Segment> for Triangle {
+    fn overlap(&self, seg: &Segment) -> bool {
+        let segs_u = self.edges();
+        for seg_u in segs_u {
+            // FIXME: Should be open intersection, however this seems to not detect any
+            // intersection
+            if let Some(_intersection) = seg.intersect(&seg_u) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+impl Collide<Cube> for Triangle {
     fn overlap(&self, cube: &Cube) -> bool {
         let c = cube.centre();
         let e = cube.half_widths();
@@ -224,68 +544,17 @@ impl Collide for Triangle {
     }
 }
 
-impl Trace for Triangle {
-    #[inline]
-    fn hit(&self, ray: &Ray) -> bool {
-        self.intersection_coors(ray).is_some()
-    }
-
-    #[inline]
-    fn dist(&self, ray: &Ray) -> Option<f64> {
-        if let Some((dist, _coors)) = self.intersection_coors(ray) {
-            return Some(dist);
-        }
-
-        None
-    }
-
-    #[inline]
-    fn dist_side(&self, ray: &Ray) -> Option<(f64, Side)> {
-        self.dist(ray).map(|dist| {
-            let side = Side::new(ray.dir(), self.plane_norm);
-            (dist, side)
-        })
-    }
-}
-
-impl Transformable for Triangle {
-    #[inline]
-    fn transform(&mut self, trans: &Trans3) {
-        for v in &mut self.verts {
-            *v = trans.transform_point(&v.data()).into();
-        }
-
-        self.plane_norm = Dir3::from(trans.transform_vector(&self.plane_norm.data()));
-    }
-}
-
-impl Emit for Triangle {
-    fn cast<R: Rng>(&self, rng: &mut R) -> Ray {
-        let mut u = rng.random::<f64>();
-        let mut v = rng.random::<f64>();
-
-        if (u + v) > 1.0 {
-            u = 1.0 - u;
-            v = 1.0 - v;
-        }
-
-        let edge_a_b = self.verts[BETA] - self.verts[ALPHA];
-        let edge_a_c = self.verts[GAMMA] - self.verts[ALPHA];
-
-        let pos = self.verts[ALPHA] + (edge_a_b * u) + (edge_a_c * v);
-
-        Ray::new(pos, self.plane_norm)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     // We implement the transformable for the triangle primitive, so we shall use this for tests.
     use super::{Trans3, Transformable};
-    use crate::{geom::{Triangle, Trace}, math::Point3};
+    use crate::{
+        geom::{Trace, Triangle},
+        math::Point3,
+    };
+    use assert_approx_eq::assert_approx_eq;
     use nalgebra::Vector3;
     use std::f64;
-    use assert_approx_eq::assert_approx_eq;
 
     fn unit_triangle() -> Triangle {
         Triangle::new([

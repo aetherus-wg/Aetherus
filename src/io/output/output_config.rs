@@ -26,7 +26,8 @@ pub struct OrientBuilder {
 
 impl Build for OrientBuilder {
     type Inst = Orient;
-    fn build(self) -> Result<Self::Inst, Error> {
+    type MetaInfo = ();
+    fn build(self, _id: ()) -> Result<Self::Inst, Error> {
         if self.up.is_none() && self.right.is_none() {
         }
         if let Some(up) = self.up {
@@ -45,7 +46,7 @@ impl Build for OrientBuilder {
             let up_dir = Dir3::new(up.x(), up.y(), up.z());
             Ok(Orient::new_up(Ray::new(self.pos, self.forward), &up_dir))
         } else {
-            return Err(Error::Build("At least one of \"up\" or \"right\" must be provided for Orient".to_string()));
+            Err(Error::Build("At least one of \"up\" or \"right\" must be provided for Orient".to_string()))
         }
     }
 }
@@ -63,16 +64,27 @@ pub struct OutputConfig {
 
 impl Build for OutputConfig {
     type Inst = Output;
-    fn build(self) -> Result<Self::Inst, Error> {
+    type MetaInfo = ();
+    fn build(self, id: ()) -> Result<Self::Inst, Error> {
         let reg = OutputRegistry::new_from_config(&self);
         // Volume output.
-        let vol = match &self.volumes {
-            Some(vols) => vols.values().map(|conf| conf.build()).collect(),
+        let vol = match self.volumes {
+            Some(vols) => {
+                vols
+                    .into_values()
+                    .map(|conf| conf.build(id))
+                    .collect::<Result<Vec<_>,_>>()?
+            },
             None => vec![],
         };
 
-        let plane = match &self.planes {
-            Some(planes) => planes.values().map(|conf| conf.build()).collect(),
+        let plane = match self.planes {
+            Some(planes) => {
+                planes
+                    .into_values()
+                    .map(|conf| conf.build(id))
+                    .collect::<Result<Vec<_>,_>>()?
+            },
             None => vec![],
         };
 
@@ -82,7 +94,7 @@ impl Build for OutputConfig {
         let mut det_id = 0;
         let mut detectors: Vec<Detector> = vec![];
 
-        let phot_cols = match &self.photon_collectors {
+        let phot_cols = match self.photon_collectors {
             Some(pcs) => {
                 for (_key, _conf) in pcs.iter() {
                     detectors.push(Detector {
@@ -91,12 +103,12 @@ impl Build for OutputConfig {
                     });
                     det_id += 1;
                 }
-                pcs.values().map(|conf| conf.clone()).collect()
+                pcs.values().cloned().collect()
             }
             None => vec![],
         };
 
-        let specs = match &self.spectra {
+        let specs = match self.spectra {
             Some(specs) => {
                 for (_key, _conf) in specs.iter() {
                     detectors.push(Detector {
@@ -105,14 +117,15 @@ impl Build for OutputConfig {
                     });
                     det_id += 1;
                 }
-                specs.values()
-                    .map(|conf| conf.build())
-                    .collect()
+                specs
+                    .into_values()
+                    .map(|conf| conf.build(id))
+                    .collect::<Result<Vec<_>,_>>()?
             },
             None => vec![],
         };
 
-        let images = match &self.images {
+        let images = match self.images {
             Some(images) => {
                 for (_key, conf) in images.iter() {
                     detectors.push(Detector {
@@ -120,22 +133,23 @@ impl Build for OutputConfig {
                         det_type: DetectorType::Imager {
                             width: conf.width(),
                             height: conf.height(),
-                            orient: conf.orient().clone().build()?,
+                            orient: conf.orient().clone().build(id)?,
                         }
                     });
                     det_id += 1;
                 }
-                images.values()
-                    .map(|conf| conf.build())
-                    .collect()
+                images
+                    .into_values()
+                    .map(|conf| conf.build(id))
+                    .collect::<Result<Vec<_>,_>>()?
             }
             None => vec![],
         };
 
-        let ccds = match &self.ccds {
+        let ccds = match self.ccds {
             Some(ccds) => {
                 for (_key, conf) in ccds.iter() {
-                    let orient = conf.orient().clone().build()?;
+                    let orient = conf.orient().clone().build(id)?;
                     let binner = Binner::new(conf.range()?, conf.bins());
                     detectors.push( Detector {
                         id: det_id,
@@ -148,10 +162,11 @@ impl Build for OutputConfig {
                     });
                     det_id += 1;
                 }
-                ccds.values()
-                    .map(|conf| conf.build())
-                    .collect()
-            }
+                ccds
+                    .into_values()
+                    .map(|conf| conf.build(id))
+                    .collect::<Result<Vec<_>,_>>()?
+            },
             None => vec![],
         };
 
@@ -433,7 +448,7 @@ mod tests {
         "#;
         // Deserialise from the provided string above.
         let conf: OutputConfig = json5::from_str(conf_str).unwrap();
-        let _out = conf.build();
+        let _out = conf.build(());
 
         // TODO: Implement some tests for the output object here.
     }

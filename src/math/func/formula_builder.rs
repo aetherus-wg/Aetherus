@@ -1,12 +1,13 @@
 //! Formula form implementation.
 
-use crate::{err::Error, ord::Build};
+use crate::{err::Error, ord::{Build, Name}};
 use arctk_attr::file;
 use ndarray::Array1;
 use std::fmt::{Display, Formatter};
 
 /// Mathematical formulae accepting a single scalar argument.
 #[file]
+#[derive(Clone)]
 pub enum FormulaBuilder {
     /// Constant value. = c
     Constant(f64),
@@ -26,8 +27,8 @@ pub enum FormulaBuilder {
 
 impl Build for FormulaBuilder {
     type Inst = crate::math::Formula;
-
-    fn build(self) -> Result<Self::Inst, Error> {
+    type MetaInfo = Name;
+    fn build(self, _id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Constant(c) => Self::Inst::Constant { c },
             Self::Line(c, m) => Self::Inst::Line { c, m },

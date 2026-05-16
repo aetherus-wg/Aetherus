@@ -5,6 +5,7 @@ use crate::{
     phys::{Local, Photon},
     sim::{Attribute, Input},
 };
+use aetherus_events::SrcId;
 use nalgebra::distance;
 
 /// Minimum weight before discarding during peel-off.
@@ -13,7 +14,7 @@ const THRESHOLD: f64 = 1.0e-6;
 /// Perform a peel-off event.
 /// Calculate the change in weight over a give flight towards a given point.
 #[must_use]
-pub fn peel_off(input: &Input, mut phot: Photon, env: &Local, pos: Point3) -> Option<f64> {
+pub fn peel_off(input: &Input<(Attribute, SrcId)>, mut phot: Photon, env: &Local, pos: Point3) -> Option<f64> {
     let g = env.asym();
     let g_sq = g * g;
 
@@ -56,8 +57,8 @@ pub fn peel_off(input: &Input, mut phot: Photon, env: &Local, pos: Point3) -> Op
             prob *= (-x * inter_coeff).exp();
 
             // Do something at the collision point.
-            match hit.tag() {
-                Attribute::Interface(inside, outside) => {
+            match hit.tag().0 {
+                Attribute::Interface(ref inside, ref outside) => {
                     // Determine far side material.
                     inter_coeff = if hit.side().is_inside() {
                         outside.sample_environment(phot.wavelength()).inter_coeff()

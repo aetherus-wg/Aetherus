@@ -1,10 +1,17 @@
-use std::{env, path::Path, process::Command};
+use std::{
+    env, path::Path, process::Command, sync::{Arc, Mutex}
+};
 use aetherus::{
-    err::Error, fs::{File, Load}, geom::{Surface, Tree}, io::output::Output, ord::{Build, Link, Set}, phys::{Material}, sim::{
-        Attribute, Parameters, ParametersBuilderLoader
-    }
+    err::Error,
+    fs::{File, Load},
+    geom::{Tree, object::Object},
+    io::output::Output,
+    ord::{Build, Link, Name, Set},
+    phys::{Light, Material},
+    sim::{Attribute, Parameters, ParametersBuilderLoader}
 };
 
+use aetherus_events::{SrcId, ledger::Ledger};
 use anyhow::Context;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::hint::black_box;
@@ -25,19 +32,38 @@ fn criterion_config(c: &mut Criterion) {
     });
 
     let params = load_parameters(&input_dir, &params_path);
-    let mats = params.mats.clone();
-    let base_output = params.output.clone().build().unwrap();
+    let (ledger, mats) = build_ledger(&params);
+    let _lights = build_lights(&params, &mats);
+    let base_output = params.output.clone().build(()).unwrap();
 
     // Build objects
     c.bench_function("build_objects", |b| {
         b.iter(|| {
-            let (surfs, attrs) = build_objects(black_box(&params), black_box(&base_output), &mats).unwrap();
-            black_box((surfs, attrs))
+            let (ledger, mats) = build_ledger(&params);
+            let (objs, attrs) = build_objects(black_box(&params), black_box(&base_output), &ledger, &mats).unwrap();
+            black_box((objs, attrs))
         });
     });
 
-    let base_output = params.output.clone().build().unwrap();
-    let (surfs, _attrs) = build_objects(&params, &base_output, &mats).unwrap();
+    let (objs, _attrs) = build_objects(&params, &base_output, &ledger, &mats).unwrap();
+
+    //// Build surfaces
+    //c.bench_function("build_surfaces", |b| {
+    //    b.iter(|| {
+    //        let surfs_vec: Vec<_> = black_box(&objs)
+    //            .iter()
+    //            .map(|obj| (Name::new(&obj.obj_name), obj.get_surface()))
+    //            .collect();
+    //        let surfs = Set::from_pairs(surfs_vec).unwrap();
+    //        black_box(surfs)
+    //    });
+    //});
+
+    let surfs_vec: Vec<_> = objs
+        .iter()
+        .map(|obj| (Name::new(&obj.obj_name), obj.get_surface()))
+        .collect();
+    let surfs = Set::from_pairs(surfs_vec).unwrap();
 
     c.bench_function("build_tree", |b| {
         b.iter(|| {
@@ -79,41 +105,81 @@ fn load_parameters(in_dir: &Path, params_path: &Path) -> Parameters {
         .load(&in_dir)
         .expect("Failed to load parameter resource files.");
 
-    let params = builder.build().expect("Failed to build parameters.");
+    let params = builder
+        .build(Name::new("simulation"))
+        .expect("Failed to build parameters.");
 
     params
 }
 
-fn build_objects(params: &Parameters, base_output: &Output, mats: &Set<Material>) -> Result<(Set<Surface<'static, Attribute>>, Set<Attribute>), Error> {
+fn build_ledger(params: &Parameters) -> (Arc<Mutex<Ledger>>, Set<Material>) {
+    let mut mats = params.mats.clone();
+    let ledger = Arc::new(Mutex::new(aetherus_events::ledger::Ledger::new()));
+    {
+        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
 
-    let attrs = params
+        for name in mats.names_list() {
+            let mat = mats.get_mut(&name).unwrap();
+            *mat = mat.clone().with_id(ledger_guard.with_mat(name.to_string()));
+        }
+        drop(ledger_guard);
+    }
+
+    (ledger, mats)
+}
+
+fn build_lights<'a>(params: &Parameters, mats: &'a Set<Material>) -> Set<Light<'a>> {
+    params
+        .lights
+        .clone()
+        .link(&mats)
+        .expect("Failed to link materials to lights.")
+}
+
+fn build_objects(params: &Parameters, base_output: &Output, ledger: &Arc<Mutex<Ledger>>, mats: &Set<Material>) -> Result<(Vec<Object>, Set<Attribute>), Error> {
+
+    let attrs_future = params
         .attrs
         .clone()
         .link(base_output.reg.vol_reg.set())?
         .link(base_output.reg.plane_reg.set())?
-        .link(base_output.reg.phot_cols_reg.set())
-        .expect("Failed to link photon collectors to attributes.")
-        .link(base_output.reg.ccd_reg.set())
-        .expect("Failed to link ccds to attributes.")
-        .link(base_output.reg.images_reg.set())
-        .expect("Failed to link imagers to attributes.")
-        .link(base_output.reg.spec_reg.set())
-        .expect("Failed to link spectrometers to attributes.")
-        .link(&mats)
-        .expect("Failed to link materials to attributes.")
-        .build()
+        .link(base_output.reg.detectors_reg.set())?
+        .link(&mats)?;
+
+    let objs_builder = params
+        .objs
+        .clone()
+        .link(&attrs_future)?
+        .link(&mats)?;
+
+    let attrs = attrs_future
+        .build(())
         .context("Failed to build attributes.")?;
 
-    let attrs: &'static Set<Attribute> = Box::leak(Box::new(attrs));
+    let scenes = objs_builder.build(())?;
 
-    let surfs = params
-        .surfs
-        .clone()
-        .link(&attrs)
-        .expect("Failed to link attribute to surfaces.");
+    let mut objs: Vec<_> = scenes
+        .build(())?
+        .values()
+        .flat_map(|o| o.clone())
+        .collect();
 
+    for obj in objs.iter_mut() {
+        let mut ledger_guard = ledger.lock().expect("Failed to lock ledger.");
+        let src_id = match obj.attr {
+            // TODO: Move this to allocate_ids inside Object struct
+            Attribute::Interface(..) => {
+                ledger_guard.with_matsurf(obj.obj_name.clone(), obj.mat_name.clone().unwrap(), None)
+            },
+            Attribute::Mirror(..) | Attribute::Reflector(..) => {
+                ledger_guard.with_surf(obj.obj_name.clone(), None)
+            },
+            _ => SrcId::None,
+        };
+        obj.with_id(src_id).expect("Failed to assign source ID to object.");
+    }
 
-    Ok((surfs, attrs.clone()))
+    Ok((objs, attrs))
 }
 
 criterion_group!(benches, criterion_config, criterion_sim);

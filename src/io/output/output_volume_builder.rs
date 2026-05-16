@@ -1,11 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use crate::{
-    fmt_report,
-    geom::Cube,
-    math::Vec3,
-    io::output::{OutputVolume, OutputParameter},
-    ord::cartesian::{X, Y, Z},
+    err::Error, fmt_report, geom::Cube, io::output::{OutputParameter, OutputVolume}, math::Vec3, ord::{Build, cartesian::{X, Y, Z}}
 };
 
 /// Configuration for the OutputVolume.
@@ -18,10 +14,12 @@ pub struct OutputVolumeBuilder {
     param: OutputParameter,
 }
 
-impl OutputVolumeBuilder {
-    pub fn build(&self) -> OutputVolume {
+impl Build for OutputVolumeBuilder {
+    type Inst = OutputVolume;
+    type MetaInfo = ();
+    fn build(self, _id: ()) -> Result<Self::Inst, Error> {
         let bound = Cube::new(self.boundary.0.data().into(), self.boundary.1.data().into());
-        OutputVolume::new(bound, self.res, self.param.clone())
+        Ok(OutputVolume::new(bound, self.res, self.param.clone()))
     }
 }
 
@@ -46,7 +44,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_deserialise_build() {
+    fn new_deserialise_build() -> Result<(), Error> {
         let input = r#"
             {
                 boundary: [[0, 0, 0], [10, 10, 10]],
@@ -56,7 +54,8 @@ mod tests {
         "#;
 
         let builder: OutputVolumeBuilder = json5::from_str(input).unwrap();
-        let outvol = builder.build();
+        let outvol = builder.build(())?;
         assert_eq!(outvol.voxel_volume(), 1.0);
+        Ok(())
     }
 }

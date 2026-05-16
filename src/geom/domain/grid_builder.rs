@@ -39,8 +39,9 @@ impl GridBuilder {
 
 impl Build for GridBuilder {
     type Inst = Grid;
+    type MetaInfo = ();
 
-    fn build(self) -> Result<Grid, Error> {
+    fn build(self, _id: Self::MetaInfo) -> Result<Grid, Error> {
         Ok(Grid::new(self.boundary, self.res))
     }
 }
@@ -69,7 +70,7 @@ mod tests {
         let boundary = Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0));
         let res = [10, 10, 10];
 
-        let grid = GridBuilder::new(boundary.clone(), res).build().expect("Failed to build Grid");
+        let grid = GridBuilder::new(boundary.clone(), res).build(()).expect("Failed to build Grid");
 
         assert_eq!(grid.boundary(), &boundary);
         assert_eq!(grid.res(), &res);
@@ -133,7 +134,7 @@ mod tests {
 
         // Read the file.
         let grid_builder = GridBuilder::load(&path).unwrap();
-        let grid = grid_builder.build().expect("Failed to build Grid");
+        let grid = grid_builder.build(()).expect("Failed to build Grid");
 
         // Check the results.
         assert_eq!(grid.boundary(), &Cube::new(Point3::new(0.0, 0.0, 0.0), Point3::new(1.0, 1.0, 1.0)));

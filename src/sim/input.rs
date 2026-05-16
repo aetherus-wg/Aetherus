@@ -11,7 +11,9 @@ use std::fmt::{Display, Error, Formatter};
 
 /// MCRT simulation resources conglomerate.
 #[derive(Clone)]
-pub struct Input<'a> {
+pub struct Input<'a, T>
+    where T: Clone
+{
     /// Spectrometer register.
     pub spec_reg: &'a Register,
     /// Materials.
@@ -19,24 +21,24 @@ pub struct Input<'a> {
     /// Attributes.
     pub attrs: &'a Set<Attribute>,
     /// Emission light.
-    pub light: Light<'a>,
+    pub light: &'a Light<'a>,
     /// Hit-scan tree.
-    pub tree: &'a Tree<'a, Attribute>,
+    pub tree: &'a Tree<'a, T>,
     /// General settings.
     pub sett: &'a Settings,
     /// Boundary for the simulation.
     pub bound: &'a Boundary,
 }
 
-impl<'a> Input<'a> {
+impl<'a, T: Clone> Input<'a, T> {
     /// Construct a new instance.
     #[must_use]
     pub const fn new(
         spec_reg: &'a Register,
         mats: &'a Set<Material>,
         attrs: &'a Set<Attribute>,
-        light: Light<'a>,
-        tree: &'a Tree<Attribute>,
+        light: &'a Light,
+        tree: &'a Tree<T>,
         sett: &'a Settings,
         bound: &'a Boundary,
     ) -> Self {
@@ -52,7 +54,7 @@ impl<'a> Input<'a> {
     }
 }
 
-impl Display for Input<'_> {
+impl<T: Clone> Display for Input<'_, T> {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, self.spec_reg, "spectrometer register");

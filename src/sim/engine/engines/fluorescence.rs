@@ -4,8 +4,9 @@ use crate::{
     io::output::{Output, OutputParameter},
     math::Formula,
     phys::{Local, Photon},
-    sim::{scatter::scatter, surface::surface, travel::travel, Event, Input},
+    sim::{Attribute, Event, Input, scatter::scatter, surface::surface, travel::travel},
 };
+use aetherus_events::SrcId;
 use ndarray::Array3;
 use rand::{rngs::ThreadRng, RngExt};
 
@@ -14,7 +15,7 @@ use rand::{rngs::ThreadRng, RngExt};
 pub fn fluorescence(
     flu_concs: &Array3<f64>,
     flu_spec: &Formula,
-    input: &Input,
+    input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
     mut rng: &mut ThreadRng,
     mut phot: Photon,
@@ -91,7 +92,7 @@ pub fn fluorescence(
             }
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut local, data);
+                surface(&mut rng, &hit, &mut phot, &mut local, data, None);
                 travel(&mut phot, &env, bump_dist);
             }
             Event::Boundary(boundary_hit) => {

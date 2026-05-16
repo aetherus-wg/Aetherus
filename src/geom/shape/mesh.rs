@@ -1,19 +1,20 @@
 //! Smooth triangle-mesh implementation.
 
 use crate::{
-    access, clone, fmt_report,
+    access, clone,
     err::Error,
+    fmt_report,
+    fs::{mesh_from_objfile, mesh_from_ugrid, File},
     geom::{Collide, Cube, Emit, Ray, Side, SmoothTriangle, Trace, Transformable},
-    fs::{File, mesh_from_objfile, mesh_from_ugrid},
     math::Trans3,
-    ord::{ALPHA, cartesian::X},
+    ord::{cartesian::X, ALPHA},
 };
+use anyhow::Context;
 use rand::{Rng, RngExt};
 use std::{
     fmt::{Display, Formatter},
-    path::Path
+    path::Path,
 };
-use anyhow::Context;
 
 /// Boundary padding.
 const PADDING: f64 = 1e-6;
@@ -80,7 +81,7 @@ impl Mesh {
     }
 }
 
-impl Collide for Mesh {
+impl Collide<Cube> for Mesh {
     #[inline]
     fn overlap(&self, cube: &Cube) -> bool {
         if !self.boundary.overlap(cube) {
@@ -172,20 +173,35 @@ impl File for Mesh {
     fn load(path: &Path) -> Result<Self, Error> {
         if path.extension().unwrap() == "obj" {
             let mesh_tris = mesh_from_objfile(path)
-                .context(format!("Unable to read mesh from wavefront file: {}", path.display()))?;
+                .context(
+                    format!("Unable to read mesh from wavefront file: {}", path.display())
+                )?;
 
             Ok(Self::new(mesh_tris))
-
         } else if path.extension().unwrap() == "nc" {
             let mesh_tris = mesh_from_ugrid(path).unwrap_or_else(|_| {
                 panic!("Unable to read mesh from ugrid file: {}", path.display())
             });
 
             Ok(Self::new(mesh_tris))
-
         } else {
             panic!("Mesh file {} has unsupported file type", path.display());
         }
+    }
+}
 
+impl Collide<Mesh> for Mesh {
+    fn overlap(&self, other: &Mesh) -> bool {
+        if !self.boundary.overlap(other.boundary()) {
+            return false;
+        }
+        for tri in &self.tris {
+            for other_tri in other.tris() {
+                if tri.overlap(other_tri) {
+                    return true;
+                }
+            }
+        }
+        false
     }
 }

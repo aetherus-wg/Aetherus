@@ -17,7 +17,7 @@ pub struct OutputRegistry {
 
 fn out_keys<T>(out: &Option<BTreeMap<Name, T>>) -> Vec<Name> {
     let keys = match &out {
-        Some(inner) => inner.keys().map(|k| k.clone()).collect(),
+        Some(inner) => inner.keys().cloned().collect(),
         None => vec![]
     };
     keys

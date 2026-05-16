@@ -3,9 +3,11 @@ use serde::Deserialize;
 use crate::{
     access,
     clone,
+    err::Error,
     fmt_report,
     img::{Colour, Image},
     io::output::OrientBuilder,
+    ord::Build
 };
 
 #[derive(Debug, Deserialize, Clone)]
@@ -23,10 +25,12 @@ impl ImageBuilder {
     clone!(height: f64);
 }
 
-impl ImageBuilder {
-    pub fn build(&self) -> Image {
+impl Build for ImageBuilder {
+    type Inst = Image;
+    type MetaInfo = ();
+    fn build(self, _id: ()) -> Result<Self::Inst, Error> {
         let background = Colour::new(0.0, 0.0, 0.0, 1.0);
-        Image::new_blank(self.res, background)
+        Ok(Image::new_blank(self.res, background))
     }
 }
 

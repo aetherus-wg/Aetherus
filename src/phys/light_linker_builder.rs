@@ -37,11 +37,12 @@ impl LightLinkerBuilder {
 
 impl Build for LightLinkerBuilder {
     type Inst = LightLinker;
+    type MetaInfo = Name;
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         let power = self.power;
         let emit = self.emit;
-        let spec = self.spec.build()?;
+        let spec = self.spec.build(id)?;
         let mat = self.mat;
 
         Ok(Self::Inst::new(power, emit, spec, mat))

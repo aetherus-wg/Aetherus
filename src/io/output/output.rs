@@ -97,7 +97,7 @@ fn voxels_march<F>(
         // Photon is already inside the output volume
     } else {
         if let Some(boundary_dist) = vol.boundary_dist(&tmp_phot) {
-            travel(&mut tmp_phot, &env, boundary_dist + bump_dist);
+            travel(&mut tmp_phot, env, boundary_dist + bump_dist);
             dist -= boundary_dist + bump_dist;
         } else {
             // This output volume has not been found in the path of this photon
@@ -145,7 +145,7 @@ fn voxels_march<F>(
         debug_assert!(effective_step > 0.0, "Step size must be positive non-zero");
 
         // Step temporal photon to the next voxel
-        travel(&mut tmp_phot, &env, step);
+        travel(&mut tmp_phot, env, step);
 
         debug_assert!(tmp_phot.ray() != phot.ray());
 
@@ -164,7 +164,7 @@ impl Output {
         self.get_volumes_for_param_mut(OutputParameter::Energy)
             .iter_mut()
             .for_each(|vol| {
-                voxels_march(vol, &env, &phot, dist, bump_dist, &energy_fn);
+                voxels_march(vol, env, phot, dist, bump_dist, &energy_fn);
             });
 
         // Absorption.
@@ -254,13 +254,11 @@ impl Output {
                 let hp_loc = Point3::new(projected_xy.0, projected_xy.1, phot.wavelength());
                 let projected_area = plane.projected_pix_area(&self.vol[inner_id]);
                 let spec_binsize = plane.hyperspectral_bin_size(&self.vol[inner_id]);
-                match self.vol[inner_id].gen_index(&hp_loc) {
-                    Some(index) => {
-                        self.vol[inner_id].data_mut()[index] +=
-                            phot.power() * phot.weight() / (projected_area * spec_binsize)
-                    }
-                    None => {}
+                if let Some(index) = self.vol[inner_id].gen_index(&hp_loc) {
+                    self.vol[inner_id].data_mut()[index] +=
+                        phot.power() * phot.weight() / (projected_area * spec_binsize)
                 }
+
             }
         }
     }

@@ -31,10 +31,17 @@
 
   }},
 
-  surfs: { Here: {
-      cube_object: {
-        attr: "cube_material",
-        mesh: ["./objs/DiffusionCube.obj", null]
+  objs: { Here: {
+      scene: {
+        obj: "./objs/DiffusionCube.obj",
+        attrs_map: {
+          Cube: {
+            Interface: "cube_material",
+          },
+        },
+        mats_map: {
+          Cube_material: "cube_material",
+        },
       },
   }},
 

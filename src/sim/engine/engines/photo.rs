@@ -1,21 +1,18 @@
 //! Photography photon-lifetime engine function.
 
 use crate::{
-    img::Colour,
-    phys::Photon,
-    io::output::{Output, OutputParameter},
-    sim::{
-        peel_off::peel_off, scatter::scatter, surface::surface, travel::travel, Event, Frame,
-        Input,
-    },
+    img::Colour, io::output::{Output, OutputParameter}, phys::Photon, sim::{
+        Attribute, Event, Frame, Input, peel_off::peel_off, scatter::scatter, surface::surface, travel::travel
+    }
 };
+use aetherus_events::SrcId;
 use rand::{rngs::ThreadRng, RngExt};
 
 /// Photograph the life of a single photon.
 #[allow(clippy::expect_used)]
 pub fn photo(
     frames: &[Frame],
-    input: &Input,
+    input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
     mut rng: &mut ThreadRng,
     mut phot: Photon,
@@ -90,7 +87,7 @@ pub fn photo(
             }
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, data);
+                surface(&mut rng, &hit, &mut phot, &mut env, data, None);
                 travel(&mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {

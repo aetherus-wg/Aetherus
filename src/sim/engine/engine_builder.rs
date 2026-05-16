@@ -3,7 +3,7 @@
 use crate::{
     err::Error,
     math::{FormulaBuilder, Point3},
-    ord::Build,
+    ord::{Build, Name},
     sim::{Engine, FilmBuilder},
 };
 use ndarray::Array3;
@@ -23,17 +23,18 @@ pub enum EngineBuilder {
 
 impl Build for EngineBuilder {
     type Inst = Engine;
+    type MetaInfo = Name;
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         Ok(match self {
             Self::Standard => Self::Inst::Standard,
             Self::Raman(p) => Self::Inst::Raman(p),
             Self::Photo(film) => {
                 let res = film.res();
-                Self::Inst::Photo(film.build()?, res)
+                Self::Inst::Photo(film.build(id)?, res)
             }
             Self::Fluorescence(shift_map, conc_spec) => {
-                Self::Inst::Fluorescence(shift_map, conc_spec.build()?)
+                Self::Inst::Fluorescence(shift_map, conc_spec.build(id)?)
             }
         })
     }

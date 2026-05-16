@@ -3,9 +3,9 @@
 use crate::{
     err::Error,
     fmt_report,
-    geom::{BoundaryBuilder, SurfaceLinker, TreeSettings},
+    geom::{object::SceneBuilder, BoundaryBuilder, TreeSettings},
     io::output::OutputConfig,
-    ord::{Build, Set},
+    ord::{Build, Name, Set},
     phys::{LightLinkerBuilder, MaterialBuilder},
     sim::{EngineBuilder, LinkerChainStart, Parameters, Settings},
 };
@@ -19,8 +19,8 @@ pub struct ParametersBuilder {
     boundary: BoundaryBuilder,
     /// Tree settings.
     tree: TreeSettings,
-    /// Surfaces.
-    surfs: Set<SurfaceLinker>,
+    /// Objects.
+    objs: Set<SceneBuilder>,
     /// Attributes.
     attrs: Set<LinkerChainStart>,
     /// Materials.
@@ -41,18 +41,18 @@ impl ParametersBuilder {
         sett: Settings,
         boundary: BoundaryBuilder,
         tree: TreeSettings,
-        surfs: Set<SurfaceLinker>,
+        objs: Set<SceneBuilder>,
         attrs: Set<LinkerChainStart>,
         mats: Set<MaterialBuilder>,
         lights: Set<LightLinkerBuilder>,
         engine: EngineBuilder,
-        output: OutputConfig
+        output: OutputConfig,
     ) -> Self {
         Self {
             sett,
             boundary,
             tree,
-            surfs,
+            objs,
             attrs,
             mats,
             lights,
@@ -64,20 +64,21 @@ impl ParametersBuilder {
 
 impl Build for ParametersBuilder {
     type Inst = Parameters;
+    type MetaInfo = Name;
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, id: Name) -> Result<Self::Inst, Error> {
         let sett = self.sett;
-        let boundary = self.boundary.build();
+        let boundary = self.boundary.build(id.clone())?;
         let tree = self.tree;
-        let surfs = self.surfs;
+        let objs = self.objs;
         let attrs = self.attrs;
-        let mats = self.mats.build()?;
-        let light = self.lights.build()?;
-        let engine = self.engine.build()?;
+        let mats = self.mats.build(())?;
+        let light = self.lights.build(())?;
+        let engine = self.engine.build(id.clone())?;
         let output = self.output;
 
         Ok(Self::Inst::new(
-            sett, boundary, tree, surfs, attrs, mats, light, engine, output,
+            sett, boundary, tree, objs, attrs, mats, light, engine, output,
         ))
     }
 }
@@ -88,7 +89,7 @@ impl Display for ParametersBuilder {
         fmt_report!(fmt, self.sett, "settings");
         fmt_report!(fmt, self.boundary, "boundary");
         fmt_report!(fmt, self.tree, "tree settings");
-        fmt_report!(fmt, self.surfs, "surfaces");
+        fmt_report!(fmt, self.objs, "objects");
         fmt_report!(fmt, self.attrs, "attributes");
         fmt_report!(fmt, self.mats, "materials");
         fmt_report!(fmt, self.lights, "lights");

@@ -13,8 +13,15 @@ pub enum Error {
     /// Parallelisation poison.
     #[error("Parallelisation poison.")]
     Parallel,
+    /// Build error.
     #[error("Build error: {0}")]
     Build(String),
+    /// UID Ledger error
+    #[error("UIDs Ledger error: {0}")]
+    Ledger(String),
+    /// Linking error
+    #[error("Linking error: {0}")]
+    Linking(String),
     /// Formatting error.
     #[error("Formatting")]
     Format(#[from] std::fmt::Error),
@@ -65,6 +72,12 @@ unsafe impl Sync for Error {}
 impl From<&str> for Error {
     fn from(err: &str) -> Self {
         Self::Text(err.to_owned())
+    }
+}
+
+impl From<String> for Error {
+    fn from(err: String) -> Self {
+        Error::from(err.as_str()) // Reuse the `From<&str>` implementation
     }
 }
 

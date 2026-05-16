@@ -18,8 +18,9 @@ pub struct Trans3Builder {
 
 impl Build for Trans3Builder {
     type Inst = crate::math::Trans3;
+    type MetaInfo = ();
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, _id: ()) -> Result<Self::Inst, Error> {
         let trans = self
             .trans
             .unwrap_or_else(|| Translation3::new(0.0, 0.0, 0.0));

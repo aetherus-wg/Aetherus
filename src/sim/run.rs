@@ -1,14 +1,14 @@
 //! Simulation control functions.
 
 use crate::{
-    err::Error,
-    sim::{Engine, Input},
-    tools::ProgressBar,
-    io::output::Output,
+    err::Error, io::output::Output, sim::{Attribute, Engine, Input}, tools::ProgressBar
 };
 use rand::rng;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
+
+use aetherus_events::prelude::*;
+use aetherus_events::events::Emission;
 
 /// Run a multi-threaded MCRT simulation.
 /// # Errors
@@ -16,8 +16,9 @@ use std::sync::{Arc, Mutex};
 #[allow(clippy::expect_used)]
 pub fn multi_thread<'a>(
     engine: &Engine,
-    input: &'a Input<'a>,
+    input: &'a Input<'a, (Attribute, SrcId)>,
     output: &Output,
+    ledger: Arc<Mutex<Ledger>>,
 ) -> Result<Output, Error> {
     let pb = ProgressBar::new("MCRT", input.sett.num_phot());
     let pb = Arc::new(Mutex::new(pb));
@@ -30,7 +31,15 @@ pub fn multi_thread<'a>(
     let threads: Vec<_> = (0..num_threads).collect();
     let mut out: Vec<_> = threads
         .par_iter()
-        .map(|_id| thread(engine, input, output.clone(), &Arc::clone(&pb)))
+        .map(|_id| {
+            thread(
+                engine,
+                input,
+                output.clone(),
+                ledger.clone(),
+                &Arc::clone(&pb),
+            )
+        })
         .collect();
     pb.lock()?.finish_with_message("Simulation complete.");
 
@@ -47,8 +56,9 @@ pub fn multi_thread<'a>(
 #[must_use]
 fn thread<'a>(
     engine: &Engine,
-    input: &'a Input<'a>,
+    input: &'a Input<'a, (Attribute, SrcId)>,
     mut output: Output,
+    ledger: Arc<Mutex<Ledger>>,
     pb: &Arc<Mutex<ProgressBar>>,
 ) -> Output {
     let mut rng = rng();
@@ -63,8 +73,23 @@ fn thread<'a>(
         b
     } {
         for _ in start..end {
-            let phot = input.light.emit(&mut rng, phot_energy);
-            engine.run(input, &mut output, &mut rng, phot);
+            let mut phot = input.light.emit(&mut rng, phot_energy);
+
+            // FIXME: Replace emission_type and light_id placeholder witha actual values from
+            // input.light
+            if input.sett.uid_tracked() == Some(true) {
+                *phot.uid_mut() = ledger
+                    .lock()
+                    .expect("Could not lock ledger.")
+                    .insert_start(EventId::new_emission(Emission::GaussianBeam, SrcId::Light(0)));
+            }
+
+            if input.sett.time_resolved() == Some(true) {
+                phot = phot.with_time();
+            }
+            // FIXME: Locking here and waiting for engine to run essentially transform this into a
+            // very inefficient sequential (non parallel threaded) program
+            engine.run(input, &mut output, &ledger, &mut rng, phot);
         }
     }
 

@@ -1,17 +1,18 @@
 //! Material builder.
 
 use crate::{
-    fmt_report,
     err::Error,
+    fmt_report,
     math::FormulaBuilder,
-    ord::Build,
-    phys::Material
+    ord::{Build, Name},
+    phys::Material,
 };
 use arctk_attr::file;
 use std::fmt::{Display, Formatter};
 
 /// Loadable material.
 #[file]
+#[derive(Clone)]
 pub struct MaterialBuilder {
     /// Refractive index.
     ref_index: FormulaBuilder,
@@ -27,15 +28,28 @@ pub struct MaterialBuilder {
 
 impl Build for MaterialBuilder {
     type Inst = Material;
+    type MetaInfo = Name;
 
-    fn build(self) -> Result<Self::Inst, Error> {
-        let ref_index   = self.ref_index.build()?;
-        let scat_coeff  = self.scat_coeff.build()?;
-        let abs_coeff   = self.abs_coeff.map(Build::build).transpose()?;
-        let shift_coeff = self.shift_coeff.map(Build::build).transpose()?;
-        let asym_fact   = self.asym_fact.build()?;
+    fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
+        let ref_index = self.ref_index.build(id.clone())?;
+        let scat_coeff = self.scat_coeff.build(id.clone())?;
+        let abs_coeff = self
+            .abs_coeff
+            .map(|abs_coeff| abs_coeff.build(id.clone()))
+            .transpose()?;
+        let shift_coeff = self
+            .shift_coeff
+            .map(|shift_coeff| shift_coeff.build(id.clone()))
+            .transpose()?;
+        let asym_fact = self.asym_fact.build(id.clone())?;
 
-        Ok(Self::Inst::new(ref_index, scat_coeff, abs_coeff, shift_coeff, asym_fact))
+        Ok(Self::Inst::new(
+            ref_index,
+            scat_coeff,
+            abs_coeff,
+            shift_coeff,
+            asym_fact,
+        ))
     }
 }
 

@@ -1,15 +1,18 @@
 //! Engine function handler.
 
 use crate::{
+    io::output::Output,
     math::{Formula, Point3},
     ord::cartesian::{X, Y},
     phys::Photon,
-    sim::{engines, Frame, Input},
-    io::output::Output,
+    sim::{engines, Attribute, Frame, Input},
 };
 use ndarray::Array3;
 use rand::rngs::ThreadRng;
 use std::fmt::{Display, Error, Formatter};
+use std::sync::{Arc, Mutex};
+
+use aetherus_events::{ledger::Ledger, SrcId};
 
 /// Engine selection.
 #[allow(clippy::large_enum_variant)]
@@ -27,9 +30,16 @@ pub enum Engine {
 
 impl Engine {
     /// Run the engine for a single photon.
-    pub fn run(&self, input: &Input, data: &mut Output, rng: &mut ThreadRng, phot: Photon) {
+    pub fn run(
+        &self,
+        input: &Input<(Attribute, SrcId)>,
+        data: &mut Output,
+        ledger: &Arc<Mutex<Ledger>>,
+        rng: &mut ThreadRng,
+        phot: Photon,
+    ) {
         match *self {
-            Self::Standard => engines::standard(input, data, rng, phot),
+            Self::Standard => engines::standard(input, data, ledger, rng, phot),
             Self::Raman(ref p) => engines::raman(p, input, data, rng, phot),
             Self::Photo(ref frames, _res) => engines::photo(frames, input, data, rng, phot),
             Self::Fluorescence(ref shift_map, ref conc_spec) => {

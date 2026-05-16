@@ -11,7 +11,7 @@
     min_weight:       0.01,  // Minimum simulation weight.
     roulette_barrels: 8,     // Roulette survival fraction.
     time_resolved:    true,  // Enable ToF measurements
-    uid_tracked:      false,
+    uid_tracked:      true,
     output_individual_lights: false,
   }},
 
@@ -33,27 +33,32 @@
 
   }},
 
-  surfs: { Here: {
-      cube_object: {
-        attr: "cube_material",
-        mesh: ["./objs/DiffusionCube.obj", null]
+  objs: { Here: {
+      scene: {
+        obj: "./objs/DiffusionCube.obj",
+        attrs_map: {
+          Cube: {
+            Interface: "cube_material",
+          },
+        },
+        mats_map: {
+          Cube_material: "cube_material",
+        },
       },
-      spad_sensor: {
-        attr: "spad_sensor",
-        mesh: ["./objs/square.obj",
-          {
-            trans: [0.050, 0.050, 0.050],
-            scale: 0.050,
-            rot: [90, 0, 0],
-          }
-        ],
-      },
+      det: {
+        obj: "./objs/square.obj",
+        transform: {
+          trans: [0.050, 0.050, 0.050],
+          scale: 0.050,
+          rot: [90, 0, 0]
+        },
+        attrs_map: {
+          default: "spad_sensor",
+        },
+      }
   }},
 
   attrs: { Here: {
-    cube_material: {
-        Interface: ["cube_material", "cube_material"],
-    },
     spad_sensor: {
         Detector: "spad_sensor",
     },
@@ -64,7 +69,6 @@
       air: { There: "mats/air.json5" },
       cube_material: { There: "mats/cube_material.json5" },
   }},
-
   lights: { Here: {
     laser_beam: {
       power: 1.0,

@@ -7,7 +7,7 @@ use crate::{
     math::{Mat4, Vec3},
     ord::{
         cartesian::{X, Y},
-        Build,
+        Build, Name,
     },
     sim::Frame,
 };
@@ -40,8 +40,9 @@ impl FilmBuilder {
 
 impl Build for FilmBuilder {
     type Inst = Vec<Frame>;
+    type MetaInfo = Name;
 
-    fn build(self) -> Result<Self::Inst, Error> {
+    fn build(self, _id: Self::MetaInfo) -> Result<Self::Inst, Error> {
         debug_assert!(self.frames > 0);
 
         let aspect_ratio = self.res[X] as f64 / self.res[Y] as f64;

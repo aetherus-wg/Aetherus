@@ -1,13 +1,14 @@
 use crate::{
     access, clone, fmt_report,
-    geom::{plane::ray_plane_intersection, Cube, Hit, Ray, Side, Trace},
+    geom::{Cube, Hit, Ray, Side, Trace, plane::ray_plane_intersection},
     math::{Dir3, Point3, Vec3},
     phys::{Photon, Reflectance},
     sim::Attribute,
     ord::cartesian::{X, Y, Z},
 };
+use aetherus_events::SrcId;
 use rand::Rng;
-use std::fmt::{Display, Formatter};
+use std::{fmt::{Display, Formatter}, marker::PhantomData};
 
 /// Struct that represents a boundary.
 /// This will be used to determine how the boundary conditions behaves when it interacts
@@ -88,7 +89,7 @@ impl Boundary {
             }
             BoundaryCondition::Reflect(reflectance) => {
                 // Handle Reflect variant
-                match reflectance.reflect(rng, &phot, &hit.get_hit()) {
+                match reflectance.reflect(rng, phot, &hit.get_hit()) {
                     Some((ray, ref_prob)) => {
                         *phot.ray_mut() = ray;
                         *phot.weight_mut() *= ref_prob;
@@ -389,9 +390,9 @@ impl<'a> BoundaryHit<'a> {
         }
     }
 
-    pub fn get_hit(&self) -> Hit<'_, Attribute> {
+    pub fn get_hit(&self) -> Hit<'_, PhantomData<(Attribute, SrcId)>> {
         Hit::new(
-            &Attribute::Mirror(0.0),
+            &PhantomData,
             self.dist(),
             Side::Inside(self.direction().normal_vector()),
         )

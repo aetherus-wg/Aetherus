@@ -1,10 +1,7 @@
 use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use crate::{
-    fmt_report,
-    math::Point2,
-    io::output::{OutputPlane, AxisAlignedPlane},
-    ord::cartesian::{X, Y},
+    fmt_report, io::output::{AxisAlignedPlane, OutputPlane}, math::Point2, ord::{Build, cartesian::{X, Y}}
 };
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -14,18 +11,22 @@ pub struct OutputPlaneBuilder {
     plane: AxisAlignedPlane,
 }
 
-impl OutputPlaneBuilder {
-    pub fn build(&self) -> OutputPlane {
-        OutputPlane::new(self.boundary.0, self.boundary.1, self.res, self.plane.clone())
+impl Build for OutputPlaneBuilder {
+    type Inst = OutputPlane;
+    type MetaInfo = ();
+    fn build(self, _id: ()) -> Result<Self::Inst, crate::err::Error> {
+        Ok(OutputPlane::new(self.boundary.0, self.boundary.1, self.res, self.plane.clone()))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::err::Error;
+
     use super::*;
 
     #[test]
-    fn new_deserialise_build() {
+    fn new_deserialise_build() -> Result<(), Error> {
         let input = r#"
             {
                 plane: "xy",
@@ -35,8 +36,10 @@ mod tests {
         "#;
 
         let builder: OutputPlaneBuilder = json5::from_str(input).unwrap();
-        let outvol = builder.build();
+        let outvol = builder.build(())?;
         assert_eq!(outvol.pix_area(), 1.0);
+
+        Ok(())
     }
 }
 

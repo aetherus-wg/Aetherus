@@ -2,14 +2,13 @@
 //! Compute the radiative field for a given set of setup and light source.
 
 use std::{
-    env::current_dir,
-    path::{Path, PathBuf},
+    env::current_dir, path::{Path, PathBuf}
 };
 use aetherus::{
     args,
     fs::{File, Load, Save},
     geom::Tree,
-    ord::{Build, Link},
+    ord::{Build, Link, Name, Set},
     report,
     sim::{
         Parameters, ParametersBuilderLoader
@@ -26,6 +25,10 @@ const BACKUP_TERM_WIDTH: usize = 80;
 
 /// Main program function.
 fn main() {
+    env_logger::builder()
+        .format_timestamp(None)
+        .init();
+
     let term_width = term::width(BACKUP_TERM_WIDTH);
     title(term_width, "Aetherus Remesh");
 
@@ -44,7 +47,7 @@ fn main() {
     report!(mats, "materials");
 
     let base_output = params.output
-        .build()
+        .build(())
         .expect("Failed to build base output.");
 
     sub_section(term_width, "Linking");
@@ -53,7 +56,7 @@ fn main() {
         .link(&mats)
         .expect("Failed to link materials to lights.");
     report!(lights, "lights");
-    let attrs = params
+    let attrs_future = params
         .attrs
         .link(base_output.reg.vol_reg.set())
         .expect("Failed to link volume output to attributes. ")
@@ -62,15 +65,39 @@ fn main() {
         .link(base_output.reg.detectors_reg.set())
         .expect("Failed to link detectors to attributes.")
         .link(&mats)
-        .expect("Failed to link materials to attributes.")
-        .build()
-        .expect("Failed to build attributes.");
-    report!(attrs, "attributes");
-    let surfs = params
-        .surfs
-        .link(&attrs)
-        .expect("Failed to link attribute to surfaces.");
-    report!(surfs, "surfaces");
+        .expect("Failed to link materials to attributes.");
+    //report!(attrs, "attributes");
+    let objs_builder = params
+        .objs
+        .link(&attrs_future)
+        .expect("Failed to link global attributes. ")
+        .link(&mats)
+        .expect("Failed to link materials to attributes.");
+
+    let scenes = objs_builder
+        .build(())
+        .expect("Failed to build scene geometries.");
+
+    section(term_width, "Objects loading and remeshing");
+    let objs: Vec<_> = scenes
+        .build(())
+        .expect("Failed to build scene objects.")
+        .into_iter()
+        .flat_map(|o| o.1.clone())
+        .collect();
+
+    println!("{} Objects have been read from files", objs.len());
+    for obj in objs.iter() {
+        report!(obj.obj_name, "Object");
+    }
+
+    let surfs_vec: Vec<_> = objs
+        .iter()
+        .map(|obj| (Name::new(&obj.obj_name), obj.get_surface()))
+        .collect();
+
+    let surfs = Set::from_pairs(surfs_vec)
+        .expect("Failed to build surface set.");
 
     surfs.save(&out_dir.join("export_surfaces.obj"))
         .expect("Failed to save surfaces to output directory.");
@@ -115,12 +142,14 @@ fn load_parameters(term_width: usize, in_dir: &Path, params_path: &Path) -> Para
     sub_section(term_width, "Loading");
     let builder = ParametersBuilderLoader::new_from_file(&in_dir.join(&params_path))
         .expect("Failed to load parameters file.")
-        .load(&in_dir)
+        .load(in_dir)
         .expect("Failed to load parameter resource files.");
     report!(builder, "builder");
 
     sub_section(term_width, "Building");
-    let params = builder.build().expect("Failed to build parameters.");
+    let params = builder
+        .build(Name::new("simulation"))
+        .expect("Failed to build parameters.");
     report!(params, "parameters");
 
     params
