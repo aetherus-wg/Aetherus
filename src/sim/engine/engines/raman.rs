@@ -3,7 +3,7 @@
 use crate::{
     io::output::{Output, OutputParameter}, math::Point3, phys::Photon, sim::{Attribute, Event, Input, scatter::shift_scatter, surface::surface, travel::travel}
 };
-use aetherus_events::SrcId;
+use events_ledger::SrcId;
 use rand::{rngs::ThreadRng, RngExt};
 
 /// Simulate the life of a single photon which has the potential to generate a Raman photon.
@@ -78,7 +78,7 @@ pub fn raman(
             }
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, data, None);
+                surface(&mut rng, &hit, &mut phot, &mut env, data);
                 travel(&mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {

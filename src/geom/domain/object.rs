@@ -2,7 +2,7 @@
 
 use std::{fmt::Display, path::{Path, PathBuf}};
 
-use aetherus_events::SrcId;
+use events_ledger::SrcId;
 use anyhow::Context;
 use mesh_splitting::{Collide, IdxTriangle, Split, mesh::parse_obj, primitives::PrimitiveIdx};
 use serde::{Deserialize, Deserializer};
@@ -426,6 +426,7 @@ impl Build for Scene {
 
         // Splitting of objects at the coplanar intersection with other meshes,
         // to ensure Attribute::Interface is correctly resolved
+        // FIXME: Split the meshes after SrcId allocation to the ledger
         let mut idx = objects.len();
         for i in 0..objects.len() {
             for j in i+1..meshes.len() {

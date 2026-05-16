@@ -4,7 +4,7 @@ use crate::{
     math::sample_henyey_greenstein,
     phys::{Local, Photon},
 };
-use aetherus_events::{EventId, EventType, mcrt_event};
+use events_ledger::{EventId, EventType, mcrt_event};
 use rand::{Rng, RngExt};
 use std::f64::consts::PI;
 

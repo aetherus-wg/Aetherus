@@ -6,7 +6,7 @@ use crate::{
     phys::{Crossing, Local, Photon},
     sim::Attribute,
 };
-use aetherus_events::prelude::*;
+use events_ledger::prelude::*;
 use rand::{Rng, RngExt};
 
 /// Handle a surface collision.
@@ -17,7 +17,6 @@ pub fn surface<R: Rng>(
     phot: &mut Photon,
     env: &mut Local,
     data: &mut Output,
-    seq_id: Option<u32>,
 ) -> EventId {
     match hit.tag().0 {
         Attribute::Interface(ref inside, ref outside) => {
@@ -91,15 +90,9 @@ pub fn surface<R: Rng>(
                 // FIXME: The photon collection happens before the new Uid is updated in the
                 // photon, hence this is a very ugly walk-around to fix this issues which needs to be
                 // sorted out properly.
-                let mut future_phot = phot.clone();
                 let event_id = EventId { event_type: EventType::Detection, src_id: hit.tag().1 };
-                if let Some(seq_id) = seq_id {
-                    *future_phot.uid_mut() = Uid::from_event(seq_id, &event_id);
-                }
-                data.phot_cols[id].collect_photon(&mut future_phot);
-                if future_phot.weight() <= 0.0 {
-                    phot.kill();
-                }
+                phot.update_node(|node| node.insert(&event_id));
+                data.collect_photon(phot, id);
                 event_id
             } else {
                 EventId { event_type: EventType::None, src_id: hit.tag().1 }

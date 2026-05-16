@@ -1,7 +1,9 @@
 //! Photon particle.
+use std::sync::Arc;
+
 use crate::{access, clone, geom::Ray};
 
-use aetherus_events::Uid;
+use events_ledger::prelude::*;
 
 #[cfg(feature = "mpi")]
 use crate::math::{Dir3, Point3};
@@ -30,7 +32,7 @@ pub struct Photon {
     // less pressure on cache: https://craftspider.github.io/2024/09/shorts-boxing/
     tof: Option<f64>,
     /// Unique ID for Event logging
-    uid: Uid,
+    node: Option<Arc<LedgerNode>>,
 }
 
 impl Photon {
@@ -39,7 +41,18 @@ impl Photon {
     clone!(wavelength, wavelength_mut: f64);
     clone!(power: f64);
     clone!(tof, tof_mut: Option<f64>);
-    clone!(uid, uid_mut: Uid);
+
+    pub fn node(&self) -> Option<&Arc<LedgerNode>> {
+        self.node.as_ref()
+    }
+    pub fn update_node<F>(&mut self, f:F)
+    where
+        F: FnOnce(&Arc<LedgerNode>) -> Arc<LedgerNode>
+    {
+        if let Some(node) = &self.node {
+            self.node = Some(f(node));
+        }
+    }
 
     /// Construct a new instance.
     #[inline]
@@ -54,8 +67,13 @@ impl Photon {
             wavelength,
             power,
             tof: None,
-            uid: Uid::new(0, 0),
+            node: None,
         }
+    }
+
+    pub fn with_node(mut self, node: Arc<LedgerNode>) -> Self {
+        self.node = Some(node);
+        self
     }
 
     pub fn with_time(self) -> Self {

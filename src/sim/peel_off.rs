@@ -5,7 +5,7 @@ use crate::{
     phys::{Local, Photon},
     sim::{Attribute, Input},
 };
-use aetherus_events::SrcId;
+use events_ledger::SrcId;
 use nalgebra::distance;
 
 /// Minimum weight before discarding during peel-off.

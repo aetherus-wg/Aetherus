@@ -6,16 +6,14 @@ use crate::{
     sim::{Attribute, Event, Input, scatter::scatter, surface::surface, travel::travel},
 };
 use rand::{Rng, RngExt};
-use std::sync::{Arc, Mutex};
 
-use aetherus_events::{EventType, SrcId, ledger::Ledger};
+use events_ledger::prelude::*;
 
 /// Simulate the life of a single photon.
 #[allow(clippy::expect_used)]
 pub fn standard<R: Rng>(
     input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
-    ledger: &Arc<Mutex<Ledger>>,
     mut rng: &mut R,
     mut phot: Photon,
 ) {
@@ -88,9 +86,7 @@ pub fn standard<R: Rng>(
                 // considerably. Consider using an async design, encapsulating `uid` in work token
                 // and computed value, transforming insert into a send on an mpsc channel
                 if input.sett.uid_tracked() == Some(true) {
-                    *phot.uid_mut() = ledger.lock()
-                                            .expect("Can't lock Ledger")
-                                            .insert(phot.uid(), event_id);
+                    phot.update_node(|node| node.insert(event_id));
 
                 }
                 // Reset scat_dist for the new scattering event
@@ -98,15 +94,10 @@ pub fn standard<R: Rng>(
             }
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
-                // FIXME: next_seq_id needed here only for PhotonCollector, which needs the updated
-                // Uid before it can store the photon data. How to solve this RAW hazard?
-                let next_seq_id = ledger.lock().expect("Can't lock Ledger").get_next_seq_id(&phot.uid());
-                let event_id = surface(&mut rng, &hit, &mut phot, &mut env, data, next_seq_id);
+                let event_id = surface(&mut rng, &hit, &mut phot, &mut env, data);
                 phot.ray_mut().travel(bump_dist);
-                if input.sett.uid_tracked() == Some(true) && event_id.event_type != EventType::None {
-                    *phot.uid_mut() = ledger.lock()
-                                            .expect("Can't lock Ledger")
-                                            .insert(phot.uid(), event_id);
+                if input.sett.uid_tracked() == Some(true) && event_id.event_type != EventType::None && phot.weight() > 0.0 {
+                    phot.update_node(|node| node.insert(event_id));
                 }
 
                 // FIXME: Is the surface interaction also affecting the scattering statistics like

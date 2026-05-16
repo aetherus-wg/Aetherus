@@ -5,7 +5,7 @@ use crate::{
         Attribute, Event, Frame, Input, peel_off::peel_off, scatter::scatter, surface::surface, travel::travel
     }
 };
-use aetherus_events::SrcId;
+use events_ledger::SrcId;
 use rand::{rngs::ThreadRng, RngExt};
 
 /// Photograph the life of a single photon.
@@ -87,7 +87,7 @@ pub fn photo(
             }
             Event::Surface(hit) => {
                 travel(&mut phot, &env, hit.dist());
-                surface(&mut rng, &hit, &mut phot, &mut env, data, None);
+                surface(&mut rng, &hit, &mut phot, &mut env, data);
                 travel(&mut phot, &env, bump_dist);
             },
             Event::Boundary(boundary_hit) => {

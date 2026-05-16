@@ -7,8 +7,8 @@ use rand::rng;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
-use aetherus_events::prelude::*;
-use aetherus_events::events::Emission;
+use events_ledger::prelude::*;
+use events_ledger::events::Emission;
 
 /// Run a multi-threaded MCRT simulation.
 /// # Errors
@@ -18,7 +18,7 @@ pub fn multi_thread<'a>(
     engine: &Engine,
     input: &'a Input<'a, (Attribute, SrcId)>,
     output: &Output,
-    ledger: Arc<Mutex<Ledger>>,
+    ledger: &LedgerTree,
 ) -> Result<Output, Error> {
     let pb = ProgressBar::new("MCRT", input.sett.num_phot());
     let pb = Arc::new(Mutex::new(pb));
@@ -36,7 +36,7 @@ pub fn multi_thread<'a>(
                 engine,
                 input,
                 output.clone(),
-                ledger.clone(),
+                ledger.root().clone(),
                 &Arc::clone(&pb),
             )
         })
@@ -58,7 +58,7 @@ fn thread<'a>(
     engine: &Engine,
     input: &'a Input<'a, (Attribute, SrcId)>,
     mut output: Output,
-    ledger: Arc<Mutex<Ledger>>,
+    ledger_root: Arc<LedgerNode>,
     pb: &Arc<Mutex<ProgressBar>>,
 ) -> Output {
     let mut rng = rng();
@@ -78,10 +78,10 @@ fn thread<'a>(
             // FIXME: Replace emission_type and light_id placeholder witha actual values from
             // input.light
             if input.sett.uid_tracked() == Some(true) {
-                *phot.uid_mut() = ledger
-                    .lock()
-                    .expect("Could not lock ledger.")
-                    .insert_start(EventId::new_emission(Emission::GaussianBeam, SrcId::Light(0)));
+                phot = phot.with_node(
+                    ledger_root
+                        .insert(EventId::new_emission(Emission::GaussianBeam, SrcId::Light(0)))
+                );
             }
 
             if input.sett.time_resolved() == Some(true) {
@@ -89,7 +89,7 @@ fn thread<'a>(
             }
             // FIXME: Locking here and waiting for engine to run essentially transform this into a
             // very inefficient sequential (non parallel threaded) program
-            engine.run(input, &mut output, &ledger, &mut rng, phot);
+            engine.run(input, &mut output, &mut rng, phot);
         }
     }
 

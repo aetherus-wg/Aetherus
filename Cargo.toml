@@ -1,6 +1,6 @@
 [package]
 name = "aetherus"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Freddy Wordingham <f.wordingham@exeter.ac.uk>", "Sam Morrell <s.a.f.morrell@exeter.ac.uk>", "Cristian Bourceanu <v.c.bourceanu@smd.ed.ac.uk>"]
 edition = "2021"
 description = "Physics simulation library and binaries"
@@ -67,7 +67,7 @@ thiserror = "2.0.17"
 log = "0.4.29"
 rand_distr = "0.6.0"
 env_logger = "0.11.9"
-aetherus-events = { git = "https://github.com/aetherus-wg/aetherus-events", tag ="0.2.3", version = "^0.2.3" }
+events-ledger = "^0.3.6"
 
 [dev-dependencies]
 tempfile = "3.2.*"
@@ -76,12 +76,6 @@ husky-rs = "0.3.3"
 criterion = { version = "0.8.2", features = ["html_reports", "rayon"] }
 integrate = "0.3.1"
 plotters = "0.3.7"
-
-[build]
-rustdocflags = [ "--html-in-header", "./src/docs-header.html" ]
-
-[package.metadata.docs.rs]
-rustdoc-args = [ "--html-in-header", "./src/docs-header.html" ]
 
 [lib]
 
