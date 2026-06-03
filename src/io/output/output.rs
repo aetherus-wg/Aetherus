@@ -12,6 +12,7 @@ use crate::{
     sim::travel,
     tools::Binner
 };
+use debug_print::debug_eprintln;
 use ndarray::Array3;
 use std::{
     fmt::{Display, Formatter},
@@ -86,7 +87,7 @@ fn voxels_march<F>(
     F: Fn(f64, f64) -> f64,
 {
     assert!(
-        dist > 0.0,
+        dist >= 0.0,
         "Photon travel distance must be positive non-zero"
     );
 
@@ -120,7 +121,7 @@ fn voxels_march<F>(
         };
 
         if voxel_dist == 0.0 {
-            println!("Investigate voxel at index {:?}", index);
+            debug_eprintln!("Investigate voxel at index {:?} and boundary {:?} while travelling {:?} to {:?}", index, voxel, phot.ray(), tmp_phot.ray());
         }
 
         debug_assert!(voxel_dist >= 0.0, "Cannot travel backwards");

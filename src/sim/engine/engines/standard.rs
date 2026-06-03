@@ -111,7 +111,7 @@ pub fn standard<R: Rng>(
                 input.bound.apply(rng, &boundary_hit, &mut phot);
                 // Allow for the possibility that the photon got killed at the boundary - hence don't evolve.
                 if phot.weight() > 0.0 {
-                    travel(&mut phot, &env, bump_dist);
+                    phot.ray_mut().travel(bump_dist);
                     scat_dist = Some(scat_dist.unwrap() - boundary_hit.dist()- bump_dist);
                 }
             }

@@ -175,12 +175,15 @@ impl Boundary {
             // Now we have to find the boundary that the ray is going to hit.
             // We can do this by finding the max absolutel component value of the
             // vector. Then, find the dir
-            let dir = self.boundary_direction(ray).expect("Ray outside of boundary. ");
-            return Some(BoundaryHit::new(
-                self.condition_for_boundary(&dir),
-                dist,
-                dir,
-            ))
+            if let Some(dir) = self.boundary_direction(ray) {
+                return Some(BoundaryHit::new(
+                    self.condition_for_boundary(&dir),
+                    dist,
+                    dir,
+                ));
+            } else {
+                panic!("Ray {:?} outside of boundary {:?}", ray, self.bounding_box);
+            }
         }
 
         None
@@ -382,7 +385,7 @@ impl<'a> BoundaryHit<'a> {
     #[inline]
     #[must_use]
     pub fn new(condition: &'a BoundaryCondition, dist: f64, direction: BoundaryDirection) -> Self {
-        debug_assert!(dist > 0.0);
+        debug_assert!(dist >= 0.0);
         Self {
             condition,
             dist,

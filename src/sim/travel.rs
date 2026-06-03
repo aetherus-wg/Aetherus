@@ -7,7 +7,7 @@ use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 
 /// Move the photon forward and record the flight.
 pub fn travel(phot: &mut Photon, env: &Local, dist: f64) {
-    debug_assert!(dist > 0.0);
+    debug_assert!(dist >= 0.0);
 
     phot.ray_mut().travel(dist);
 
