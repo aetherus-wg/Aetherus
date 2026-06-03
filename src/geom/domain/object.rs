@@ -4,7 +4,7 @@ use std::{fmt::Display, path::{Path, PathBuf}};
 
 use events_ledger::SrcId;
 use anyhow::Context;
-use mesh_splitting::{Collide, IdxTriangle, Split, mesh::parse_obj, primitives::PrimitiveIdx};
+use aetherus_remesh::{Collide, IdxTriangle, Split, mesh::parse_obj, primitives::PrimitiveIdx};
 use serde::{Deserialize, Deserializer};
 
 use crate::{
@@ -18,7 +18,8 @@ use crate::{
     sim::{Attribute, AttributeFuture}
 };
 
-use mesh_splitting::mesh::{Mesh as IdxMesh};
+use aetherus_remesh::mesh::{Mesh as IdxMesh};
+use obj::{Obj, ObjMaterial};
 
 use log::{debug, info, trace, warn};
 
@@ -123,7 +124,7 @@ pub enum AttributeFutureFuture {
 #[derive(Debug, Clone)]
 pub enum ObjFuture {
     Future(PathBuf),
-    Value(obj::Obj),
+    Value(Obj),
 }
 
 impl<'de> Deserialize<'de> for ObjFuture {
@@ -138,7 +139,7 @@ impl<'de> Deserialize<'de> for ObjFuture {
 
 pub struct Scene {
     pub name: String,
-    objs: obj::Obj,
+    objs: Obj,
     transform: Option<Trans3>,
     mats: Set<Material>,
     attrs: Set<AttributeFuture>,
@@ -171,7 +172,7 @@ impl Load for SceneBuilder {
         match &self.obj {
             ObjFuture::Future(path) => {
                 let full_path = in_dir.join(path);
-                self.obj = ObjFuture::Value(obj::Obj::load(full_path)?);
+                self.obj = ObjFuture::Value(Obj::load(full_path)?);
             }
             ObjFuture::Value(_) => {}
         }
@@ -368,7 +369,7 @@ impl Build for Scene {
             let mut mat_name: Option<String> = None;
             for group in &object.groups {
                 match &group.material {
-                    Some(obj::ObjMaterial::Ref(name)) => {
+                    Some(ObjMaterial::Ref(name)) => {
                         if let Some(ref existing) = mat_name {
                             if *existing != *name {
                                 return Err(Error::Linking(format!(
