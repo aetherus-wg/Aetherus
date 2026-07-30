@@ -1,16 +1,15 @@
 //! Objects structure that define Surface, Material, SrcId and Attributes
 
-use std::{fmt::Display, path::{Path, PathBuf}};
+use std::{fmt::Display, path::PathBuf};
 
 use events_ledger::SrcId;
 use anyhow::Context;
-use aetherus_remesh::{Collide, IdxTriangle, Split, mesh::parse_obj, primitives::PrimitiveIdx};
+use aetherus_remesh::{Collide, IdxTriangle, Inventory, Split, primitives::PrimitiveIdx, utils::parse_obj_file};
 use serde::{Deserialize, Deserializer};
 
 use crate::{
     err::Error,
     fmt_report,
-    fs::Load,
     geom::{Mesh, SmoothTriangle, Surface, Transformable},
     math::{Dir3, Point3, Trans3, Trans3Builder},
     ord::{Build, Link, Map, Name, Set},
@@ -19,7 +18,6 @@ use crate::{
 };
 
 use aetherus_remesh::mesh::{Mesh as IdxMesh};
-use obj::{Obj, ObjMaterial};
 
 use log::{debug, info, trace, warn};
 
@@ -121,25 +119,9 @@ pub enum AttributeFutureFuture {
     Value(AttributeFuture),
 }
 
-#[derive(Debug, Clone)]
-pub enum ObjFuture {
-    Future(PathBuf),
-    Value(Obj),
-}
-
-impl<'de> Deserialize<'de> for ObjFuture {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let path = PathBuf::deserialize(deserializer)?;
-        Ok(ObjFuture::Future(path))
-    }
-}
-
 pub struct Scene {
     pub name: String,
-    objs: Obj,
+    obj: PathBuf,
     transform: Option<Trans3>,
     mats: Set<Material>,
     attrs: Set<AttributeFuture>,
@@ -147,7 +129,7 @@ pub struct Scene {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SceneBuilder {
-    obj: ObjFuture,
+    obj: PathBuf,
     /// Optional transformation.
     transform: Option<Trans3Builder>,
     mats_map: Option<Set<MaterialFuture>>,
@@ -157,26 +139,8 @@ pub struct SceneBuilder {
 impl Display for SceneBuilder {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(fmt, "...")?;
-        fmt_report!(fmt, match &self.obj {
-            ObjFuture::Future(path) => format!("Obj({})", path.display()),
-            ObjFuture::Value(obj) => format!("Obj({})", obj.path.display()),
-        }, "obj");
+        fmt_report!(fmt, format!("Obj({})", self.obj.display()));
         Ok(())
-    }
-}
-
-impl Load for SceneBuilder {
-    type Inst = SceneBuilder;
-
-    fn load(mut self, in_dir: &Path) -> Result<Self::Inst, Error> {
-        match &self.obj {
-            ObjFuture::Future(path) => {
-                let full_path = in_dir.join(path);
-                self.obj = ObjFuture::Value(Obj::load(full_path)?);
-            }
-            ObjFuture::Value(_) => {}
-        }
-        Ok(self)
     }
 }
 
@@ -283,16 +247,6 @@ impl Build for SceneBuilder {
     type Inst = Scene;
     type MetaInfo = Name;
     fn build(self, id: Self::MetaInfo) -> Result<Self::Inst, Error> {
-        let objs = match self.obj {
-            ObjFuture::Future(_) => {
-                return Err(Error::LoadFile(
-                    std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "Object not loaded before build.")
-                ))
-            }
-            ObjFuture::Value(obj) => obj,
-        };
 
         let mut mats_map: Map<Name, Material> = Map::new();
         if let Some(mats_future_map) = self.mats_map {
@@ -336,7 +290,7 @@ impl Build for SceneBuilder {
 
         let scene = Scene {
             name: id.to_string(),
-            objs,
+            obj: self.obj,
             transform,
             mats: Set::new(mats_map),
             attrs: Set::new(attrs),
@@ -353,40 +307,22 @@ impl Build for Scene {
 
         // FIXME: Figure out how to properly sort out the mismatched version of `obj` dependency.
         // I.e. don't rely on proxy crates data to be consistent across libraries
-        let (meshes, verts, norms, faces) = parse_obj(&self.objs.data);
+        let Inventory{meshes, verts, norms, faces} = parse_obj_file(&self.obj)?;
 
         let mut objects: Vec<Object> = Vec::new();
         let mut resolved_objects = Vec::new();
 
-        for (object_idx, object) in self.objs.data.objects.iter().enumerate() {
+        for (object_idx, mesh) in meshes.iter().enumerate() {
             // NOTE: Don't support multiple groups per object
-            let obj_name = if object.name == "default" {
+            let obj_name = if mesh.name == "default" {
                 self.name.clone()
             } else {
-                object.name.clone()
+                mesh.name.clone()
             };
 
-            let mut mat_name: Option<String> = None;
-            for group in &object.groups {
-                match &group.material {
-                    Some(ObjMaterial::Ref(name)) => {
-                        if let Some(ref existing) = mat_name {
-                            if *existing != *name {
-                                return Err(Error::Linking(format!(
-                                    "Multiple material names found for object {}: {} and {}",
-                                    obj_name, existing, name
-                                )));
-                            }
-                        } else {
-                            mat_name = Some(name.clone());
-                        }
-                    },
-                    None => {},
-                    _ => return Err(Error::Linking("Material description from wavefront obj file not supported".to_string())),
-                };
-            }
+            let mut mat_name: Option<String> = mesh.mat_name.clone();
             if mat_name.is_none() {
-                mat_name = Some(format!("{}_material", object.name.clone()));
+                mat_name = Some(format!("{}", mesh.name.clone()));
             }
             let mat = match &mat_name {
                 Some(name) => self.mats.get(&Name::new(name)).cloned(),
@@ -395,17 +331,17 @@ impl Build for Scene {
 
             // TODO: Fallback to object.name maping in materials if a material hasn't been found
             // Attribute::Interface |-> Material is defined
-            info!("Building Object: {}, with material: {}", object.name, mat_name.as_deref().unwrap_or("None"));
+            info!("Building Object: {}, with material: {}", mesh.name, mat_name.as_deref().unwrap_or("None"));
             let attr = self.attrs
-                .get(&Name::new(&object.name))
+                .get(&Name::new(&mesh.name))
                 .ok_or_else(||
                     std::io::Error::new(std::io::ErrorKind::InvalidData,
-                    format!("No Attribute found that matches with obj_name({}) in the attributes map", object.name))
+                    format!("No Attribute found that matches with obj_name({}) in the attributes map", mesh.name))
                 )?
                 .clone()
                 .resolve_material(mat.clone())?
-                .build(Name::new(&object.name))
-                .context(format!("Failed to build Attribute for object {}/{}", self.name, object.name))?;
+                .build(Name::new(&mesh.name))
+                .context(format!("Failed to build Attribute for object {}/{}", self.name, mesh.name))?;
 
             objects.push(
                 Object {

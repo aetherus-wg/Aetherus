@@ -47,7 +47,7 @@ impl Load for ParametersBuilderLoader {
         let sett     = self.sett.load(in_dir)?;
         let boundary = self.boundary.load(in_dir)?;
         let tree     = self.tree.load(in_dir)?;
-        let objs     = self.objs.load(in_dir)?.load(in_dir)?;
+        let objs     = self.objs.load(in_dir)?;
         let attrs    = attribute_chain_resolve_set(self.attrs.load(in_dir)?);
         let mats     = self.mats.load(in_dir)?.load(in_dir)?;
         let lights   = self.lights.load(in_dir)?.load(in_dir)?;
