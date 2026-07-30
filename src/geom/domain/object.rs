@@ -1,6 +1,6 @@
 //! Objects structure that define Surface, Material, SrcId and Attributes
 
-use std::{fmt::Display, path::PathBuf};
+use std::{fmt::Display, path::{Path, PathBuf}};
 
 use events_ledger::SrcId;
 use anyhow::Context;
@@ -9,6 +9,7 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{
     err::Error,
+    fs::Load,
     fmt_report,
     geom::{Mesh, SmoothTriangle, Surface, Transformable},
     math::{Dir3, Point3, Trans3, Trans3Builder},
@@ -141,6 +142,25 @@ impl Display for SceneBuilder {
         writeln!(fmt, "...")?;
         fmt_report!(fmt, format!("Obj({})", self.obj.display()));
         Ok(())
+    }
+}
+
+impl Load for SceneBuilder {
+    type Inst = Self;
+    fn load(self, in_dir: &Path) -> Result<Self::Inst, Error> {
+        let obj_path = in_dir.join(&self.obj);
+        if !obj_path.exists() {
+            return Err(Error::Build(format!(
+                "SceneBuilder: Obj file not found: {}",
+                obj_path.display()
+            )));
+        }
+        Ok(Self {
+            obj: obj_path,
+            transform: self.transform,
+            mats_map: self.mats_map,
+            attrs_map: self.attrs_map,
+        })
     }
 }
 

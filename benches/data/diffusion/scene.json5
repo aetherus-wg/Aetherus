@@ -42,7 +42,7 @@
           },
         },
         mats_map: {
-          Cube_material: "cube_material",
+          Cube: "cube_material",
         },
       },
       det: {

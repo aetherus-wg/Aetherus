@@ -31,3 +31,6 @@ Cargo.lock
 .spack-env
 
 results.json
+
+# Benches output files
+benches/**/out
