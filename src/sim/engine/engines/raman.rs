@@ -4,15 +4,15 @@ use crate::{
     io::output::{Output, OutputParameter}, math::Point3, phys::Photon, sim::{Attribute, Event, Input, scatter::shift_scatter, surface::surface, travel::travel}
 };
 use events_ledger::SrcId;
-use rand::{rngs::ThreadRng, RngExt};
+use rand::{RngExt, rand_core::Rng};
 
 /// Simulate the life of a single photon which has the potential to generate a Raman photon.
 #[allow(clippy::expect_used)]
-pub fn raman(
+pub fn raman<R: Rng>(
     _detector_pos: &Point3,
     input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
-    mut rng: &mut ThreadRng,
+    mut rng: &mut R,
     mut phot: Photon,
 ) {
     // Add to the emission variables in which the photon is present.

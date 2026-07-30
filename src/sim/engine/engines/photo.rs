@@ -6,15 +6,15 @@ use crate::{
     }
 };
 use events_ledger::SrcId;
-use rand::{rngs::ThreadRng, RngExt};
+use rand::{rand_core::Rng, RngExt};
 
 /// Photograph the life of a single photon.
 #[allow(clippy::expect_used)]
-pub fn photo(
+pub fn photo<R: Rng>(
     frames: &[Frame],
     input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
-    mut rng: &mut ThreadRng,
+    mut rng: &mut R,
     mut phot: Photon,
 ) {
     // Add to the emission variables in which the photon is present.

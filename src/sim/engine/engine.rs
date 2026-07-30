@@ -8,7 +8,7 @@ use crate::{
     sim::{engines, Attribute, Frame, Input},
 };
 use ndarray::Array3;
-use rand::rngs::ThreadRng;
+use rand::rand_core::Rng;
 use std::fmt::{Display, Error, Formatter};
 
 use events_ledger::prelude::*;
@@ -29,11 +29,11 @@ pub enum Engine {
 
 impl Engine {
     /// Run the engine for a single photon.
-    pub fn run(
+    pub fn run<R: Rng>(
         &self,
         input: &Input<(Attribute, SrcId)>,
         data: &mut Output,
-        rng: &mut ThreadRng,
+        rng: &mut R,
         phot: Photon,
     ) {
         match *self {

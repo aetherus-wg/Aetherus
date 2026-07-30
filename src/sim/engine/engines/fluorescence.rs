@@ -8,16 +8,16 @@ use crate::{
 };
 use events_ledger::SrcId;
 use ndarray::Array3;
-use rand::{rngs::ThreadRng, RngExt};
+use rand::{rand_core::Rng, RngExt};
 
 /// Lifetime of a single photon capable of participating in fluorescence.
 #[allow(clippy::expect_used)]
-pub fn fluorescence(
+pub fn fluorescence<R: Rng>(
     flu_concs: &Array3<f64>,
     flu_spec: &Formula,
     input: &Input<(Attribute, SrcId)>,
     data: &mut Output,
-    mut rng: &mut ThreadRng,
+    mut rng: &mut R,
     mut phot: Photon,
 ) {
     // Add to the emission variables in which the photon is present.
