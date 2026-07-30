@@ -27,6 +27,11 @@ const BACKUP_TERM_WIDTH: usize = 80;
 
 /// Main program function.
 fn main() {
+
+    env_logger::builder()
+        .format_timestamp(None)
+        .init();
+
     let term_width = term::width(BACKUP_TERM_WIDTH);
     title(term_width, "Aetherus");
 
