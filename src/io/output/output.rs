@@ -344,9 +344,10 @@ impl Save for Output {
             self.ccds[*index].save(&out_dir.join(format!("ccd_{name}.nc")))?;
         }
 
+        // TODO: Add input configuration to choose output format
         for (name, index) in self.reg.phot_cols_reg.set().map().iter() {
             self.phot_cols[*index]
-                .save(&out_dir.join(format!("photon_collector_{name}.csv")))?;
+                .save(&out_dir.join(format!("photon_collector_{name}.h5")))?;
         }
 
         Ok(())

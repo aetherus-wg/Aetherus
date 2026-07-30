@@ -1,5 +1,6 @@
 use crate::{err::Error, fmt_report, fs::Save, phys::Photon, tools::ProgressBar};
 use std::{fmt::Display, fs::File, io::Write, ops::AddAssign, path::Path};
+use ndarray::Array1;
 use serde::Deserialize;
 
 #[derive(Default, Clone, Debug, Deserialize)]
@@ -30,55 +31,111 @@ impl PhotonCollector {
     pub fn nphoton(&self) -> usize {
         self.photons.len()
     }
+
+    fn save_csv(&self, path: &Path) -> Result<(), Error> {
+        let mut file = File::create(path)?;
+
+        // To reduce the time to run, I am manually do my won CSV write, directly from this vec.
+        let headings = vec![
+            "pos_x",
+            "pos_y",
+            "pos_z",
+            "dir_x",
+            "dir_y",
+            "dir_z",
+            "wavelength",
+            "power",
+            "weight",
+            "tof",
+            "uid",
+        ];
+
+        write!(file, "{}", headings[0])?;
+        for heading in headings.iter().skip(1) {
+            write!(file, ",{}", heading)?;
+        }
+        writeln!(file)?;
+
+        // This can potentually
+        let mut pb = ProgressBar::new("Saving Photons", self.photons.len());
+
+        // Write the properties of each of the photons to the output table.
+        for phot in self.photons.iter() {
+            writeln!(
+                file,
+                "{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.10e},{:.10e},{:.10e},{:016X}",
+                phot.ray().pos().x(),
+                phot.ray().pos().y(),
+                phot.ray().pos().z(),
+                phot.ray().dir().x(),
+                phot.ray().dir().y(),
+                phot.ray().dir().z(),
+                phot.wavelength(),
+                phot.power(),
+                phot.weight(),
+                phot.tof().unwrap_or(0.0),
+                phot.node().map(|node| node.uid().unwrap().encode()).unwrap_or(0),
+            )?;
+            pb.tick();
+        }
+
+        Ok(())
+    }
+
+    fn save_hdf5(&self, path: &Path) -> Result<(), Error> {
+        use hdf5_metno::File as H5File;
+        let file: H5File = H5File::create(path)?;
+
+        let pos_x:      Array1<f64> = self.photons.iter().map(|phot| phot.ray().pos().x()).collect();
+        let pos_y:      Array1<f64> = self.photons.iter().map(|phot| phot.ray().pos().y()).collect();
+        let pos_z:      Array1<f64> = self.photons.iter().map(|phot| phot.ray().pos().z()).collect();
+        let dir_x:      Array1<f64> = self.photons.iter().map(|phot| phot.ray().dir().x()).collect();
+        let dir_y:      Array1<f64> = self.photons.iter().map(|phot| phot.ray().dir().y()).collect();
+        let dir_z:      Array1<f64> = self.photons.iter().map(|phot| phot.ray().dir().z()).collect();
+        let wavelength: Array1<f64> = self.photons.iter().map(|phot| phot.wavelength()).collect();
+        let power:      Array1<f64> = self.photons.iter().map(|phot| phot.power()).collect();
+        let weight:     Array1<f64> = self.photons.iter().map(|phot| phot.weight()).collect();
+        let tof:        Array1<f64> = self.photons.iter().map(|phot| phot.tof().unwrap_or(0.0)).collect();
+        let uid:        Array1<u64> = self.photons.iter().map(|phot| {
+            phot.node()
+            .and_then(|node| node.uid())
+            .map(|uid| uid.encode())
+            .unwrap_or(0)
+        }).collect();
+
+        file.new_dataset_builder().with_data(&pos_x).create("pos_x")?;
+        file.new_dataset_builder().with_data(&pos_y).create("pos_y")?;
+        file.new_dataset_builder().with_data(&pos_z).create("pos_z")?;
+        file.new_dataset_builder().with_data(&dir_x).create("dir_x")?;
+        file.new_dataset_builder().with_data(&dir_y).create("dir_y")?;
+        file.new_dataset_builder().with_data(&dir_z).create("dir_z")?;
+        file.new_dataset_builder().with_data(&wavelength).create("wavelength")?;
+        file.new_dataset_builder().with_data(&power).create("power")?;
+        file.new_dataset_builder().with_data(&weight).create("weight")?;
+        file.new_dataset_builder().with_data(&tof).create("tof")?;
+        file.new_dataset_builder().with_data(&uid).create("uid")?;
+
+        Ok(())
+    }
 }
 
 impl Save for PhotonCollector {
     /// Loads the fields of the photon into a vec of vecs and outputs using a table to CSV.
     fn save_data(&self, path: &Path) -> Result<(), Error> {
         if !self.photons.is_empty() {
-            let mut file = File::create(path)?;
+            // Extract the file extension and decide to write csv file or hdf5
+            let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
 
-            // To reduce the time to run, I am manually do my won CSV write, directly from this vec.
-            let headings = vec![
-                "pos_x",
-                "pos_y",
-                "pos_z",
-                "dir_x",
-                "dir_y",
-                "dir_z",
-                "wavelength",
-                "power",
-                "weight",
-                "tof",
-                "uid",
-            ];
-            write!(file, "{}", headings[0])?;
-            for heading in headings.iter().skip(1) {
-                write!(file, ",{}", heading)?;
-            }
-            writeln!(file)?;
-
-            // This can potentually
-            let mut pb = ProgressBar::new("Saving Photons", self.photons.len());
-
-            // Write the properties of each of the photons to the output table.
-            for phot in self.photons.iter() {
-                writeln!(
-                    file,
-                    "{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.5e},{:.10e},{:.10e},{:.10e},{:016X}",
-                    phot.ray().pos().x(),
-                    phot.ray().pos().y(),
-                    phot.ray().pos().z(),
-                    phot.ray().dir().x(),
-                    phot.ray().dir().y(),
-                    phot.ray().dir().z(),
-                    phot.wavelength(),
-                    phot.power(),
-                    phot.weight(),
-                    phot.tof().unwrap_or(0.0),
-                    phot.node().map(|node| node.uid().unwrap().encode()).unwrap_or(0),
-                )?;
-                pb.tick();
+            match ext {
+                "csv" => {
+                    self.save_csv(path)?;
+                }
+                "hdf5" | "h5" => {
+                    self.save_hdf5(path)?;
+                }
+                _ => {
+                    return Err(Error::Save(format!("Unsupported file extension: {}", ext)));
+                }
             }
         }
 

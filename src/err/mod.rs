@@ -10,6 +10,9 @@ pub enum Error {
     /// Description error.
     #[error("Text error: {0}")]
     Text(String),
+    /// Save error.
+    #[error("Save error: {0}")]
+    Save(String),
     /// Parallelisation poison.
     #[error("Parallelisation poison.")]
     Parallel,
@@ -52,6 +55,9 @@ pub enum Error {
     /// Min/max error.
     #[error("MinMax")]
     MinMax(#[from] ndarray_stats::errors::MinMaxError),
+    /// HDF5 io error.
+    #[error("HDF5 IO")]
+    HDF5(#[from] hdf5_metno::Error),
     /// NetCDF io error.
     #[error("NetCDF IO")]
     NetCdf(#[from] netcdf::Error),
