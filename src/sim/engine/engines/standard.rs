@@ -34,6 +34,7 @@ pub fn standard<R: Rng>(
     // Initialisation.
     let mat = input.light.mat();
     let mut env = mat.sample_environment(phot.wavelength());
+    let mut scat_coeff = env.scat_coeff();
     // scat_dist persists across voxels propagation, in order to preserve scattering statistics
     let mut scat_dist = None;
 
@@ -60,7 +61,7 @@ pub fn standard<R: Rng>(
 
         // Scattering distance
         if scat_dist.is_none() {
-            scat_dist = Some(-(rng.random::<f64>()).ln() / env.scat_coeff());
+            scat_dist = Some(-(rng.random::<f64>()).ln() / scat_coeff);
         }
         // NOTE: Does aggregated absorption and scattering reduce the scanning depth?
         // Perhaps the distance considerations significantly reduces the time to complete the Tree search
@@ -103,7 +104,9 @@ pub fn standard<R: Rng>(
                 // FIXME: Is the surface interaction also affecting the scattering statistics like
                 // voxels did? => Based on "MONTE CARLO MODELLING OF PHOTON TRANSPORT IN BIOLOGICAL TISSUE - p40" yes
                 // Recompute the scattering distance for the new env
-                scat_dist = Some(scat_dist.unwrap() - hit.dist());
+                let remaining_scat_dist = scat_dist.unwrap() - hit.dist();
+                scat_dist = Some(remaining_scat_dist * scat_coeff / env.scat_coeff());
+                scat_coeff = env.scat_coeff();
                 assert!(scat_dist.unwrap() >= 0.0);
             },
             Event::Boundary(boundary_hit) => {

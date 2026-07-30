@@ -28,9 +28,5 @@ pub fn shift_scatter<R: Rng>(rng: &mut R, phot: &mut Photon, env: &Local) -> Eve
     }
 
     // The remaining weight is scattered.
-    let phi = sample_henyey_greenstein(rng, env.asym());
-    let theta = rng.random_range(0.0..(PI * 2.0));
-    phot.ray_mut().rotate(phi, theta);
-
-    EventId { event_type: EventType::MCRT(mcrt_event!(Material, Inelastic, Raman, Unknown)), src_id: env.mat_id() }
+    scatter(rng, phot, env)
 }
