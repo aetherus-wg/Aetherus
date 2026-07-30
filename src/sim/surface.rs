@@ -55,7 +55,7 @@ pub fn surface<R: Rng>(
                 // Reflect.
                 let new_dir = *crossing.ref_dir();
                 let norm = hit.side().norm();
-                debug_assert!(phot.ray().dir().dot(norm) * new_dir.dot(norm)>= 0.0, "Reflection direction is not on the correct side of the surface");
+                debug_assert!(phot.ray().dir().dot(norm) * new_dir.dot(norm) <= 0.0, "Reflection direction is not on the correct side of the surface");
                 phot.ray_mut().update_dir(new_dir);
                 EventId { event_type: EventType::MCRT(mcrt_event!(Interface, Reflection)), src_id: hit.tag().1}
             } else {
@@ -76,8 +76,13 @@ pub fn surface<R: Rng>(
                 },
                 None => phot.kill(),
             }
-            // FIXME: Get reflector type from the reflectance.reflect() fn instead
-            EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Specular)), src_id: hit.tag().1 }
+            use crate::phys::Reflectance;
+            match reflectance {
+                Reflectance::Lambertian{..} => EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Diffuse)), src_id: hit.tag().1 },
+                Reflectance::Specular{..} => EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Specular)), src_id: hit.tag().1 },
+                // FIXME: Get which choice from specular/diffuse has been used this time
+                Reflectance::Composite {..} => EventId { event_type: EventType::MCRT(mcrt_event!(Reflector, Composite)), src_id: hit.tag().1 },
+            }
         }
         Attribute::Mirror(abs) => {
             *phot.weight_mut() *= abs;
