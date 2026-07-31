@@ -48,7 +48,7 @@ jobs:
           --thresholds-reset \
           --github-actions '${{ secrets.GITHUB_TOKEN }}' \
           --adapter rust_criterion \
-          cargo bench
+          "cargo bench --bench diffusion"
       - name: Report accuracy
         run: |
           bencher run \
@@ -69,4 +69,4 @@ jobs:
           --threshold-upper-boundary 10.0 \
           --file results.json \
           --github-actions '${{ secrets.GITHUB_TOKEN }}' \
-            cargo bench accuracy
+          "cargo bench --bench accuracy"
