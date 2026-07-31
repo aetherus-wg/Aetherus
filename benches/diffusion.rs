@@ -1,5 +1,5 @@
 use std::{
-    env, path::Path, process::Command, sync::{Arc, Mutex}
+    env, path::Path, process::Command
 };
 use aetherus::{
     err::Error,

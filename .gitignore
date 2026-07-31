@@ -33,4 +33,4 @@ Cargo.lock
 results.json
 
 # Benches output files
-benches/**/out
+/benches/**/out/
